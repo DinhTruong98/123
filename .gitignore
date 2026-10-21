@@ -21,3 +21,6 @@ dev/
 
 # Results file
 results.tsv
+
+# Experiment log
+run.log

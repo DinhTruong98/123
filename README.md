@@ -1,3 +1,11 @@
+# autoresearch (CPU port)
+
+> **This is a CPU-only port of [karpathy/autoresearch](https://github.com/karpathy/autoresearch)** (upstream commit `228791f`, MIT), following the "smaller compute" recommendations in the upstream README below: TinyStories data (or TinyShakespeare as an offline-friendly fallback), `vocab_size` 2048, `MAX_SEQ_LEN` 256, `DEPTH` 4, `WINDOW_PATTERN` "L", `TOTAL_BATCH_SIZE` 2**14. Flash Attention 3 is replaced by PyTorch `scaled_dot_product_attention`, everything runs in float32, and the summary reports `peak_mem_mb` (RAM) and `tok_per_sec` instead of `peak_vram_mb` and MFU. Data is pre-tokenized into `~/.cache/autoresearch-cpu/`. See `SETUP.md` for setup (Vietnamese).
+>
+> CPU quick start: `uv sync`, then `uv run prepare.py` (or `uv run prepare.py --dataset shakespeare`), then `uv run train.py`. The original README follows unchanged.
+
+---
+
 # autoresearch
 
 ![teaser](progress.png)
