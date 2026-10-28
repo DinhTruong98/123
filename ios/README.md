@@ -2,7 +2,8 @@
 
 App iOS chạy đúng model `assets/models/student_int8.tflite` (DS-CNN int8, cùng file sẽ nạp cho ESP32-S3) trên âm thanh
 micro iPhone, theo pipeline của bản Python: 16 kHz, cửa sổ 1 s, hop 0.5 s, gate −55 dBFS, log-mel 49×40,
-PostProcessor (k-of-n, cooldown, DANGER lặp tới khi xác nhận). Cảnh báo bằng icon, nhãn tiếng Việt, màu theo mức, rung
+PostProcessor (k-of-n, cooldown, DANGER lặp tới khi xác nhận; DANGER báo ngay ở một hop bão hoà 255/256, quy tắc 4b,
+`danger_fast_threshold`). Cảnh báo bằng icon, nhãn tiếng Việt, màu theo mức, rung
 Core Haptics. Khi khoá màn hình thì gửi notification.
 
 ## Cấu trúc
@@ -125,8 +126,8 @@ silicon (LiteRT không có lát x86_64 cho simulator).
 |---|---|
 | `FeatureExtractorTests` | log-mel so với 5 golden case của `export-golden`, max \|diff\| < 1e-3; silence = log(1e-6); RingBuffer; thời gian feature + suy luận < 20 ms |
 | `ClassifierTests` | input golden case 4 đã chuẩn hoá → xác suất khớp Python `TFLiteClassifier` trong ±1/256; SF Symbols tồn tại |
-| `PostProcessorTests` | port `tests/test_wp5_postprocess.py` (tham số cũ của `tests/_legacy_cfg.py`) + `bg_margin` |
-| `EndToEndTests` | Engine offline trên `demo_scenario.wav`: sự kiện không lặp khớp `demo_expected_events.json` (cùng lớp, lệch ≤ 0.5 s) |
+| `PostProcessorTests` | port `tests/test_wp5_postprocess.py`: 8 test cũ (tham số của `tests/_legacy_cfg.py`, tắt luật 4b) + `bg_margin`, và 7 test `test_fast_path_*` (cấu hình đã tune, `dangerFastThreshold` = 255/256) |
+| `EndToEndTests` | Engine offline trên `demo_scenario.wav`: sự kiện không lặp khớp `demo_expected_events.json` (cùng lớp, cùng hop: lệch ≤ 0.25 s); tắt luật 4b thì test này fail |
 
 Kết quả (Xcode 27.1, simulator iOS 27.1, Mac Apple silicon):
 
@@ -134,8 +135,8 @@ Kết quả (Xcode 27.1, simulator iOS 27.1, Mac Apple silicon):
 |---|---|
 | Golden log-mel, max \|diff\| (silence / sine / noise / chirp / sum_of_sines) | 0 / 9.5e-7 / 4.8e-7 / 9.5e-7 / 9.5e-7 |
 | Classifier golden case 4 | trùng từng giá trị với Python |
-| Demo 60 s: xác suất từng hop (119 hop) | lệch tối đa 0, cùng các hop bị gate |
-| Demo 60 s: sự kiện | 12/12 trùng Python (6 sự kiện mới + 6 lần nhắc DANGER), cùng thời điểm |
+| Demo 60 s: xác suất từng hop (119 hop) | lệch tối đa 1/256 so với file kỳ vọng (sinh trên Linux; sinh trên Mac thì lệch 0), cùng các hop bị gate |
+| Demo 60 s: sự kiện | 12/12 trùng Python (6 sự kiện mới + 6 lần nhắc DANGER), cùng thời điểm. Có luật 4b: smoke_alarm 3.0 s, car_horn 12.0 s, siren 22.0 s (sớm hơn 0.5 s so với trước) |
 | Feature + suy luận / hop, Release | 0.20 ms + 0.63 ms (Debug: 5.7 + 1.3 ms) |
 
 Trên iPhone 12 (iOS 27.0.1, bản Release, cài qua Wi-Fi):

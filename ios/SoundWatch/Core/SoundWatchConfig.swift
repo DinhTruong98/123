@@ -22,6 +22,7 @@ struct SoundWatchConfig: Decodable {
         var dangerRepeatS: Double
         var dangerClearS: Double
         var bgMargin: Double?
+        var dangerFastThreshold: Double?  // rule 4b, nil = off
     }
 
     struct UI: Decodable {

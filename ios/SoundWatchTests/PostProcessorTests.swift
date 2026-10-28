@@ -17,6 +17,7 @@ final class PostProcessorTests: XCTestCase {
         c.postprocess.smoothN = 3
         c.postprocess.kOfN = [2, 3]
         c.postprocess.bgMargin = nil
+        c.postprocess.dangerFastThreshold = nil  // like tests/_legacy_cfg.py
         for i in c.classes.indices { if let t = Self.wp7Thresholds[c.classes[i].key] { c.classes[i].threshold = t } }
         cfg = c
     }
@@ -157,5 +158,153 @@ final class PostProcessorTests: XCTestCase {
         XCTAssertTrue(run(pp, rep(p, 6)).isEmpty)
         p[cfg.backgroundId] = 0.5
         XCTAssertEqual(run(PostProcessor(classes: cfg.classes, cfg: pcfg), rep(p, 6)).count, 1)
+    }
+
+    // MARK: DANGER fast path (rule 4b), port of test_fast_path_* in tests/test_wp5_postprocess.py
+
+    static let sat: Float = 255.0 / 256.0  // saturated int8 output (scale 1/256, zero point -128)
+
+    /// Tuned config (smooth_n 1, k_of_n 2/2, thresholds from JSON) with the fast path set explicitly.
+    func deployed(_ fast: Double?, bgMargin: Double? = nil) throws -> SoundWatchConfig {
+        var c = try TestSupport.config()
+        c.postprocess.smoothN = 1
+        c.postprocess.kOfN = [2, 2]
+        c.postprocess.bgMargin = bgMargin
+        c.postprocess.dangerFastThreshold = fast
+        return c
+    }
+
+    func sat(_ c: SoundWatchConfig, _ cid: Int, _ p: Float = sat) -> [Float] {
+        var v = [Float](repeating: 0, count: c.numClasses)
+        v[cid] = p
+        v[c.backgroundId] = 1 - p
+        return v
+    }
+
+    func pp(_ c: SoundWatchConfig) -> PostProcessor { PostProcessor(classes: c.classes, cfg: c.postprocess) }
+
+    func testFastPathSingleSaturatedHopAlertsAtOnce() throws {
+        let off = try deployed(nil), on = try deployed(Double(Self.sat))
+        let siren = on.classId("siren")!
+        let bg = sat(on, on.backgroundId, 1)
+        let seq = rep(bg, 3) + [sat(on, siren)] + rep(bg, 6)  // ambulance passing: one saturated hop
+        XCTAssertTrue(run(pp(off), seq).isEmpty)
+        let ev = run(pp(on), seq)
+        XCTAssertEqual(ev.map(\.0), [1.0 + 3 * Self.hop])
+        XCTAssertEqual(ev.map(\.1.classId), [siren])
+        XCTAssertEqual(ev.map(\.1.repeatAlert), [false])
+        XCTAssertEqual(ev[0].1.confidence, Self.sat)
+    }
+
+    func testFastPathThresholdIsExactInFloat32() throws {
+        let on = try deployed(Double(Self.sat))
+        let fire = on.classId("smoke_alarm")!
+        XCTAssertTrue(pp(on).update(sat(on, fire, 254.0 / 256), tAudio: 1).isEmpty)  // one step below
+        XCTAssertEqual(pp(on).update(sat(on, fire), tAudio: 1).map(\.classId), [fire])
+        // the classifier's dequantized saturated output is exactly the threshold
+        XCTAssertEqual((Float(Int8(127)) - Float(-128)) * Float(1.0 / 256), Self.sat)
+    }
+
+    func testFastPathOffOrUnreachedIsIdentical() throws {
+        let off = try deployed(nil), on = try deployed(Double(Self.sat))
+        var rng = SplitMix64(seed: 0)
+        let levels: [Float] = [0.2, 0.92, 0.98, 0.99, 254.0 / 256]
+        for _ in 0..<20 {
+            let seq = (0..<80).map { _ in
+                sat(off, Int(rng.next() % UInt64(off.numClasses)), levels[Int(rng.next() % UInt64(levels.count))])
+            }
+            let a = run(pp(off), seq), b = run(pp(on), seq)
+            XCTAssertEqual(a.map(\.0), b.map(\.0))
+            XCTAssertEqual(a.map(\.1), b.map(\.1))
+        }
+        // a config without the field decodes as "off"
+        XCTAssertNil(try JSONDecoder.snake.decode(SoundWatchConfig.Postprocess.self, from: Data(
+            #"{"smooth_n": 1, "k_of_n": [2, 2], "danger_repeat_s": 5, "danger_clear_s": 10}"#.utf8)).dangerFastThreshold)
+    }
+
+    func testFastPathDoesNotAffectWarnAndInfo() throws {
+        let on = try deployed(Double(Self.sat))
+        let bg = sat(on, on.backgroundId, 1)
+        for key in ["baby_cry", "door_knock", "dog_bark", "water_running"] {
+            XCTAssertTrue(run(pp(on), [bg, sat(on, on.classId(key)!), bg, bg]).isEmpty, key)
+        }
+    }
+
+    func testFastPathNoFreshAlertDuringOccurrenceEvenIfAcked() throws {
+        let on = try deployed(Double(Self.sat))
+        let siren = on.classId("siren")!
+        let bg = sat(on, on.backgroundId, 1), hi = sat(on, siren)
+        let p = pp(on)
+        XCTAssertEqual(run(p, [hi]).count, 1)
+        XCTAssertTrue(p.isPending(siren))
+        p.ack(siren)
+        // isolated saturated hops every 2 s (< danger_clear_s apart): same occurrence, no new alert
+        let seq = Array(repeating: rep(bg, 3) + [hi], count: 10).flatMap { $0 }
+        XCTAssertTrue(run(p, seq, t0: 1.5).isEmpty)
+    }
+
+    func testFastPathKeepsCooldownRepeatAndClear() throws {
+        let on = try deployed(Double(Self.sat))
+        let pcfg = on.postprocess
+        let siren = on.classId("siren")!
+        let bg = sat(on, on.backgroundId, 1), hi = sat(on, siren)
+        var p = pp(on)
+        // one saturated hop, never acked: fresh + repeats every max(danger_repeat_s, cooldown_s)
+        // until the sound has been below threshold for danger_clear_s
+        var ev = run(p, [hi] + rep(bg, 40))
+        let ts = ev.map(\.0)
+        XCTAssertFalse(ev[0].1.repeatAlert)
+        XCTAssertTrue(ev.dropFirst().allSatisfy { $0.1.repeatAlert })
+        let step = max(pcfg.dangerRepeatS, on.classes[siren].cooldownS)
+        for i in 1..<ts.count { XCTAssertEqual(ts[i] - ts[i - 1], step, accuracy: 1e-9) }
+        XCTAssertLessThan(ts.last! - ts[0], pcfg.dangerClearS + step)
+        XCTAssertFalse(p.isPending(siren))
+        // after the occurrence cleared, a new single saturated hop alerts fresh again
+        let ev2 = run(p, [hi], t0: 1.0 + 41 * Self.hop)
+        XCTAssertEqual(ev2.map(\.1.classId), [siren])
+        XCTAssertEqual(ev2.map(\.1.repeatAlert), [false])
+        // cooldown: a fresh fast alert never comes < cooldown_s after the previous emission
+        var classes = on.classes
+        classes[siren] = SoundClass(key: classes[siren].key, labelVi: classes[siren].labelVi, level: classes[siren].level,
+                                    color: classes[siren].color, vibration: classes[siren].vibration,
+                                    threshold: classes[siren].threshold, cooldownS: 30, enabled: true,
+                                    sfSymbol: classes[siren].sfSymbol)
+        p = PostProcessor(classes: classes, cfg: pcfg)
+        ev = run(p, [hi] + rep(bg, 25) + [hi] + rep(bg, 40) + [hi])
+        let fresh = ev.filter { !$0.1.repeatAlert }.map(\.0)
+        XCTAssertEqual(fresh.first, 1.0)
+        for i in 1..<max(1, fresh.count) { XCTAssertGreaterThanOrEqual(fresh[i] - fresh[i - 1], 30) }
+    }
+
+    func testFastPathRespectsBgMargin() throws {
+        let on = try deployed(Double(Self.sat), bgMargin: 0.2)
+        let siren = on.classId("siren")!
+        var v = [Float](repeating: 0, count: on.numClasses)
+        v[siren] = Self.sat
+        v[on.backgroundId] = 0.9  // (not normalized) margin 0.096 < 0.2
+        XCTAssertTrue(pp(on).update(v, tAudio: 1).isEmpty)
+        v[on.backgroundId] = 0.5  // margin 0.496 >= 0.2
+        XCTAssertEqual(pp(on).update(v, tAudio: 1).map(\.classId), [siren])
+    }
+}
+
+/// Small deterministic PRNG for the randomized test.
+struct SplitMix64 {
+    var state: UInt64
+    init(seed: UInt64) { state = seed }
+    mutating func next() -> UInt64 {
+        state &+= 0x9E37_79B9_7F4A_7C15
+        var z = state
+        z = (z ^ (z >> 30)) &* 0xBF58_476D_1CE4_E5B9
+        z = (z ^ (z >> 27)) &* 0x94D0_49BB_1331_11EB
+        return z ^ (z >> 31)
+    }
+}
+
+extension JSONDecoder {
+    static var snake: JSONDecoder {
+        let d = JSONDecoder()
+        d.keyDecodingStrategy = .convertFromSnakeCase
+        return d
     }
 }

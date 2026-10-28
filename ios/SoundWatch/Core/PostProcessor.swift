@@ -10,6 +10,9 @@ struct AlertEvent: Equatable {
 /// Port of src/soundwatch/engine/postprocess.py (see its docstring for the rules):
 /// moving average over `smooth_n` hops, k-of-n trigger, per-class cooldown, DANGER repeat until ack,
 /// acked occurrence silent until below threshold for `danger_clear_s`, disabled/background silent.
+/// Rule 4b (optional `danger_fast_threshold`): a DANGER class also counts as triggered at a single hop
+/// whose smoothed prob reaches the threshold (and `bg_margin`, if set), without waiting for k-of-n;
+/// every other condition of a fresh alert still applies. Compared in Float, like numpy float32.
 final class PostProcessor {
     let classes: [SoundClass]
     let cfg: SoundWatchConfig.Postprocess
@@ -102,12 +105,19 @@ final class PostProcessor {
         }
         hits[hitsPos] = above
         hitsPos = (hitsPos + 1) % n
+        var fastHit = [Bool](repeating: false, count: numClasses)
+        if let fast = cfg.dangerFastThreshold {
+            let bg = smoothed[backgroundId]
+            for c in 0..<numClasses where isDanger[c] && smoothed[c] >= Float(fast) {
+                fastHit[c] = cfg.bgMargin.map { smoothed[c] - bg >= Float($0) } ?? true
+            }
+        }
         for c in 0..<numClasses where above[c] { lastAbove[c] = t }
 
         var events: [AlertEvent] = []
         for c in 0..<numClasses {
             if c == backgroundId || !enabled[c] { continue }
-            let triggered = (0..<n).reduce(0) { $0 + (hits[$1][c] ? 1 : 0) } >= k
+            let triggered = (0..<n).reduce(0) { $0 + (hits[$1][c] ? 1 : 0) } >= k || fastHit[c]
             let danger = isDanger[c]
             if danger && active[c] && t - lastAbove[c] >= cfg.dangerClearS {
                 active[c] = false
