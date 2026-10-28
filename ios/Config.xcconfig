@@ -2,5 +2,8 @@
 // (git-ignored) and set your own values there.
 SW_BUNDLE_ID = com.example.soundwatch
 SW_TEAM_ID =
+// SoundWatch/SoundWatch.entitlements (Time Sensitive notifications) needs a paid developer team;
+// Personal Teams cannot sign it, so it is off by default.
+SW_ENTITLEMENTS =
 
 #include? "Local.xcconfig"

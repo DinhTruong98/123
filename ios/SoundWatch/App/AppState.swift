@@ -1,5 +1,7 @@
 import AVFoundation
+import os
 import SwiftUI
+import UserNotifications
 
 struct ShownAlert: Identifiable, Equatable {
     let id = UUID()
@@ -21,7 +23,10 @@ final class AppState: ObservableObject {
     @Published private(set) var micDenied = false
     @Published private(set) var timing = (featureMs: 0.0, inferMs: 0.0, maxTotalMs: 0.0)
     @Published var enabled: [Bool] = []
-    @Published var showDebug = false
+    @Published private(set) var notificationsAllowed: Bool?
+    @Published var showDebug = UserDefaults.standard.bool(forKey: "showDebug") {
+        didSet { UserDefaults.standard.set(showDebug, forKey: "showDebug") }
+    }
     @Published var playDemoAloud = true
 
     let config: SoundWatchConfig
@@ -33,6 +38,7 @@ final class AppState: ObservableObject {
     private var dismissTask: Task<Void, Never>?
     private var isActive = true
     private static let enabledKey = "enabledClasses"
+    private let micFeeds = OSAllocatedUnfairLock(initialState: true)
 
     static var isRunningTests: Bool { ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil }
 
@@ -57,7 +63,12 @@ final class AppState: ObservableObject {
             let date = Date()
             Task { @MainActor in self?.handle(alert: e, date: date) }
         }
-        capture.onSamples = { [weak self] x in self?.engine?.feed(x) }
+        // The microphone keeps running while the demo plays (its samples are dropped), so switching
+        // sources never restarts recording, which iOS refuses while the app is in the background.
+        let micFeeds = micFeeds
+        capture.onSamples = { [weak self] x in
+            if micFeeds.withLock({ $0 }) { self?.engine?.feed(x) }
+        }
         demo.onSamples = { [weak self] x in self?.engine?.feed(x) }
         demo.onFinished = { [weak self] in Task { @MainActor in self?.demoFinished() } }
         notifier.onAck = { [weak self] c in Task { @MainActor in self?.ack(classId: c) } }
@@ -71,25 +82,43 @@ final class AppState: ObservableObject {
     func start() async {
         guard !Self.isRunningTests, source == .idle else { return }
         notifier.setUp()
+        await refreshNotificationStatus()
         guard await AudioCapture.requestPermission() else {
             micDenied = true
             return
         }
         micDenied = false
         startMic()
-        // launch argument -demo: start with the demo file (presentations, screenshots)
-        if ProcessInfo.processInfo.arguments.contains("-demo") {
-            showDebug = true
+        // launch arguments -demo [-demoDelay N]: start with the demo file, optionally after N s
+        // (presentations, screenshots, lock-screen tests)
+        let args = ProcessInfo.processInfo.arguments
+        if args.contains("-demo") {
+            if let i = args.firstIndex(of: "-demoDelay"), i + 1 < args.count, let s = Double(args[i + 1]) {
+                try? await Task.sleep(for: .seconds(s))
+            }
             toggleDemo()
         }
     }
 
-    func setActive(_ active: Bool) { isActive = active }
+    func setActive(_ active: Bool) {
+        isActive = active
+        if active { Task { await refreshNotificationStatus() } }
+    }
+
+    func refreshNotificationStatus() async {
+        let s = await UNUserNotificationCenter.current().notificationSettings()
+        switch s.authorizationStatus {
+        case .authorized, .provisional, .ephemeral: notificationsAllowed = true
+        case .denied: notificationsAllowed = false
+        default: notificationsAllowed = nil
+        }
+    }
 
     private func startMic() {
         engine?.reset()
+        micFeeds.withLock { $0 = true }
         do {
-            try capture.start()
+            try capture.start()  // no-op if already running
             source = .mic
             errorMessage = nil
         } catch {
@@ -106,7 +135,7 @@ final class AppState: ObservableObject {
             demoFinished()
             return
         }
-        capture.stop()
+        micFeeds.withLock { $0 = false }
         engine?.reset()
         timing = (0, 0, 0)
         do {
@@ -141,7 +170,7 @@ final class AppState: ObservableObject {
         let shown = ShownAlert(classId: e.classId, confidence: e.confidence, date: date, tAudio: e.tAudio)
         let background = !isActive
         haptics.play(pattern: cls.vibration, level: cls.level, background: background)
-        if background && cls.level >= .warn {
+        if background {
             notifier.post(classId: e.classId, cls: cls, confidence: e.confidence, at: date, repeatAlert: e.repeatAlert)
         }
         if !e.repeatAlert {
@@ -184,6 +213,8 @@ final class AppState: ObservableObject {
     private func reopen(classId: Int) {
         if let a = history.first(where: { $0.classId == classId }), currentAlert == nil { show(a) }
     }
+
+    func clearHistory() { history.removeAll() }
 
     // MARK: settings
 

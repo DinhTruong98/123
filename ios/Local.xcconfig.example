@@ -3,3 +3,5 @@
 SW_BUNDLE_ID = com.yourname.soundwatch
 // Team ID: Xcode > Settings > Accounts > (Apple ID) > Personal Team, or leave empty and pick the team in Xcode.
 SW_TEAM_ID =
+// Paid Apple Developer Program team only: DANGER notifications as Time Sensitive.
+// SW_ENTITLEMENTS = SoundWatch/SoundWatch.entitlements

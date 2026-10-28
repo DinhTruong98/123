@@ -92,7 +92,7 @@ final class DemoFilePlayer {
             throw NSError(domain: "SoundWatch", code: 6, userInfo: [NSLocalizedDescriptionKey: "demo WAV phải là \(sampleRate) Hz"])
         }
         if playAloud {
-            try AudioCapture.configureSession()
+            if AVAudioSession.sharedInstance().category != .playAndRecord { try AudioCapture.configureSession() }
             player = try AVAudioPlayer(contentsOf: url)
             player?.play()
         }
