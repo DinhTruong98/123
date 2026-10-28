@@ -18,6 +18,8 @@ final class AudioCapture {
         let s = AVAudioSession.sharedInstance()
         try s.setCategory(.playAndRecord, mode: .measurement,
                           options: [.defaultToSpeaker, .mixWithOthers, .allowBluetoothA2DP])
+        // iOS mutes Core Haptics and system vibration while recording unless this is set
+        try s.setAllowHapticsAndSystemSoundsDuringRecording(true)
         try s.setActive(true)
     }
 

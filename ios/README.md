@@ -171,8 +171,8 @@ Log cảnh báo (`SW_ALERT ...`) xem bằng `xcrun devicectl device process laun
   nền đạt độ tương phản ≥ 4.5:1 (đỏ DANGER được làm đậm để chữ trắng đọc được; cam/xanh dùng chữ đen). DANGER nhấp nháy
   2 Hz, cả nền trang cũng nháy, và giữ tới khi chạm "Nhấn để xác nhận" (ack về PostProcessor, dừng nhắc lại). Bật
   Reduce Motion thì không nháy, chỉ giữ viền sáng. WARN/INFO tự tắt sau 6 s.
-- Rung theo mẫu `vibration` của từng lớp; DANGER cường độ 1.0, WARN 0.7, INFO 0.5. DANGER lặp lại thì rung lại nhưng
-  không thêm dòng lịch sử.
+- Rung theo mẫu `vibration` của từng lớp (xem mục Rung bên dưới): DANGER rung lặp liên tục tới khi xác nhận, WARN/INFO
+  rung một lần.
 - **Lịch sử**: 10 sự kiện gần nhất, giờ và "bao lâu trước", nút Xoá.
 - **Cài đặt**: bật/tắt từng lớp theo nhóm mức độ (lưu giữa các lần mở), trạng thái quyền thông báo, bật bảng debug,
   phát file demo, thông tin model.
@@ -189,7 +189,7 @@ Log cảnh báo (`SW_ALERT ...`) xem bằng `xcrun devicectl device process laun
 - gom nhóm theo lớp (`threadIdentifier`). DANGER chỉ giữ một notification mỗi lớp, lần nhắc lại thay thế lần trước;
 - nhấn giữ: DANGER có **Xác nhận** (ack PostProcessor, dừng nhắc lại), WARN/INFO có **Đã thấy**. Chạm vào notification
   thì mở app và hiện lại cảnh báo;
-- kèm rung hệ thống (Core Haptics không chạy khi app ở nền).
+- rung: xem mục Rung.
 
 Nếu iPhone đặt "Hiện bản xem trước: Khi được mở khoá" (mặc định), màn hình khoá chỉ hiện "Cảnh báo nguy hiểm" /
 "Cảnh báo âm thanh". Muốn thấy đủ nhãn khi đang khoá: Cài đặt → Thông báo → SoundWatch → Hiện bản xem trước → Luôn luôn.
@@ -201,6 +201,29 @@ tắt; iOS tự hạ về mức `.active`. Có tài khoản Apple Developer Prog
 `SW_ENTITLEMENTS = SoundWatch/SoundWatch.entitlements` vào `Local.xcconfig`.
 
 **Critical Alerts** (kêu cả khi tắt tiếng / Không làm phiền) cần Apple duyệt entitlement riêng, nên không làm.
+
+### Rung
+
+Thu âm và rung chạy cùng lúc chỉ khi audio session gọi `setAllowHapticsAndSystemSoundsDuringRecording(true)`
+(`AudioCapture.configureSession`). Thiếu dòng này thì iOS nuốt cả Core Haptics lẫn `kSystemSoundID_Vibrate` mà không báo
+lỗi. Đã thử trên iPhone 12: không có dòng đó thì không rung, có thì rung.
+
+| Mức | Rung |
+|---|---|
+| DANGER | Lặp mẫu `vibration` của lớp liên tục (nghỉ 0.6 s giữa hai lần) tới khi xác nhận. App mở: Core Haptics, cường độ 1.0. App ở nền / khoá máy: `kSystemSoundID_Vibrate` lặp theo timer (Core Haptics không chạy ở nền; app vẫn sống nhờ đang thu âm) |
+| WARN / INFO | Mẫu `vibration` một lần (cường độ 0.7 / 0.5); ở nền: một lần rung hệ thống |
+
+- Xác nhận (chạm mặt đồng hồ, hoặc "Xác nhận" trên notification) dừng **mọi** rung DANGER đang chạy và ack các lớp đó,
+  vì mặt đồng hồ chỉ hiện cảnh báo mới nhất. DANGER mới tới sau đó lại rung.
+- Cài đặt → "Rung khi nguy hiểm": mặc định "Đến khi xác nhận"; có thể giới hạn 1 / 2 / 5 / 10 phút để đỡ hao pin.
+- Kết quả thử trên iPhone 12 (iOS 27.0.1) với nút "Phát file demo":
+
+| Trạng thái | Kết quả |
+|---|---|
+| Mở app, chuông bật | rung lặp liên tục; xác nhận thì dừng ngay |
+| Khoá máy, chuông bật | rung lặp liên tục; "Xác nhận" trên notification dừng |
+| Khoá máy, công tắc Im lặng | rung lặp liên tục; một lần "Xác nhận" dừng hết |
+| Chế độ Tập trung (Không làm phiền) | chưa thử |
 
 ### Launch argument
 

@@ -28,6 +28,13 @@ final class AppState: ObservableObject {
         didSet { UserDefaults.standard.set(showDebug, forKey: "showDebug") }
     }
     @Published var playDemoAloud = true
+    /// DANGER vibration stops by itself after this many minutes; 0 = until ack (default).
+    @Published var dangerVibrationLimitMin = UserDefaults.standard.integer(forKey: "dangerVibrationLimitMin") {
+        didSet {
+            UserDefaults.standard.set(dangerVibrationLimitMin, forKey: "dangerVibrationLimitMin")
+            haptics.continuousLimit = dangerVibrationLimitMin > 0 ? Double(dangerVibrationLimitMin) * 60 : nil
+        }
+    }
 
     let config: SoundWatchConfig
     private let engine: Engine?
@@ -71,7 +78,9 @@ final class AppState: ObservableObject {
         }
         demo.onSamples = { [weak self] x in self?.engine?.feed(x) }
         demo.onFinished = { [weak self] in Task { @MainActor in self?.demoFinished() } }
-        notifier.onAck = { [weak self] c in Task { @MainActor in self?.ack(classId: c) } }
+        haptics.log = { print("SW_HAPTIC \($0)") }
+        haptics.continuousLimit = dangerVibrationLimitMin > 0 ? Double(dangerVibrationLimitMin) * 60 : nil
+        notifier.onAck = { [weak self] c in Task { @MainActor in self?.acknowledge(classId: c) } }
         notifier.onOpen = { [weak self] c in Task { @MainActor in self?.reopen(classId: c) } }
     }
 
@@ -102,6 +111,7 @@ final class AppState: ObservableObject {
 
     func setActive(_ active: Bool) {
         isActive = active
+        haptics.setBackground(!active)
         if active { Task { await refreshNotificationStatus() } }
     }
 
@@ -169,7 +179,11 @@ final class AppState: ObservableObject {
                      e.repeatAlert ? " repeat" : ""))
         let shown = ShownAlert(classId: e.classId, confidence: e.confidence, date: date, tAudio: e.tAudio)
         let background = !isActive
-        haptics.play(pattern: cls.vibration, level: cls.level, background: background)
+        if cls.level == .danger && !e.repeatAlert {
+            haptics.startContinuous(classId: e.classId, pattern: cls.vibration)  // until ack
+        } else if !(cls.level == .danger && haptics.isLooping(e.classId)) {
+            haptics.playOnce(pattern: cls.vibration, level: cls.level)
+        }
         if background {
             notifier.post(classId: e.classId, cls: cls, confidence: e.confidence, at: date, repeatAlert: e.repeatAlert)
         }
@@ -195,14 +209,25 @@ final class AppState: ObservableObject {
         }
     }
 
-    /// Tap on the alert: DANGER -> ack (stops repeats), others -> dismiss.
+    /// Tap on the alert: DANGER -> ack (stops repeats and vibration), others -> dismiss.
     func acknowledgeCurrent() {
         guard let a = currentAlert else { return }
-        ack(classId: a.classId)
+        acknowledge(classId: a.classId)
+    }
+
+    /// A DANGER ack (in the app or "Xác nhận" on a notification) also acks every other DANGER class
+    /// that is still vibrating: the face shows only the newest alert, and one "I know" should stop
+    /// the phone vibrating instead of leaving an older, hidden alert running.
+    func acknowledge(classId: Int) {
+        if class_(classId).level == .danger {
+            for c in haptics.loopingClassIds where c != classId { ack(classId: c) }
+        }
+        ack(classId: classId)
     }
 
     func ack(classId: Int) {
         if class_(classId).level == .danger { engine?.ack(classId) }
+        haptics.stopContinuous(classId: classId)
         notifier.clear(classKey: class_(classId).key)
         if currentAlert?.classId == classId {
             dismissTask?.cancel()
@@ -222,6 +247,9 @@ final class AppState: ObservableObject {
         enabled[classId] = on
         engine?.setEnabled(classId, on)
         UserDefaults.standard.set(enabled, forKey: Self.enabledKey)
-        if !on, currentAlert?.classId == classId { currentAlert = nil }
+        if !on {
+            haptics.stopContinuous(classId: classId)
+            if currentAlert?.classId == classId { currentAlert = nil }
+        }
     }
 }

@@ -382,6 +382,10 @@ struct SettingsView: View {
                 }
 
                 Section {
+                    Picker("Rung khi nguy hiểm", selection: $state.dangerVibrationLimitMin) {
+                        Text("Đến khi xác nhận").tag(0)
+                        ForEach([1, 2, 5, 10], id: \.self) { Text("Tối đa \($0) phút").tag($0) }
+                    }
                     LabeledContent("Thông báo") {
                         switch state.notificationsAllowed {
                         case true?: Label("Đã bật", systemImage: "checkmark.circle.fill").foregroundStyle(.green)
@@ -395,9 +399,9 @@ struct SettingsView: View {
                         }
                     }
                 } header: {
-                    Text("Khi khoá màn hình")
+                    Text("Rung & thông báo")
                 } footer: {
-                    Text("Khi app chạy nền hoặc khoá màn hình, mỗi cảnh báo được gửi thành thông báo kèm rung. Cảnh báo nguy hiểm có nút Xác nhận để dừng nhắc lại.")
+                    Text("Âm nguy hiểm làm máy rung liên tục cho tới khi bạn xác nhận, cả khi khoá màn hình. Khi app chạy nền hoặc khoá màn hình, mỗi cảnh báo còn được gửi thành thông báo; cảnh báo nguy hiểm có nút Xác nhận.")
                 }
 
                 Section("Demo & debug") {
