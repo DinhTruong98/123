@@ -58,6 +58,15 @@ PoC gồm 4 khối chạy trên PC:
 - Font tiếng Việt: **Be Vietnam Pro** hoặc **Noto Sans** (SIL OFL) — bundle file `.ttf` trong `assets/fonts/` kèm file license.
 - Icon: **Google Material Symbols** (Apache 2.0) hoặc **Tabler Icons** (MIT) — PNG 128 px, bundle trong `assets/icons/` kèm license.
 
+### 3.1 Quyết định môi trường (đã chốt ở WP0)
+
+- Python **3.11** (uv), **tensorflow-cpu 2.21.0 + keras 3.15.1** — đã kiểm tra: train Keras, convert full-int8 TFLite, chạy `tf.lite.Interpreter` đều OK. Version pin trong `pyproject.toml` / `uv.lock`; agent không tự thêm dependency mà không ghi chú.
+- **YAMNet**: không dùng `tensorflow_hub` (tfhub.dev bị chặn trong môi trường dev). Tải trọng số `https://storage.googleapis.com/audioset/yamnet.h5` + code model (`yamnet.py`, `params.py`, `features.py`) từ `https://raw.githubusercontent.com/tensorflow/models/master/research/audioset/yamnet/` vào `artifacts/cache/yamnet/`.
+- **ESC-50**: tải bằng `git clone --depth 1 https://github.com/karolpiczak/ESC-50` (zip qua codeload bị chặn). **UrbanSound8K**: Zenodo record 1203745. **FSD50K**: tắt mặc định (quá lớn).
+- `sounddevice` import lazy trong `MicSource` (container dev không có PortAudio; trên máy thật thì có).
+- Mọi CLI command là một module có `add_arguments(parser)` và `main(args) -> int`, đăng ký trong `src/soundwatch/__main__.py`. Module mỗi WP đã có stub; agent chỉ thay stub của mình.
+- Đường dẫn chuẩn: `src/soundwatch/paths.py`. Config: `soundwatch.config.load_config()`.
+
 ---
 
 ## 4. Kiến trúc & interface chung (CONTRACT – không tự ý thay đổi)
