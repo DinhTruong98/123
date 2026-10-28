@@ -258,7 +258,7 @@ def test_demo_runs_headless_fast_enough():
                        capture_output=True, text=True, env=env, timeout=60)
     assert r.returncode == 0, r.stderr
     line = next(ln for ln in r.stdout.splitlines() if ln.startswith("frames="))
-    fps = float(line.split("fps=")[1])
+    fps = float(line.split("fps=")[1].split()[0])
     assert fps >= 25, line
 
 

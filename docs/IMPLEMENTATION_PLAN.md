@@ -35,14 +35,17 @@ PoC gồm 4 khối chạy trên PC:
 
 ## 2. Yêu cầu phi chức năng / mục tiêu định lượng
 
-| Chỉ số | Mục tiêu PoC |
-|---|---|
-| Macro-F1 trên test split (student int8) | ≥ 0.80 |
-| Recall các lớp `danger` (student int8) | ≥ 0.85 |
-| Sụt giảm accuracy khi float32 → int8 | ≤ 2 điểm % |
-| Kích thước model `.tflite` int8 | ≤ 100 KB |
-| Tensor arena ước tính | ≤ 150 KB |
-| MACs / lần suy luận | ≤ 10 M |
+Phần cứng đích đã được nâng lên **ESP32-S3 có PSRAM** (quyết định của chủ dự án, sau WP3); ngân sách
+model/RAM cũ cho nRF52840 được giữ lại để tham khảo.
+
+| Chỉ số | Mục tiêu PoC (ESP32-S3 + PSRAM) | nRF52840 – cũ |
+|---|---|---|
+| Macro-F1 trên test split (student int8) | ≥ 0.80 | |
+| Recall các lớp `danger` (student int8) | ≥ 0.85 | |
+| Sụt giảm accuracy khi float32 → int8 | ≤ 2 điểm % | |
+| Kích thước model `.tflite` int8 | ≤ 500 KB | ≤ 100 KB |
+| Tensor arena ước tính | ≤ 512 KB | ≤ 150 KB |
+| MACs / lần suy luận | ≤ 50 M | ≤ 10 M |
 | Báo nhầm trên kịch bản chỉ có âm nền | ≤ 2 lần / giờ |
 | Độ trễ từ lúc âm bắt đầu → hiện cảnh báo (median) | ≤ 1.5 s |
 | Thời gian feature + suy luận trên PC | ≤ 20 ms / cửa sổ |
@@ -198,6 +201,9 @@ class PostProcessor:
 3. Mỗi lớp có `cooldown_s`; trong cooldown không phát lại sự kiện.
 4. Lớp `DANGER` sau khi phát: phát lại mỗi `danger_repeat_s` (mặc định 5 s) cho tới khi nhận `ack`, hoặc âm đó biến mất liên tục 10 s.
 5. Lớp bị tắt (`enabled=False`) không bao giờ phát.
+6. (WP8, tuỳ chọn, mặc định tắt) `postprocess.bg_margin`: nếu đặt, lớp `c` chỉ "trên ngưỡng" khi thêm
+   điều kiện `smoothed[c] − smoothed[background] ≥ bg_margin`. Trường `PostprocessConfig.bg_margin: float | None = None`
+   — tương thích ngược (config cũ không có trường này vẫn chạy y như trước).
 
 ### 4.4 Config (`config/soundwatch.yaml`)
 
@@ -213,9 +219,10 @@ audio:
   fmax: 8000
   gate_dbfs: -55
 postprocess:
-  smooth_n: 3
+  smooth_n: 3            # WP8 đã chỉnh trên val: smooth_n 1, k_of_n [2, 2] (xem config/soundwatch.yaml)
   k_of_n: [2, 3]
   danger_repeat_s: 5
+  # bg_margin: 0.2       # tuỳ chọn (WP8), mặc định tắt
 model:
   tflite_path: artifacts/models/student_int8.tflite
   stats_path: artifacts/models/feature_stats.json
@@ -495,8 +502,11 @@ Có cờ `--no-debug` chỉ hiện mặt đồng hồ (dùng khi demo cho ngư�
 | `make data` / `make data-quick` | WP1 |
 | `make train` | teacher + student + distill |
 | `make quantize` | int8 + export firmware headers + icons |
-| `make eval` | offline + streaming + benchmark + report |
+| `make eval` | offline + streaming + phân tích báo nhầm + benchmark + report (đo FPS UI) |
+| `make tune` | (WP8) sinh kịch bản **val** + quét hậu xử lý → `artifacts/reports/tuning.md` |
 | `make demo` / `make demo-file` | chạy UI với mic / file |
+| `make demo-headless` / `make demo-gif` | demo không UI (console) / quay GIF cửa sổ UI |
+| `make record CLASS=… SECONDS=…` | (WP8) thu âm micro → `artifacts/data/custom/<lớp>/` |
 | `make all` | data → train → quantize → eval |
 
 ---
@@ -560,12 +570,50 @@ Có cờ `--no-debug` chỉ hiện mặt đồng hồ (dùng khi demo cho ngư�
 
 | WP | Agent | Trạng thái | Ghi chú / kết quả |
 |---|---|---|---|
-| WP0 | | Chưa bắt đầu | |
-| WP1 | | Chưa bắt đầu | |
-| WP2 | | Chưa bắt đầu | |
-| WP3 | | Chưa bắt đầu | |
-| WP4 | | Chưa bắt đầu | |
-| WP5 | | Chưa bắt đầu | |
-| WP6 | | Chưa bắt đầu | |
-| WP7 | | Chưa bắt đầu | |
-| WP8 | | Chưa bắt đầu | |
+| WP0 | agent WP0 | Xong | uv + Python 3.11, tensorflow-cpu 2.21 / keras 3.15 (pin), CLI khung, `doctor`, config validate (mục 3.1). |
+| WP1 | agent WP1 | Xong | ESC-50 + UrbanSound8K + FSD50K chọn lọc (baby_cry, smoke_alarm); split theo fold, không rò rỉ clip; noise bank train/test. |
+| WP2 | agent WP2 | Xong | log-mel numpy thuần, sai số so với librosa < 1e-3; ~0.15 ms/cửa sổ; golden vectors + `.h`. |
+| WP3 | agent WP3 | Xong | Teacher YAMNet+head: test macro-F1 0.823. Student DS-CNN (width 96, 4 block, 24.5 M MACs) có distill: val macro-F1 0.828 / test 0.795; không distill: val 0.796 / test 0.715. |
+| WP4 | agent WP4 | Xong | int8 208 KB, arena ~117 KB, chỉ op TFLM; sụt float→int8 +0.08 điểm % accuracy (trùng top-1 98.9 %); `model_data.cc`, `feature_params.h`, `labels.h`. |
+| WP5 | agent WP5 | Xong | Engine thread + queue, ring buffer tĩnh, energy gate, PostProcessor (mục 4.3), `run` (mic/file, headless, fast). |
+| WP6 | agent WP6 | Xong | UI pygame 960×600, 4 màn hình, mô phỏng rung, debug panel; `icons.h` (XBM 48 px + RGB565 96 px); 30 FPS (khả năng ~160 FPS). |
+| WP7 | agent WP7 | Xong | 20 kịch bản sự kiện + 10 × 6 phút nền (test); hậu xử lý cũ (smooth 3, k/n 2/3): recall 0.46, 67 báo nhầm/giờ, trễ median 2.0 s; quét ngưỡng; benchmark; `report.md`. |
+| WP8 | agent WP8 | Xong | `tune` trên kịch bản **val** → smooth_n 1, k_of_n 2/2, ngưỡng 0.90–0.99; test: recall 0.40 (DANGER TB 0.54), **23 báo nhầm/giờ**, trễ median **1.43 s** (p90 3.2 s). `fa-analysis`: chỉ ~6 % báo nhầm do nhiễu nhãn nền. `record`, `--record-gif`, `--ui-stats`, README. |
+
+---
+
+## 13. Kết quả & hạn chế (sau WP8)
+
+**Số liệu cuối** (student int8 `assets/models/student_int8.tflite`; chi tiết `artifacts/reports/report.md`):
+
+| Hạng mục | Kết quả | Mục tiêu |
+|---|---|---|
+| Offline test macro-F1 / accuracy | 0.795 / 0.792 (teacher 0.823) | ≥ 0.80 ❌ (sát) |
+| Recall DANGER offline (smoke / car_horn / siren) | 0.90 / 0.73 / **0.56** | ≥ 0.85 ❌ |
+| Sụt float → int8 | +0.08 điểm % | ≤ 2 ✅ |
+| Kích thước / arena / MACs | 208 KB / ~117 KB / 24.5 M | ≤ 500 KB / 512 KB / 50 M ✅ |
+| Streaming test: event recall (tổng / DANGER TB) | 0.40 / 0.54 (SNR 20 dB: 0.74, 0 dB: 0.21) | – |
+| Báo nhầm / giờ trên nền (test) | 23 (val: 10) | ≤ 2 ❌ |
+| Độ trễ median / p90 | 1.43 s / 3.2 s (oracle: 1.22 s) | ≤ 1.5 s ✅ |
+| PC: feature + suy luận | ~0.5 ms / cửa sổ | ≤ 20 ms ✅ |
+| UI | 30 FPS (giới hạn), khả năng ~160 FPS | ≥ 30 ✅ |
+| Ước tính ESP32-S3 240 MHz + ESP-NN | ~51–102 ms / suy luận (10–20 % CPU mỗi hop) | – |
+
+**Tinh chỉnh hậu xử lý (WP8):** với ràng buộc trễ median ≤ 1.5 s, chỉ còn smooth_n = 1 (hoặc smooth 2 + k/n 1/1);
+trên val không cấu hình nào đạt ≤ 2 hoặc ≤ 5 báo nhầm/giờ, nên chọn ngân sách 10/giờ (smooth_n 1, k_of_n 2/2).
+Nới trễ lên ~1.8 s thì đạt ≤ 2/giờ trên val (smooth 2, k/n 2/2) nhưng recall giảm (0.43). Model int8 quá tự tin
+(xác suất bão hoà 0.996) nên ngưỡng gần như không còn tác dụng; quy tắc `bg_margin` không giúp gì.
+
+**Hạn chế đã biết**
+- `siren` yếu nhất (recall offline 0.56) và là nguồn báo nhầm lớn nhất: model nhầm âm có cao độ ổn định / hài âm
+  (nhạc đường phố – violin, máy khoan, điều hoà, động cơ) thành còi. Phân tích bằng YAMNet (`fa-analysis`) cho thấy
+  phần lớn **không** phải nhiễu nhãn (nền thật sự không có còi/chó) → lỗi model; hướng xử lý: hard-negative mining,
+  mixup nền–sự kiện, hiệu chỉnh nhiệt độ (temperature scaling) trước khi đặt ngưỡng.
+- `smoke_alarm` một phần vẫn là proxy ESC-50 `clock_alarm` (FSD50K có rất ít chuông báo khói thật); tiếng dế bị nhầm
+  thành báo cháy.
+- FSD50K chỉ tải chọn lọc (baby_cry, smoke_alarm); các lớp khác chỉ từ ESC-50 / UrbanSound8K (ít clip `door_knock`).
+- Kịch bản streaming là âm thanh tổng hợp (nền + sự kiện trộn theo SNR), ~1 giờ nền test → sai số thống kê lớn cho
+  báo nhầm/giờ; val (2 giờ) và test cho 10 vs 23 báo nhầm/giờ.
+- Lệch miền sang micro thật **chưa được kiểm tra** (container phát triển không có micro); `record` đã có để thu dữ liệu
+  thật và fine-tune.
+- Single-label softmax: không xử lý được nhiều âm cùng lúc.

@@ -3,7 +3,7 @@ import dataclasses
 import numpy as np
 import pytest
 
-from soundwatch.config import load_config
+from _legacy_cfg import legacy_config
 from soundwatch.engine.postprocess import PostProcessor
 
 HOP = 0.5
@@ -11,7 +11,7 @@ HOP = 0.5
 
 @pytest.fixture(scope="module")
 def cfg():
-    return load_config()
+    return legacy_config()
 
 
 def probs_for(cfg, cid, p):

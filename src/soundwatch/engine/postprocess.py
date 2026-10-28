@@ -3,7 +3,8 @@
 Rules (evaluated once per hop, i.e. per `update(probs, t_audio)` call):
 
 1. Smoothing: `smoothed` = mean of the last `smooth_n` probability vectors (fewer at start-up).
-2. Hit: class c is "above" at a hop if smoothed[c] >= threshold[c]. Class c (not background)
+2. Hit: class c is "above" at a hop if smoothed[c] >= threshold[c] (and, only if the optional
+   `cfg.bg_margin` is set, smoothed[c] - smoothed[background] >= bg_margin). Class c (not background)
    is *triggered* if it was above in >= k of the last n hops (`k_of_n`, fewer hops at start-up
    count as not-above).
 3. Cooldown: a class never emits (fresh or repeat) less than `cooldown_s` after its last emission.
@@ -102,6 +103,9 @@ class PostProcessor:
         self.smoothed[:] = self._hist.sum(axis=0) / m  # unfilled rows are zero
 
         above = self.smoothed >= self._thr
+        margin = getattr(self.cfg, "bg_margin", None)
+        if margin is not None:
+            above &= (self.smoothed - self.smoothed[self.background_id]) >= float(margin)
         self._hits[self._hits_pos] = above
         self._hits_pos = (self._hits_pos + 1) % self.n
         triggered = self._hits.sum(axis=0) >= self.k

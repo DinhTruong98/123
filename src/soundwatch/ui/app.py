@@ -1,7 +1,8 @@
 """Watch simulator (pygame). Owner: WP6.
 
 Contract used by `soundwatch run`:
-    run_app(cfg, out_queue, in_queue, show_debug=True, max_seconds=None, screenshot_dir=None) -> None
+    run_app(cfg, out_queue, in_queue, show_debug=True, max_seconds=None, screenshot_dir=None,
+            close_on_stop=False, record_gif=None, stats_path=None) -> dict (run_loop stats)
 consumes StatusUpdate / AlertEvent / EngineStopped from out_queue (engine -> UI) and
 puts AckCommand / SettingsCommand on in_queue (UI -> engine). Returns when the user quits,
 when max_seconds elapses, or (if close_on_stop) after EngineStopped.
@@ -31,6 +32,47 @@ from soundwatch.types import AckCommand, AlertEvent, EngineStopped, Level, Setti
 from soundwatch.ui.screens import WatchUI
 
 MAX_MSGS_PER_FRAME = 200
+GIF_FPS = 5
+GIF_SCALE = 0.5
+
+
+class GifRecorder:
+    """Streams every `fps_ui / GIF_FPS`-th frame, scaled by GIF_SCALE, into an animated GIF (imageio)."""
+
+    def __init__(self, path, ui_fps: int, fps: int = GIF_FPS, scale: float = GIF_SCALE):
+        import imageio.v2 as imageio
+
+        self.path = Path(path)
+        self.path.parent.mkdir(parents=True, exist_ok=True)
+        self.every = max(1, round(ui_fps / fps))
+        self.scale = scale
+        self.frames = 0
+        self._n = 0
+        self._w = imageio.get_writer(str(self.path), mode="I", duration=1000.0 / fps, loop=0)
+
+    def add(self, surface: pygame.Surface) -> None:
+        self._n += 1
+        if (self._n - 1) % self.every:
+            return
+        w, h = surface.get_size()
+        small = pygame.transform.smoothscale(surface, (int(w * self.scale), int(h * self.scale)))
+        arr = np.ascontiguousarray(pygame.surfarray.array3d(small).transpose(1, 0, 2))
+        self._w.append_data(arr)
+        self.frames += 1
+
+    def close(self) -> None:
+        self._w.close()
+
+
+def write_ui_stats(path, stats: dict, target_fps: int, source: str = "") -> None:
+    """ui_stats.json for the report: measured fps (frame cap = target_fps) + render capacity."""
+    import json
+
+    d = {k: v for k, v in stats.items() if k != "screenshots"}
+    d.update({"target_fps": target_fps, "source": source})
+    p = Path(path)
+    p.parent.mkdir(parents=True, exist_ok=True)
+    p.write_text(json.dumps(d, indent=2), encoding="utf-8")
 
 
 def _save_screenshot(surface: pygame.Surface, directory: Path, index: int, screen: str) -> Path:
@@ -42,10 +84,14 @@ def _save_screenshot(surface: pygame.Surface, directory: Path, index: int, scree
 
 def run_loop(cfg: Config, out_queue: queue.Queue, in_queue: queue.Queue, show_debug: bool = True,
              max_seconds: float | None = None, screenshot_dir=None, close_on_stop: bool = False,
-             auto_ack_s: float | None = None) -> dict:
-    """Main loop behind run_app; returns stats {frames, seconds, fps, screenshots}.
+             auto_ack_s: float | None = None, record_gif=None) -> dict:
+    """Main loop behind run_app; returns stats {frames, seconds, fps, work_ms_mean, work_ms_p95,
+    fps_capacity, gif_frames, screenshots}. `fps` is capped by cfg.ui.fps (clock.tick);
+    `fps_capacity` = 1000 / p95 of the per-frame work time (events + update + draw + flip), i.e. the
+    frame rate the loop could sustain without the cap.
 
     auto_ack_s (demo only): acknowledge a shown DANGER alert automatically after that many seconds.
+    record_gif: path of an animated GIF to record (GIF_FPS frames/s, scaled by GIF_SCALE).
     """
     pygame.display.init()  # no pygame.init(): the mixer is not needed (and spams ALSA errors headless)
     pygame.font.init()
@@ -55,12 +101,15 @@ def run_loop(cfg: Config, out_queue: queue.Queue, in_queue: queue.Queue, show_de
     clock = pygame.time.Clock()
     shot_dir = Path(screenshot_dir) if screenshot_dir else None
     shots: list[Path] = []
+    gif = GifRecorder(record_gif, cfg.ui.fps) if record_gif else None
     t0 = time.monotonic()
     frames = 0
+    work_ms: list[float] = []
     last_screen: str | None = None
     try:
         while True:
             now = time.monotonic()
+            w0 = time.perf_counter()
             for ev in pygame.event.get():
                 ui.handle_event(ev, now)
             for _ in range(MAX_MSGS_PER_FRAME):
@@ -77,6 +126,9 @@ def run_loop(cfg: Config, out_queue: queue.Queue, in_queue: queue.Queue, show_de
             ui.fps = clock.get_fps()
             ui.draw(window)
             pygame.display.flip()
+            work_ms.append((time.perf_counter() - w0) * 1000.0)
+            if gif is not None:
+                gif.add(window)
             frames += 1
             if shot_dir is not None and ui.screen != last_screen:
                 shots.append(_save_screenshot(window, shot_dir, len(shots), ui.screen))
@@ -92,15 +144,25 @@ def run_loop(cfg: Config, out_queue: queue.Queue, in_queue: queue.Queue, show_de
             shots.append(_save_screenshot(window, shot_dir, len(shots), f"{ui.screen}_exit"))
     finally:
         elapsed = time.monotonic() - t0
+        if gif is not None:
+            gif.close()
         pygame.display.quit()
+    wm = np.asarray(work_ms[1:] or work_ms or [0.0])  # first frame includes font/icon warm-up
+    p95 = float(np.percentile(wm, 95))
     return {"frames": frames, "seconds": elapsed, "fps": frames / elapsed if elapsed > 0 else 0.0,
-            "screenshots": shots}
+            "work_ms_mean": float(wm.mean()), "work_ms_p95": p95,
+            "fps_capacity": 1000.0 / p95 if p95 > 0 else 0.0,
+            "gif_frames": gif.frames if gif is not None else 0, "screenshots": shots}
 
 
 def run_app(cfg: Config, out_queue: queue.Queue, in_queue: queue.Queue, show_debug: bool = True,
-            max_seconds: float | None = None, screenshot_dir=None, close_on_stop: bool = False) -> None:
-    run_loop(cfg, out_queue, in_queue, show_debug=show_debug, max_seconds=max_seconds,
-             screenshot_dir=screenshot_dir, close_on_stop=close_on_stop)
+            max_seconds: float | None = None, screenshot_dir=None, close_on_stop: bool = False,
+            record_gif=None, stats_path=None) -> dict:
+    stats = run_loop(cfg, out_queue, in_queue, show_debug=show_debug, max_seconds=max_seconds,
+                     screenshot_dir=screenshot_dir, close_on_stop=close_on_stop, record_gif=record_gif)
+    if stats_path:
+        write_ui_stats(stats_path, stats, cfg.ui.fps, source="run")
+    return stats
 
 
 # ---------------------------------------------------------------------- demo
@@ -187,14 +249,14 @@ class DemoGenerator(threading.Thread):
 
 
 def run_demo(cfg: Config, seconds: float | None = None, screenshot_dir=None, show_debug: bool = True,
-             auto_ack_s: float | None = None) -> dict:
+             auto_ack_s: float | None = None, record_gif=None) -> dict:
     out_q: queue.Queue = queue.Queue()
     in_q: queue.Queue = queue.Queue()
     gen = DemoGenerator(cfg, out_q, in_q)
     gen.start()
     try:
         return run_loop(cfg, out_q, in_q, show_debug=show_debug, max_seconds=seconds,
-                        screenshot_dir=screenshot_dir, auto_ack_s=auto_ack_s)
+                        screenshot_dir=screenshot_dir, auto_ack_s=auto_ack_s, record_gif=record_gif)
     finally:
         gen.stop()
         gen.join(timeout=2.0)
@@ -208,6 +270,7 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--no-debug", action="store_true", help="watch face only (no debug panel)")
     ap.add_argument("--auto-ack", type=float, default=None, metavar="S",
                     help="demo: acknowledge DANGER alerts automatically after S seconds")
+    ap.add_argument("--stats", default=None, metavar="JSON", help="write UI stats (fps ...) to this file")
     ap.add_argument("--config", default=None)
     args = ap.parse_args(argv)
     if not args.demo:
@@ -217,7 +280,10 @@ def main(argv: list[str] | None = None) -> int:
     cfg = load_config(args.config)
     stats = run_demo(cfg, seconds=args.seconds, screenshot_dir=args.screenshots, show_debug=not args.no_debug,
                      auto_ack_s=args.auto_ack)
-    print(f"frames={stats['frames']} seconds={stats['seconds']:.2f} fps={stats['fps']:.1f}")
+    print(f"frames={stats['frames']} seconds={stats['seconds']:.2f} fps={stats['fps']:.1f} "
+          f"(capacity {stats['fps_capacity']:.0f} fps)")
+    if args.stats:
+        write_ui_stats(args.stats, stats, cfg.ui.fps, source="ui.app --demo")
     for p in stats["screenshots"]:
         print(f"screenshot: {p}")
     return 0

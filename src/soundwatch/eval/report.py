@@ -1,9 +1,11 @@
-"""WP7: assemble artifacts/reports/report.md from the JSON / PNG outputs of the other WP7 commands.
+"""WP7/WP8: assemble artifacts/reports/report.md from the JSON / PNG outputs of the other commands.
 
 Inputs (all optional - missing ones become "chưa có" rows, the command never fails on them):
   data/windows/summary.json, reports/offline_metrics.json, reports/streaming_metrics.json,
   reports/benchmark.json, reports/suggested_thresholds.yaml, models/quant_metrics.json,
-  models/student_<tag>_metrics.json, models/teacher_metrics.json, reports/ui_*.png
+  models/student_<tag>_metrics.json, models/teacher_metrics.json, reports/ui_*.png,
+  reports/tuning.json (`tune`), reports/fa_analysis.json (`fa-analysis`), reports/ui_stats.json
+  (`run --ui-stats` / `report --measure-ui-fps`), reports/demo.gif (`run --record-gif`)
 """
 
 from __future__ import annotations
@@ -17,18 +19,19 @@ from soundwatch.config import Config, load_config
 from soundwatch.types import Level
 
 NA = "chưa có"
-TARGETS = {  # plan section 2
+TARGETS = {  # plan section 2 (hardware target ESP32-S3 + PSRAM)
     "macro_f1": 0.80,
     "danger_recall": 0.85,
     "int8_drop_pts": 2.0,
-    "size_kb": 100.0,
-    "arena_kb": 150.0,
-    "macs_m": 10.0,
+    "size_kb": 500.0,
+    "arena_kb": 512.0,
+    "macs_m": 50.0,
     "fa_per_h": 2.0,
     "latency_s": 1.5,
     "pc_ms": 20.0,
     "ui_fps": 30.0,
 }
+TARGETS_OLD = {"size_kb": 100.0, "arena_kb": 150.0, "macs_m": 10.0}  # nRF52840 (cũ)
 MODEL_TITLES = {
     "teacher": "Teacher (YAMNet + head)",
     "student_distill": "Student float (distill, Keras)",
@@ -255,8 +258,9 @@ def section_streaming(cfg: Config, st: dict | None, sugg: dict | None, reports_d
             for k, v in sugg["thresholds"].items()
         ]
         s.append(
-            "Ngưỡng đề xuất (`suggested_thresholds.yaml`, KHÔNG tự sửa config; tối đa hoá recall với "
-            f"báo nhầm nền ≤ {TARGETS['fa_per_h']:g}/giờ):"
+            "Ngưỡng đề xuất (`suggested_thresholds.yaml`, chỉ để tham khảo: chọn trên chính kịch bản "
+            f"test nên KHÔNG áp dụng; tối đa hoá recall với báo nhầm nền ≤ {TARGETS['fa_per_h']:g}/giờ). "
+            "Config dùng kết quả `tune` trên kịch bản **val** (mục 3b):"
         )
         s.append(_table(["Lớp", "Hiện tại", "Đề xuất"], rows))
         if sugg.get("infeasible"):
@@ -399,7 +403,7 @@ def targets_checklist(
     v = bq["size_bytes"] / 1024 if bq else (_get(quant, "size_bytes", "tflite_int8") or 0) / 1024 or None
     add(
         "Kích thước .tflite int8 (KB)",
-        f"≤ {TARGETS['size_kb']:g}",
+        f"≤ {TARGETS['size_kb']:g} (nRF52840 cũ: ≤ {TARGETS_OLD['size_kb']:g})",
         v,
         v is not None and v <= TARGETS["size_kb"],
         "{:.1f}",
@@ -408,7 +412,7 @@ def targets_checklist(
     v = v / 1024 if v else None
     add(
         "Tensor arena ước tính (KB)",
-        f"≤ {TARGETS['arena_kb']:g}",
+        f"≤ {TARGETS['arena_kb']:g} (nRF52840 cũ: ≤ {TARGETS_OLD['arena_kb']:g})",
         v,
         v is not None and v <= TARGETS["arena_kb"],
         "{:.1f}",
@@ -417,7 +421,7 @@ def targets_checklist(
     v = v / 1e6 if v else None
     add(
         "MACs / lần suy luận (M)",
-        f"≤ {TARGETS['macs_m']:g}",
+        f"≤ {TARGETS['macs_m']:g} (nRF52840 cũ: ≤ {TARGETS_OLD['macs_m']:g})",
         v,
         v is not None and v <= TARGETS["macs_m"],
         "{:.2f}",
@@ -446,22 +450,137 @@ def targets_checklist(
         v is not None and v <= TARGETS["pc_ms"],
         "{:.2f}",
     )
-    add(
-        "UI FPS",
-        f"≥ {TARGETS['ui_fps']:g}",
-        ui_fps,
-        ui_fps is not None and ui_fps >= TARGETS["ui_fps"],
-        "{:.1f}",
+    ui = ui_fps if isinstance(ui_fps, dict) else ({"fps": ui_fps} if ui_fps is not None else None)
+    v = ui.get("fps") if ui else None
+    cap = ui.get("fps_capacity") if ui else None
+    # the loop is capped at cfg.ui.fps (= target) by clock.tick, so allow 1 fps of timer jitter; when
+    # the uncapped render capacity is known it must reach the target too
+    ok = v is not None and v >= TARGETS["ui_fps"] - 1.0 and (cap is None or cap >= TARGETS["ui_fps"])
+    rows.append(
+        [
+            "UI FPS (khung hình thực / khả năng không giới hạn)",
+            f"≥ {TARGETS['ui_fps']:g}",
+            NA if v is None else (f"{v:.1f}" + (f" / {cap:.0f}" if cap is not None else "")),
+            _check(None if v is None else ok),
+        ]
     )
     return rows
 
 
-def _ui_fps(reports_dir: Path) -> float | None:
+def _ui_fps(reports_dir: Path) -> dict | None:
     for name in ("ui_stats.json", "ui_metrics.json"):
         d = _load_json(reports_dir / name)
         if d and isinstance(d.get("fps"), (int, float)):
-            return float(d["fps"])
+            return d
     return None
+
+
+def measure_ui_fps(cfg: Config, reports_dir: Path, seconds: float = 3.0) -> dict:
+    """Run the UI demo (fake events, full debug panel) headless for `seconds` -> ui_stats.json."""
+    import os
+
+    if not os.environ.get("SDL_VIDEODRIVER"):  # unset or empty (the Makefile exports it empty)
+        os.environ["SDL_VIDEODRIVER"] = "dummy"
+    from soundwatch.ui.app import run_demo, write_ui_stats
+
+    st = run_demo(cfg, seconds=seconds, show_debug=True)
+    write_ui_stats(
+        reports_dir / "ui_stats.json", st, cfg.ui.fps, source=f"report --measure-ui-fps ({seconds:g} s)"
+    )
+    return st
+
+
+def section_tuning(cfg: Config, tun: dict | None) -> str:
+    s = ["## 3b. Tinh chỉnh hậu xử lý trên kịch bản val (WP8)"]
+    if not tun:
+        return "\n\n".join(s + [f"`tuning.json`: {NA} (chạy `make-scenarios --split val` rồi `tune`)."])
+    s.append(
+        f"`python -m soundwatch tune` trên `{tun.get('scenarios')}` ({tun.get('n_event_scenarios')} kịch bản "
+        f"sự kiện, {_f(tun.get('background_hours'), '{:.1f}')} giờ chỉ có nền; "
+        "**không** dùng kịch bản test). "
+        "Lưới smooth_n {1,2,3} × k_of_n {1/1, 2/2, 2/3, 3/4} × bg_margin {tắt, 0.2, 0.4} × ngưỡng từng lớp "
+        "(tham lam, DANGER ×2); ràng buộc trễ median ≤ "
+        f"{tun.get('max_latency_s')} s. Bảng đầy đủ + Pareto: [tuning.md](tuning.md)."
+    )
+    rows = []
+    for b, p in (tun.get("best") or {}).items():
+        if not p:
+            rows.append([f"≤ {b}", "không có điểm khả thi", "", "", "", ""])
+            continue
+        rows.append(
+            [
+                f"≤ {b}",
+                p["setting"],
+                _f(p.get("weighted_recall")),
+                _f(p.get("recall")),
+                _f(p.get("fa_per_hour_background"), "{:.1f}"),
+                f"{_f(p.get('latency_median_s'), '{:.2f}')} / {_f(p.get('latency_p90_s'), '{:.2f}')}",
+            ]
+        )
+    s.append(
+        _table(
+            ["Ngân sách FA/h", "Hậu xử lý tốt nhất", "Recall (trọng số)", "Recall", "FA/h (val)", "Trễ (s)"],
+            rows,
+        )
+    )
+    pp = cfg.postprocess
+    s.append(
+        f"**Đang dùng trong config:** smooth_n={pp.smooth_n}, k_of_n={pp.k_of_n[0]}/{pp.k_of_n[1]}, "
+        f"bg_margin={'tắt' if pp.bg_margin is None else pp.bg_margin}; ngưỡng: "
+        + ", ".join(f"{c.key}={c.threshold:.2f}" for c in cfg.classes[:-1])
+        + ". Kết quả trên test ở mục 3."
+    )
+    return "\n\n".join(s)
+
+
+def section_fa_analysis(fa: dict | None, fa_old: dict | None) -> str:
+    s = ["## 3c. Phân tích báo nhầm (kịch bản chỉ có nền, test)"]
+    if not fa:
+        return "\n\n".join(s + [f"`fa_analysis.json`: {NA} (chạy `fa-analysis`)."])
+    from soundwatch.eval.fa_analysis import summarize, summary_lines
+
+    s.append("Chi tiết từng báo nhầm: [fa_analysis.md](fa_analysis.md).")
+    s.append("\n".join(summary_lines(fa)))
+    n_tot, k_tot = fa["n_analysed"], fa["n_label_noise_likely"]
+    if fa_old:
+        s.append(
+            f"Với hậu xử lý cũ của WP7 (nhiều báo nhầm hơn): {fa_old['n_label_noise_likely']}/"
+            f"{fa_old['n_analysed']} báo nhầm nghi do nhiễu nhãn (`fa_analysis_wp7config.json`)."
+        )
+        n_tot += fa_old["n_analysed"]
+        k_tot += fa_old["n_label_noise_likely"]
+    frac = k_tot / n_tot if n_tot else 0.0
+    top = ", ".join(src for src, _ in summarize(fa)["top_sources"][:4])
+    if frac < 0.3:
+        s.append(
+            f'**Kết luận:** giả thuyết "nền UrbanSound8K/ESC-50 thật ra chứa còi/chó" chỉ giải thích '
+            f"~{100 * frac:.0f}% báo nhầm (YAMNet hầu như không nghe thấy lớp bị báo, "
+            "và không bản ghi nền nào "
+            "có slice cùng lớp). Phần lớn là **lỗi của model**: nhầm âm có cao độ ổn định / hài âm "
+            "(nhạc đường "
+            "phố – violin, máy khoan, điều hoà, động cơ) thành `siren`, tiếng dế (bíp cao tần lặp) thành "
+            "`smoke_alarm` (proxy `clock_alarm`), tiếng cười / ếch / chim thành `dog_bark`. Nguồn chính: "
+            f"{top}. Các loại nền này đã có trong background của train nhưng model vẫn nhầm → hướng xử lý: "
+            "hard-negative mining (oversample / tăng trọng số các cửa sổ nền bị nhầm), mixup nền–sự kiện, "
+            "hiệu chỉnh xác suất (temperature) vì model int8 bão hoà ở 0.996."
+        )
+    else:
+        s.append(
+            f"**Kết luận:** ~{100 * frac:.0f}% báo nhầm có dấu hiệu nhiễu nhãn trong dữ liệu nền "
+            "(YAMNet cũng "
+            "nghe thấy lớp bị báo) → cần lọc dữ liệu nền; phần còn lại là lỗi model."
+        )
+    return "\n\n".join(s)
+
+
+def section_demo(reports_dir: Path) -> str:
+    if not (reports_dir / "demo.gif").exists():
+        return ""
+    return (
+        "## 5b. Demo (kịch bản `assets/demo/demo_scenario.wav`)\n\n"
+        "`python -m soundwatch run --source assets/demo/demo_scenario.wav --record-gif "
+        "artifacts/reports/demo.gif` (5 fps, ½ kích thước):\n\n![demo](demo.gif)"
+    )
 
 
 def build_report(
@@ -479,25 +598,34 @@ def build_report(
     bench = _load_json(reports_dir / "benchmark.json")
     sugg = _load_yaml(reports_dir / "suggested_thresholds.yaml")
     quant = _load_json(models_dir / "quant_metrics.json")
+    tun = _load_json(reports_dir / "tuning.json")
+    fa = _load_json(reports_dir / "fa_analysis.json")
+    fa_old = _load_json(reports_dir / "fa_analysis_wp7config.json")
     checklist = targets_checklist(off, st, bench, quant, _ui_fps(reports_dir))
     n_ok = sum(1 for r in checklist if r[3] == "✅")
     n_known = sum(1 for r in checklist if r[3] != "⬜")
     parts = [
-        "# SoundWatch PoC – Báo cáo đánh giá (WP7)",
+        "# SoundWatch PoC – Báo cáo đánh giá (WP7–WP8)",
         "Sinh tự động bởi `python -m soundwatch report`. ✅ đạt, ❌ chưa đạt, ⬜ chưa có số liệu.",
-        f"## 0. Đối chiếu mục tiêu (mục 2 kế hoạch): {n_ok}/{n_known} đạt",
+        f"## 0. Đối chiếu mục tiêu (mục 2 kế hoạch, phần cứng ESP32-S3 + PSRAM): {n_ok}/{n_known} đạt",
         _table(["Chỉ số", "Mục tiêu", "Đo được", "Đạt?"], checklist),
         section_dataset(cfg, summary),
         section_offline(cfg, off),
         section_streaming(cfg, st, sugg, reports_dir),
+        section_tuning(cfg, tun),
+        section_fa_analysis(fa, fa_old),
         section_benchmark(bench),
         section_ui(reports_dir),
+        section_demo(reports_dir),
         "## 6. Ghi chú\n\n"
         "- `smoke_alarm` dùng `clock_alarm` (ESC-50) làm proxy khi chưa có dữ liệu báo cháy thật (mục 10).\n"
         "- Kịch bản streaming được tổng hợp từ test split (nền + sự kiện trộn theo SNR), "
         "không phải ghi âm thật; "
         "số báo nhầm/giờ dựa trên ~1 giờ âm nền nên sai số thống kê lớn.\n"
-        "- Ngưỡng đề xuất được chọn trên chính các kịch bản đánh giá → kết quả kỳ vọng là lạc quan.\n"
+        "- Hậu xử lý + ngưỡng trong config được chọn trên kịch bản **val** (`tune`); số liệu mục 3 là "
+        "trên test. Ngưỡng đề xuất của `eval-streaming` được chọn trên chính test → chỉ tham khảo, "
+        "lạc quan.\n"
+        "- Lệch miền sang micro thật chưa được đo (container không có micro).\n"
         "- Số liệu MCU là ước tính từ MACs, không phải đo trên phần cứng.",
     ]
     return "\n\n".join(parts) + "\n"
@@ -505,10 +633,18 @@ def build_report(
 
 def add_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--out", default=None, help="output path (default artifacts/reports/report.md)")
+    parser.add_argument(
+        "--measure-ui-fps",
+        action="store_true",
+        help="run the UI demo headless for 3 s first and write reports/ui_stats.json",
+    )
 
 
 def main(args: argparse.Namespace) -> int:
     cfg = load_config(args.config)
+    if getattr(args, "measure_ui_fps", False):
+        st = measure_ui_fps(cfg, paths.REPORTS)
+        print(f"[report] UI: {st['fps']:.1f} fps (capacity {st['fps_capacity']:.0f})")
     md = build_report(cfg)
     out = Path(args.out) if args.out else paths.REPORTS / "report.md"
     out.parent.mkdir(parents=True, exist_ok=True)

@@ -125,7 +125,7 @@ def _fake(cfg, tmp_path):
                         "size_bytes": 60000,
                         "params": 25000,
                         "macs": 3_000_000,
-                        "arena_estimate_bytes": 200_000,
+                        "arena_estimate_bytes": 600_000,  # > 512 KB ESP32-S3 budget
                         "infer_ms": {"median": 0.4, "p95": 0.6},
                         "total_ms_median": 0.9,
                         "mcu_estimates": est,
@@ -155,7 +155,7 @@ def test_report_with_fake_inputs(tmp_path, cfg):
     assert rows["Tensor arena ước tính (KB)"][3] == "❌"
     assert rows["Báo nhầm / giờ (chỉ nền)"][3] == "❌"
     assert rows["Độ trễ median onset → cảnh báo (s)"][3] == "✅"
-    assert rows["UI FPS"][3] == "⬜"
+    assert rows["UI FPS (khung hình thực / khả năng không giới hạn)"][3] == "⬜"
     assert "![sweep](streaming_sweep.png)" in md and "offline_teacher.png" in md
     assert "ui_idle.png" in md and "ƯỚC TÍNH" in md and "Báo cháy" in md
     assert "7/9 đạt" in md or "đạt" in md

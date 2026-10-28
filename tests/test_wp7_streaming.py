@@ -129,9 +129,9 @@ def test_end_to_end_dummy_with_sweep(tmp_path, cfg, monkeypatch):
 
     y = yaml.safe_load((rep / "suggested_thresholds_dummy.yaml").read_text())
     assert set(y["thresholds"]) == set(cfg.class_keys[:-1])
-    # oracle confidence 0.9 -> recall 1 up to threshold 0.9, 0 at 0.95
+    # oracle confidence 1.0 (like the saturating int8 model) -> recall 1 over the whole grid
     g = {r["threshold"]: r["recall"] for r in res["sweep"]["global"]}
-    assert g[0.3] == 1.0 and g[0.95] == 0.0
+    assert g[0.3] == 1.0 and g[0.95] == 1.0
 
 
 def test_suggest_thresholds_respects_budget(cfg):

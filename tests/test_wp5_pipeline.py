@@ -6,9 +6,9 @@ import numpy as np
 import pytest
 import soundfile as sf
 
+from _legacy_cfg import legacy_config
 from soundwatch.audio import features
 from soundwatch.audio.sources import ArraySource
-from soundwatch.config import load_config
 from soundwatch.engine.classifier import DummyClassifier
 from soundwatch.engine.pipeline import Engine, replay_postprocess, run_offline
 from soundwatch.types import AckCommand, AlertEvent, EngineStopped, SettingsCommand, StatusUpdate
@@ -35,7 +35,7 @@ def _features_available(monkeypatch):
 
 @pytest.fixture(scope="module")
 def cfg():
-    return load_config()
+    return legacy_config()
 
 
 def scenario(seconds_quiet=10.0, seconds_loud=20.0, seed=0):
@@ -213,10 +213,11 @@ def test_cli_headless_fast_dummy(tmp_path, capsys):
     rc = main(["run", "--source", str(wav), "--headless", "--fast", "--dummy", "--log", str(log)])
     assert rc == 0
     out = capsys.readouterr().out
-    # dummy schedule: smoke_alarm 2-5 s, car_horn 10-13 s
-    assert "[t=3.0s] DANGER Báo cháy (0.90)" in out
-    assert "DANGER Còi xe" in out
-    assert "[t=8.0s] DANGER Báo cháy" in out and "[repeat]" in out
+    # dummy schedule: smoke_alarm 2-5 s, car_horn 10-13 s; confidence 1.0; config (WP8):
+    # smooth_n=1, k_of_n=2/2 -> alert on the 2nd hop inside the interval, repeat 5 s later
+    assert "[t=2.5s] DANGER Báo cháy (1.00)" in out
+    assert "[t=10.5s] DANGER Còi xe" in out
+    assert "[t=7.5s] DANGER Báo cháy" in out and "[repeat]" in out
     assert "alerts" in out and "gated" in out
     assert log.exists()
 

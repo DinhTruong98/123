@@ -25,6 +25,8 @@ COMMANDS: dict[str, tuple[str, str]] = {
     "make-scenarios": ("soundwatch.data.scenarios", "synthesize long streaming test scenarios"),
     "eval": ("soundwatch.eval.offline", "offline metrics on test split"),
     "eval-streaming": ("soundwatch.eval.streaming", "event-level metrics on scenarios"),
+    "tune": ("soundwatch.eval.tune", "tune post-processing (smoothing, k-of-n, thresholds) on val scenarios"),
+    "fa-analysis": ("soundwatch.eval.fa_analysis", "trace background false alarms to source clips + YAMNet"),
     "benchmark": ("soundwatch.eval.benchmark", "model size / MACs / latency benchmark"),
     "report": ("soundwatch.eval.report", "assemble artifacts/reports/report.md"),
     "run": ("soundwatch.engine.run", "run real-time engine (+ watch simulator UI)"),

@@ -19,6 +19,7 @@ from soundwatch.types import AlertEvent, EngineStopped, Level
 DUMMY_ON_S = 3.0      # each scheduled class lasts this long ...
 DUMMY_PERIOD_S = 8.0  # ... and a new one starts every DUMMY_PERIOD_S seconds
 DUMMY_START_S = 2.0
+DUMMY_CONFIDENCE = 1.0
 
 
 def add_arguments(parser: argparse.ArgumentParser) -> None:
@@ -33,6 +34,10 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--device", default=None, help="sounddevice input device (mic only)")
     parser.add_argument("--log", default=None, help="event log JSONL path (default: artifacts/logs/...)")
     parser.add_argument("--no-log", action="store_true", help="do not write an event log")
+    parser.add_argument("--record-gif", default=None, metavar="PATH",
+                        help="UI: record the window as an animated GIF (5 fps, half size)")
+    parser.add_argument("--ui-stats", default=None, metavar="JSON",
+                        help="UI: write frame-rate stats (e.g. artifacts/reports/ui_stats.json)")
 
 
 def _warn(msg: str) -> None:
@@ -143,7 +148,8 @@ def main(args: argparse.Namespace) -> int:
         print(f"DummyClassifier: cycling {len(sched)} scripted alerts "
               f"({DUMMY_ON_S:.0f} s every {DUMMY_PERIOD_S:.0f} s; gated (quiet) audio stays silent)",
               file=sys.stderr)
-        classifier = DummyClassifier(cfg.num_classes, sched)
+        # confidence 1.0 like the (saturating) int8 model, so tuned thresholds up to 0.99 still fire
+        classifier = DummyClassifier(cfg.num_classes, sched, confidence=DUMMY_CONFIDENCE)
     else:
         classifier = load_classifier(model_path)
 
@@ -174,8 +180,11 @@ def main(args: argparse.Namespace) -> int:
                     event_log_path=log_path, emit_logmel=not args.no_debug)
     engine.start()
     try:
-        run_app(cfg, out_q, in_q, show_debug=not args.no_debug, max_seconds=args.max_seconds,
-                close_on_stop=False)
+        ui_stats = run_app(cfg, out_q, in_q, show_debug=not args.no_debug, max_seconds=args.max_seconds,
+                           close_on_stop=False, record_gif=args.record_gif, stats_path=args.ui_stats)
+        print(f"-- UI: {ui_stats['fps']:.1f} fps (cap {cfg.ui.fps}, capacity "
+              f"{ui_stats['fps_capacity']:.0f} fps)"
+              + (f", GIF {args.record_gif}" if args.record_gif else ""))
     except KeyboardInterrupt:
         pass
     except NotImplementedError as e:

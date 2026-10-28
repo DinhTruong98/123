@@ -149,16 +149,20 @@ class Library:
         return [k for k in self.cfg.class_keys[:-1] if k in self.events]
 
     @classmethod
-    def from_dirs(cls, cfg: Config, noise_dir: Path, events_dir: Path) -> Library:
+    def from_dirs(
+        cls, cfg: Config, noise_dir: Path, events_dir: Path, noise: list[tuple[str, np.ndarray]] | None = None
+    ) -> Library:
+        """`noise`: optional pre-loaded noise clips (then `noise_dir` is not read)."""
         sr = cfg.audio.sample_rate
-        nfiles = sorted(Path(noise_dir).glob("*.wav"))
-        if not nfiles:
-            raise FileNotFoundError(f"no noise wavs in {noise_dir}")
-        noise = []
-        for f in nfiles:
-            x = load_wav(f, sr)
-            s, e = active_region(x, sr)
-            noise.append((f.name, x[s:e]))
+        if noise is None:
+            nfiles = sorted(Path(noise_dir).glob("*.wav"))
+            if not nfiles:
+                raise FileNotFoundError(f"no noise wavs in {noise_dir}")
+            noise = []
+            for f in nfiles:
+                x = load_wav(f, sr)
+                s, e = active_region(x, sr)
+                noise.append((f.name, x[s:e]))
         events: dict[str, list[tuple[str, np.ndarray]]] = {}
         for key in cfg.class_keys[:-1]:
             clips = []
@@ -175,24 +179,32 @@ class Library:
     def from_windows(cls, cfg: Config, npz_path: Path) -> Library:
         """Fallback: 1 s windows of windows/<split>.npz (first window of every source clip for
         events; all background windows grouped by clip for noise)."""
-        if not Path(npz_path).exists():
-            raise FileNotFoundError(f"{npz_path} not found")
-        sr = cfg.audio.sample_rate
-        with np.load(npz_path, allow_pickle=False) as d:
-            wave, label, src = d["wave"], d["label"].astype(int), d["source_clip"]
-        noise: dict[str, list[np.ndarray]] = {}
-        events: dict[str, list[tuple[str, np.ndarray]]] = {k: [] for k in cfg.class_keys[:-1]}
-        seen: set[str] = set()
-        for w, lab, s in zip(wave, label, src, strict=True):
-            s = str(s)
-            if lab == cfg.background_id:
-                noise.setdefault(s, []).append(w.astype(np.float32)[: sr // 2])  # hop-sized chunks
-            elif s not in seen:
-                seen.add(s)
-                y = trim_event(w.astype(np.float32), sr)
-                if len(y) >= int(0.1 * sr):
-                    events[cfg.class_keys[lab]].append((s, y))
-        return cls(cfg, [(k, np.concatenate(v)) for k, v in noise.items()], events)
+        noise, events = windows_clips(cfg, npz_path)
+        return cls(cfg, noise, events)
+
+
+def windows_clips(
+    cfg: Config, npz_path: Path
+) -> tuple[list[tuple[str, np.ndarray]], dict[str, list[tuple[str, np.ndarray]]]]:
+    """(noise clips, event clips) from windows/<split>.npz, see Library.from_windows."""
+    if not Path(npz_path).exists():
+        raise FileNotFoundError(f"{npz_path} not found")
+    sr = cfg.audio.sample_rate
+    with np.load(npz_path, allow_pickle=False) as d:
+        wave, label, src = d["wave"], d["label"].astype(int), d["source_clip"]
+    noise: dict[str, list[np.ndarray]] = {}
+    events: dict[str, list[tuple[str, np.ndarray]]] = {k: [] for k in cfg.class_keys[:-1]}
+    seen: set[str] = set()
+    for w, lab, s in zip(wave, label, src, strict=True):
+        s = str(s)
+        if lab == cfg.background_id:
+            noise.setdefault(s, []).append(w.astype(np.float32)[: sr // 2])  # hop-sized chunks
+        elif s not in seen:
+            seen.add(s)
+            y = trim_event(w.astype(np.float32), sr)
+            if len(y) >= int(0.1 * sr):
+                events[cfg.class_keys[lab]].append((s, y))
+    return [(k, np.concatenate(v)) for k, v in noise.items()], events
 
 
 def load_library(
@@ -205,10 +217,22 @@ def load_library(
 ) -> Library:
     noise_dir = Path(noise_dir) if noise_dir else paths.NOISE / split
     events_dir = Path(events_dir) if events_dir else paths.DATA / "events" / split
+    npz = (Path(windows_dir) if windows_dir else paths.WINDOWS) / f"{split}.npz"
+    if not any(Path(noise_dir).glob("*.wav")) and Path(events_dir).is_dir() and Path(npz).exists():
+        # e.g. the val split: build-dataset writes no noise bank for it, but full event clips exist.
+        # Use full event clips + background reconstructed from the 1 s windows of <split>.npz.
+        try:
+            noise, _ = windows_clips(cfg, npz)
+            full = Library.from_dirs(cfg, noise_dir, events_dir, noise=noise)
+            if verbose:
+                print(f"[scenarios] no noise bank in {noise_dir}: background from {npz}, "
+                      f"events from {events_dir}")
+            return full
+        except FileNotFoundError:
+            pass
     try:
         return Library.from_dirs(cfg, noise_dir, events_dir)
     except FileNotFoundError as e:
-        npz = (Path(windows_dir) if windows_dir else paths.WINDOWS) / f"{split}.npz"
         if verbose:
             print(f"[scenarios] {e}; falling back to 1 s windows from {npz}")
         try:
@@ -227,8 +251,12 @@ def make_background(
     level_dbfs: float,
     sr: int = 16000,
     xfade_s: float = XFADE_S,
+    segments: list | None = None,
 ) -> np.ndarray:
-    """Continuous background of `n_samples` at RMS `level_dbfs` from crossfaded noise clips."""
+    """Continuous background of `n_samples` at RMS `level_dbfs` from crossfaded noise clips.
+
+    If `segments` is a list, (start_s, end_s, clip_name) of every clip used is appended to it
+    (does not change the random stream, so outputs are identical with or without it)."""
     xf = int(xfade_s * sr)
     out = np.zeros(n_samples + xf, np.float64)
     pos = 0
@@ -239,7 +267,7 @@ def make_background(
     while pos < n_samples:
         if not order:
             order = list(rng.permutation(len(lib.noise)))
-        _, clip = lib.noise[order.pop()]
+        name, clip = lib.noise[order.pop()]
         r = rms(clip)
         if r < 1e-6 or len(clip) <= 2 * xf:
             skipped += 1
@@ -255,6 +283,8 @@ def make_background(
             start = pos - xf
         end = min(start + len(seg), len(out))
         out[start:end] += seg[: end - start]
+        if segments is not None and start < n_samples:
+            segments.append((round(start / sr, 3), round(min(end, n_samples) / sr, 3), name))
         pos = start + len(seg)
     bg = out[:n_samples]
     return (bg * (10.0 ** (level_dbfs / 20.0)) / max(rms(bg), 1e-12)).astype(np.float32)
@@ -337,7 +367,8 @@ def synth_event_scenario(
 ) -> tuple[np.ndarray, list[dict], dict]:
     n = int(round(duration_s * sr))
     level = float(rng.uniform(*BG_LEVEL_DBFS))
-    bg = make_background(lib, n, rng, level, sr)
+    segs: list = []
+    bg = make_background(lib, n, rng, level, sr, segments=segs)
     k = int(rng.integers(n_events[0], n_events[1] + 1))
     picks = []
     for _ in range(k):
@@ -372,7 +403,12 @@ def synth_event_scenario(
     return (
         mix,
         events,
-        {"bg_level_dbfs": round(level + db(g), 2), "peak_gain": round(g, 4), "clipped_samples": n_clip},
+        {
+            "bg_level_dbfs": round(level + db(g), 2),
+            "peak_gain": round(g, 4),
+            "clipped_samples": n_clip,
+            "bg_segments": segs,
+        },
     )
 
 
@@ -380,9 +416,10 @@ def synth_background(
     lib: Library, duration_s: float, rng: np.random.Generator, sr: int = 16000
 ) -> tuple[np.ndarray, dict]:
     level = float(rng.uniform(*BG_LEVEL_DBFS))
-    x = make_background(lib, int(round(duration_s * sr)), rng, level, sr)
+    segs: list = []
+    x = make_background(lib, int(round(duration_s * sr)), rng, level, sr, segments=segs)
     g, _ = _limit_peak(x)
-    return x, {"bg_level_dbfs": round(level + db(g), 2), "peak_gain": round(g, 4)}
+    return x, {"bg_level_dbfs": round(level + db(g), 2), "peak_gain": round(g, 4), "bg_segments": segs}
 
 
 def write_csv(path: Path, events: list[dict]) -> None:

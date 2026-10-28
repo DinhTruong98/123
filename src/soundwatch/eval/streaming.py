@@ -492,7 +492,7 @@ def run_scenarios(
     return runs
 
 
-def oracle_dummy(cfg: Config, confidence: float = 0.9):
+def oracle_dummy(cfg: Config, confidence: float = 1.0):
     """DummyClassifier factory predicting the GT class while the window overlaps an event by >= 0.5 s."""
     from soundwatch.engine.classifier import DummyClassifier
 

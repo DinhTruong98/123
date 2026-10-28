@@ -47,6 +47,9 @@ class PostprocessConfig:
     k_of_n: tuple[int, int]
     danger_repeat_s: float
     danger_clear_s: float
+    # optional (WP8): a class only counts as "above" if smoothed[c] - smoothed[background] >= bg_margin;
+    # None = rule off (default, backward compatible)
+    bg_margin: float | None = None
 
 
 @dataclass(frozen=True)
@@ -159,6 +162,7 @@ def load_config(path: str | Path | None = None, check_icons: bool = False) -> Co
         k_of_n=(k, n),
         danger_repeat_s=float(p["danger_repeat_s"]),
         danger_clear_s=float(p["danger_clear_s"]),
+        bg_margin=None if p.get("bg_margin") is None else float(p["bg_margin"]),
     )
     m = raw["model"]
     model = ModelConfig(
