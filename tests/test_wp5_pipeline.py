@@ -213,11 +213,12 @@ def test_cli_headless_fast_dummy(tmp_path, capsys):
     rc = main(["run", "--source", str(wav), "--headless", "--fast", "--dummy", "--log", str(log)])
     assert rc == 0
     out = capsys.readouterr().out
-    # dummy schedule: smoke_alarm 2-5 s, car_horn 10-13 s; confidence 1.0; config (WP8):
-    # smooth_n=1, k_of_n=2/2 -> alert on the 2nd hop inside the interval, repeat 5 s later
-    assert "[t=2.5s] DANGER Báo cháy (1.00)" in out
-    assert "[t=10.5s] DANGER Còi xe" in out
-    assert "[t=7.5s] DANGER Báo cháy" in out and "[repeat]" in out
+    # dummy schedule: smoke_alarm 2-5 s, car_horn 10-13 s; confidence 1.0; config: smooth_n=1,
+    # k_of_n=2/2 plus the DANGER fast path (danger_fast_threshold 255/256 <= 1.0) -> both DANGER
+    # classes alert on the 1st hop inside the interval (was the 2nd before the fast path), repeat 5 s later
+    assert "[t=2.0s] DANGER Báo cháy (1.00)" in out
+    assert "[t=10.0s] DANGER Còi xe" in out
+    assert "[t=7.0s] DANGER Báo cháy" in out and "[repeat]" in out
     assert "alerts" in out and "gated" in out
     assert log.exists()
 

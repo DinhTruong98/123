@@ -2,7 +2,7 @@ import XCTest
 @testable import SoundWatch
 
 /// Engine offline on demo_scenario.wav vs the Python pipeline (demo_expected_events.json):
-/// same non-repeat events (class, |dt| <= 0.5 s).
+/// same non-repeat events (same class, same hop).
 final class EndToEndTests: XCTestCase {
     func testDemoScenarioMatchesPython() throws {
         let cfg = try TestSupport.config()
@@ -49,7 +49,7 @@ final class EndToEndTests: XCTestCase {
         XCTAssertEqual(fresh.count, expFresh.count)
         for (s, p) in zip(fresh, expFresh) {
             XCTAssertEqual(keys[s.classId], p["class_key"] as! String)
-            XCTAssertEqual(s.tAudio, (p["t_audio"] as! NSNumber).doubleValue, accuracy: 0.5)
+            XCTAssertEqual(s.tAudio, (p["t_audio"] as! NSNumber).doubleValue, accuracy: 0.25)  // hops are 0.5 s apart
         }
     }
 }

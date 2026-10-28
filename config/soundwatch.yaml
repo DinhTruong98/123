@@ -25,6 +25,11 @@ postprocess:
   danger_repeat_s: 5.0
   danger_clear_s: 10.0
   # bg_margin: 0.2   # optional: require smoothed[c] - smoothed[background] >= bg_margin (default off)
+  # DANGER fast path (postprocess.py rule 4b): a DANGER class alerts on a single hop whose smoothed
+  # prob reaches this value, without waiting for k_of_n. 255/256 = saturated int8 output. Chosen on
+  # val (artifacts/reports/fast_path.json): same recall as 254/256 with fewer false alarms; it costs
+  # about +8-9 FA/h on background-only streams (val 10 -> 18, test 23 -> 32). Remove / null = off.
+  danger_fast_threshold: 0.99609375
 
 model:
   tflite_path: artifacts/models/student_int8.tflite

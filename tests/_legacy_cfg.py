@@ -18,7 +18,9 @@ WP7_THRESHOLDS = {
 
 def legacy_config() -> Config:
     cfg = load_config()
-    pp = dataclasses.replace(cfg.postprocess, smooth_n=3, k_of_n=(2, 3), bg_margin=None)
+    pp = dataclasses.replace(
+        cfg.postprocess, smooth_n=3, k_of_n=(2, 3), bg_margin=None, danger_fast_threshold=None
+    )
     classes = tuple(
         dataclasses.replace(c, threshold=WP7_THRESHOLDS[c.key]) if c.key in WP7_THRESHOLDS else c
         for c in cfg.classes

@@ -84,6 +84,7 @@ def export_config(cfg, stats: dict) -> dict:
         "postprocess": {
             "smooth_n": p.smooth_n, "k_of_n": list(p.k_of_n), "danger_repeat_s": p.danger_repeat_s,
             "danger_clear_s": p.danger_clear_s, "bg_margin": p.bg_margin,
+            "danger_fast_threshold": p.danger_fast_threshold,
         },
         "ui": {"alert_timeout_s": cfg.ui.alert_timeout_s, "history_len": cfg.ui.history_len},
         "classes": [{
