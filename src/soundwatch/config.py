@@ -50,6 +50,9 @@ class PostprocessConfig:
     # optional (WP8): a class only counts as "above" if smoothed[c] - smoothed[background] >= bg_margin;
     # None = rule off (default, backward compatible)
     bg_margin: float | None = None
+    # optional: a DANGER class whose smoothed prob reaches this in a single hop alerts at once,
+    # without waiting for k-of-n (see postprocess.py rule 4b); None = rule off (default)
+    danger_fast_threshold: float | None = None
 
 
 @dataclass(frozen=True)
@@ -163,7 +166,12 @@ def load_config(path: str | Path | None = None, check_icons: bool = False) -> Co
         danger_repeat_s=float(p["danger_repeat_s"]),
         danger_clear_s=float(p["danger_clear_s"]),
         bg_margin=None if p.get("bg_margin") is None else float(p["bg_margin"]),
+        danger_fast_threshold=None
+        if p.get("danger_fast_threshold") is None
+        else float(p["danger_fast_threshold"]),
     )
+    if post.danger_fast_threshold is not None and not (0.0 < post.danger_fast_threshold <= 1.0):
+        raise ConfigError("postprocess.danger_fast_threshold must be in (0, 1]")
     m = raw["model"]
     model = ModelConfig(
         tflite_path=paths.resolve(m["tflite_path"]),

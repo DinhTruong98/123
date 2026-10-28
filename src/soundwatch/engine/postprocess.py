@@ -10,6 +10,13 @@ Rules (evaluated once per hop, i.e. per `update(probs, t_audio)` call):
 3. Cooldown: a class never emits (fresh or repeat) less than `cooldown_s` after its last emission.
 4. Fresh alert (repeat=False): emitted when the class is triggered, enabled, outside its cooldown
    and (DANGER only) not currently in an *active occurrence* (see 5).
+4b. DANGER fast path (only if the optional `cfg.danger_fast_threshold` is set): a DANGER class also
+   counts as triggered at a hop where smoothed[c] >= danger_fast_threshold (and, if `bg_margin` is
+   set, smoothed[c] - smoothed[background] >= bg_margin), without waiting for k-of-n. All other
+   conditions of rule 4 still apply (enabled, cooldown, no active occurrence, acked or not). It
+   changes nothing else: hit history, last-above time, repeats, ack and clear are as in 2, 3, 5.
+   Suggested value: 255/256 = 0.99609375, the saturation level of the int8 output (scale 1/256,
+   zero point -128), compared in float32. WARN / INFO classes are not affected.
 5. DANGER classes: a fresh alert starts an active occurrence that is *pending ack*. While pending,
    the alert is re-emitted with repeat=True every max(danger_repeat_s, cooldown_s) seconds after the
    previous emission, whether or not the sound is still triggered; no fresh alerts are emitted.
@@ -109,6 +116,12 @@ class PostProcessor:
         self._hits[self._hits_pos] = above
         self._hits_pos = (self._hits_pos + 1) % self.n
         triggered = self._hits.sum(axis=0) >= self.k
+        fast = getattr(self.cfg, "danger_fast_threshold", None)
+        if fast is not None:
+            fast_hit = self._is_danger & (self.smoothed >= np.float32(fast))
+            if margin is not None:
+                fast_hit &= (self.smoothed - self.smoothed[self.background_id]) >= float(margin)
+            triggered |= fast_hit
         self._last_above[above] = t
 
         events: list[AlertEvent] = []

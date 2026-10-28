@@ -35,6 +35,7 @@ import numpy as np
 
 from soundwatch import paths
 from soundwatch.config import Config, load_config
+from soundwatch.types import Level
 
 SNRS_DB = (0.0, 5.0, 10.0, 20.0)
 BG_LEVEL_DBFS = (-45.0, -30.0)
@@ -241,6 +242,32 @@ def load_library(
             raise FileNotFoundError(
                 f"cannot build scenarios: {e}; and {e2}. Run `python -m soundwatch build-dataset` first."
             ) from e2
+
+
+def shorten_events(
+    lib: Library,
+    lengths_s: tuple[float, ...],
+    rng: np.random.Generator,
+    keys: list[str] | None = None,
+    sr: int = 16000,
+) -> Library:
+    """Library whose event clips are random excerpts of exactly L s (L in `lengths_s`) of the
+    original (already trimmed) clips of classes `keys` (default: all), with 10 ms fades. Every clip
+    long enough contributes one excerpt per length, so lengths stay balanced. Used to measure short
+    events (e.g. an ambulance passing by); noise is shared with `lib`."""
+    keys = list(keys) if keys is not None else lib.class_keys
+    events: dict[str, list[tuple[str, np.ndarray]]] = {}
+    for key in keys:
+        out = []
+        for name, w in lib.events.get(key, []):
+            for L in lengths_s:
+                n = int(round(L * sr))
+                if len(w) < n:
+                    continue
+                start = int(rng.integers(0, len(w) - n + 1))
+                out.append((f"{name}@{L:g}s+{start / sr:.2f}", apply_fades(w[start : start + n].copy(), sr)))
+        events[key] = out
+    return Library(lib.cfg, lib.noise, events)
 
 
 # ---------------------------------------------------------------- synthesis
@@ -574,6 +601,15 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--no-demo", action="store_true", help="do not (re)write assets/demo/demo_scenario.wav"
     )
+    parser.add_argument(
+        "--classes", default=None, help="comma-separated class keys to use (default all); 'danger' = DANGER"
+    )
+    parser.add_argument(
+        "--event-lengths",
+        default=None,
+        help="comma-separated lengths in s (e.g. 0.5,1,1.5): cut every event to random excerpts of "
+        "these lengths (short-event scenarios); implies --no-demo",
+    )
 
 
 def main(args: argparse.Namespace) -> int:
@@ -583,6 +619,19 @@ def main(args: argparse.Namespace) -> int:
         f"[scenarios] library: {len(lib.noise)} noise clips, "
         + ", ".join(f"{k}={len(v)}" for k, v in lib.events.items())
     )
+    keys = None
+    if args.classes:
+        if args.classes == "danger":
+            keys = [c.key for c in cfg.classes[:-1] if c.level == Level.DANGER]
+        else:
+            keys = [k.strip() for k in args.classes.split(",") if k.strip()]
+        lib = Library(cfg, lib.noise, {k: v for k, v in lib.events.items() if k in keys})
+    if args.event_lengths:
+        lengths = tuple(float(v) for v in args.event_lengths.split(","))
+        rng = np.random.default_rng(args.seed + 1000)
+        lib = shorten_events(lib, lengths, rng, keys, cfg.audio.sample_rate)
+        args.no_demo = True
+        print("[scenarios] short events: " + ", ".join(f"{k}={len(v)}" for k, v in lib.events.items()))
     out = Path(args.out) if args.out else paths.SCENARIOS
     idx = generate(
         cfg,

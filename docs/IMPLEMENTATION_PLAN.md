@@ -204,6 +204,11 @@ class PostProcessor:
 6. (WP8, tuỳ chọn, mặc định tắt) `postprocess.bg_margin`: nếu đặt, lớp `c` chỉ "trên ngưỡng" khi thêm
    điều kiện `smoothed[c] − smoothed[background] ≥ bg_margin`. Trường `PostprocessConfig.bg_margin: float | None = None`
    — tương thích ngược (config cũ không có trường này vẫn chạy y như trước).
+7. (Luật hai tầng cho DANGER, tuỳ chọn) `postprocess.danger_fast_threshold`: nếu đặt, lớp `DANGER` đang bật, ngoài
+   cooldown và không có occurrence đang active sẽ báo **ngay ở một hop** có xác suất đã làm mượt ≥ giá trị này
+   (và thoả `bg_margin` nếu bật), không cần đủ k-of-n. Lịch sử hit, cooldown, lặp, ack, clear giữ nguyên; WARN/INFO
+   không đổi. `PostprocessConfig.danger_fast_threshold: float | None = None` (tắt). Config hiện dùng 255/256 =
+   0.99609375 (output int8 bão hoà). Số liệu trước/sau: [danger_fast_path.md](danger_fast_path.md).
 
 ### 4.4 Config (`config/soundwatch.yaml`)
 
@@ -223,6 +228,7 @@ postprocess:
   k_of_n: [2, 3]
   danger_repeat_s: 5
   # bg_margin: 0.2       # tuỳ chọn (WP8), mặc định tắt
+  danger_fast_threshold: 0.99609375   # luật hai tầng cho DANGER (mục 4.3 quy tắc 7); null = tắt
 model:
   tflite_path: artifacts/models/student_int8.tflite
   stats_path: artifacts/models/feature_stats.json

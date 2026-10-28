@@ -30,7 +30,9 @@ SR = 16000
 
 @pytest.fixture(scope="module")
 def cfg():
-    return load_config()
+    # these tests exercise smoothing / k-of-n tuning: keep the DANGER fast path (rule 4b) off
+    c = load_config()
+    return dataclasses.replace(c, postprocess=dataclasses.replace(c.postprocess, danger_fast_threshold=None))
 
 
 def _probs(cfg, cid, p):
