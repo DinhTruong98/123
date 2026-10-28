@@ -136,6 +136,8 @@ final class AppState: ObservableObject {
 
     private func handle(alert e: AlertEvent, date: Date) {
         let cls = class_(e.classId)
+        print(String(format: "SW_ALERT t_audio=%.1f %@ conf=%.3f%@", e.tAudio, cls.key, e.confidence,
+                     e.repeatAlert ? " repeat" : ""))
         let shown = ShownAlert(classId: e.classId, confidence: e.confidence, date: date, tAudio: e.tAudio)
         let background = !isActive
         haptics.play(pattern: cls.vibration, level: cls.level, background: background)

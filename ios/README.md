@@ -63,28 +63,51 @@ Không cần CocoaPods và không có `.xcworkspace`: mở thẳng `SoundWatch.x
 
 ## Cài lên iPhone (Apple ID miễn phí)
 
-1. iPhone: Settings → Privacy & Security → **Developer Mode** → bật, khởi động lại.
-2. Cắm iPhone vào Mac, bấm Trust trên iPhone.
-3. Xcode → Settings → Accounts → thêm Apple ID (tạo ra "Personal Team").
-4. Chọn target SoundWatch → Signing & Capabilities → Team = Personal Team. Nếu bundle id bị trùng thì đổi
-   `SW_BUNDLE_ID` trong `Local.xcconfig` rồi chạy lại `xcodegen generate`.
-5. Chọn iPhone ở thanh trên, scheme SoundWatch → Product → Scheme → Edit Scheme → Run → Build Configuration =
+Chuẩn bị một lần:
+
+1. **Cắm cáp** iPhone vào Mac (bắt buộc lần đầu), mở khoá iPhone, bấm **Trust** và nhập passcode.
+2. iPhone: Settings → Privacy & Security → **Developer Mode** → bật, khởi động lại, xác nhận "Turn On". Mục này chỉ
+   hiện sau khi iPhone đã kết nối với Xcode ít nhất một lần (bước 1).
+3. Xcode → Settings → Accounts → **+** → Apple ID → đăng nhập. Xcode tạo "Personal Team" và chứng chỉ Apple Development.
+   Dòng lệnh `xcodebuild` cũng dùng tài khoản này; chưa đăng nhập thì báo `No Accounts`.
+4. `Local.xcconfig`: `SW_BUNDLE_ID` (bundle id riêng, ví dụ `com.<tên>.soundwatch`) và `SW_TEAM_ID` (Team ID của
+   Personal Team, xem ở Xcode → Settings → Accounts, hoặc để trống rồi chọn team trong Xcode), sau đó
+   `xcodegen generate`.
+
+Cài và chạy từ Xcode:
+
+5. Chọn iPhone ở thanh trên, scheme SoundWatch. Product → Scheme → Edit Scheme → Run → Build Configuration =
    **Release** (đo thời gian đúng hơn Debug) → Run.
 6. Lần đầu iPhone báo "Untrusted Developer": Settings → General → VPN & Device Management → Apple ID của bạn → Trust.
 7. Mở app, cho phép **Micro** và **Thông báo**.
 
 Profile của Personal Team hết hạn sau 7 ngày: trước buổi báo cáo phải build và cài lại.
 
+### Qua Wi-Fi (không cắm cáp)
+
+Sau khi đã pair bằng cáp một lần (bước 1–2), Mac và iPhone cùng mạng Wi-Fi là đủ:
+
+- Xcode → Window → Devices and Simulators → chọn iPhone → bật **Connect via network** (Xcode 15 trở lên thường tự bật).
+  Rút cáp; iPhone vẫn hiện trong danh sách thiết bị, có biểu tượng mạng.
+- Kiểm tra từ dòng lệnh: `xcrun devicectl list devices` phải thấy iPhone ở trạng thái `available (paired)`, và
+  `xcrun devicectl device info details --device <UDID>` có `Transport Type: localNetwork`, `Developer Mode Status: Enabled`.
+- iPhone phải đang mở khoá khi cài và khi Xcode khởi chạy app. Nếu máy không hiện: mở khoá iPhone, tắt/bật Wi-Fi, hoặc
+  cắm cáp lại một lần.
+- Build và cài như mục dưới, `--device` là UDID hoặc tên máy.
+
 ### Bằng dòng lệnh
 
 ```bash
+xcrun devicectl list devices                     # lấy UDID của iPhone
 xcodebuild -project SoundWatch.xcodeproj -scheme SoundWatch -configuration Release \
-  -destination 'generic/platform=iOS' -derivedDataPath build -allowProvisioningUpdates \
-  DEVELOPMENT_TEAM=<TEAM_ID> build
-xcrun devicectl list devices
-xcrun devicectl device install app --device <DEVICE_ID> build/Build/Products/Release-iphoneos/SoundWatch.app
-xcrun devicectl device process launch --device <DEVICE_ID> <SW_BUNDLE_ID>
+  -destination 'id=<UDID>' -derivedDataPath build -allowProvisioningUpdates build
+xcrun devicectl device install app --device <UDID> build/Build/Products/Release-iphoneos/SoundWatch.app
+xcrun devicectl device process launch --device <UDID> <SW_BUNDLE_ID>
+xcrun devicectl device process launch --device <UDID> <SW_BUNDLE_ID> -demo   # mở và phát file demo
 ```
+
+Bundle id và team lấy từ `Local.xcconfig`. Lần đầu `-allowProvisioningUpdates` tạo App ID và provisioning profile
+(Personal Team: tối đa 10 App ID trong 7 ngày).
 
 `-allowProvisioningUpdates` cần Apple ID đã đăng nhập trong Xcode ít nhất một lần.
 
@@ -114,6 +137,16 @@ Kết quả (Xcode 27.1, simulator iOS 27.1, Mac Apple silicon):
 | Demo 60 s: xác suất từng hop (119 hop) | lệch tối đa 0, cùng các hop bị gate |
 | Demo 60 s: sự kiện | 12/12 trùng Python (6 sự kiện mới + 6 lần nhắc DANGER), cùng thời điểm |
 | Feature + suy luận / hop, Release | 0.20 ms + 0.63 ms (Debug: 5.7 + 1.3 ms) |
+
+Trên iPhone 12 (iOS 27.0.1, bản Release, cài qua Wi-Fi):
+
+| Mục | Kết quả |
+|---|---|
+| Quyền micro | Hiện hộp thoại tiếng Việt; sau khi cho phép thì nghe liên tục (RMS, gate cập nhật mỗi 0.5 s) |
+| "Phát file demo" (real-time, `-demo`) | 12/12 sự kiện trùng Python: 6/7 âm, cùng thời điểm, kể cả các lần nhắc DANGER |
+| Feature + suy luận / hop (Debug panel) | ~0.9 ms + ~3.2 ms, tối đa 4.9 ms |
+
+Log cảnh báo (`SW_ALERT ...`) xem bằng `xcrun devicectl device process launch --console --device <UDID> <SW_BUNDLE_ID>`.
 
 ## Dùng app
 
