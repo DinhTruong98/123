@@ -32,7 +32,7 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
         c.requestAuthorization(options: [.alert, .sound, .badge]) { _, _ in }
     }
 
-    func post(classId: Int, cls: SoundClass, confidence: Float, at date: Date, repeatAlert: Bool) {
+    func post(classId: Int, cls: SoundClass, confidence: Float, at date: Date, repeatAlert: Bool, silent: Bool = false) {
         let content = UNMutableNotificationContent()
         content.title = "\(cls.emoji) \(cls.labelVi)"
         let time = date.formatted(date: .omitted, time: .standard)
@@ -43,7 +43,7 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
         case (.warn, _): content.body = "Có thể cần bạn chú ý."
         case (.info, _): content.body = "Âm thanh xung quanh, không khẩn cấp."
         }
-        content.sound = .default
+        content.sound = silent ? nil : .default
         content.userInfo = ["classId": classId]
         content.threadIdentifier = cls.key
         content.summaryArgument = cls.labelVi

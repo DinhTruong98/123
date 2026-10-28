@@ -210,12 +210,14 @@ lỗi. Đã thử trên iPhone 12: không có dòng đó thì không rung, có t
 
 | Mức | Rung |
 |---|---|
-| DANGER | Lặp mẫu `vibration` của lớp liên tục (nghỉ 0.6 s giữa hai lần) tới khi xác nhận. App mở: Core Haptics, cường độ 1.0. App ở nền / khoá máy: `kSystemSoundID_Vibrate` lặp theo timer (Core Haptics không chạy ở nền; app vẫn sống nhờ đang thu âm) |
+| DANGER | Lặp mẫu `vibration` của lớp liên tục (nghỉ 0.6 s giữa hai lần) tới khi xác nhận, tối đa 30 s kể từ cảnh báo của lớp đó (mặc định). App mở: Core Haptics, cường độ 1.0. App ở nền / khoá máy: `kSystemSoundID_Vibrate` lặp theo timer (Core Haptics không chạy ở nền; app vẫn sống nhờ đang thu âm) |
 | WARN / INFO | Mẫu `vibration` một lần (cường độ 0.7 / 0.5); ở nền: một lần rung hệ thống |
 
 - Xác nhận (chạm mặt đồng hồ, hoặc "Xác nhận" trên notification) dừng **mọi** rung DANGER đang chạy và ack các lớp đó,
   vì mặt đồng hồ chỉ hiện cảnh báo mới nhất. DANGER mới tới sau đó lại rung.
-- Cài đặt → "Rung khi nguy hiểm": mặc định "Đến khi xác nhận"; có thể giới hạn 1 / 2 / 5 / 10 phút để đỡ hao pin.
+- Cài đặt → "Rung khi nguy hiểm": mặc định **tối đa 30 giây** (Dinh chọn); có thêm 1 phút, 2 phút, "Đến khi xác nhận".
+  Hết thời gian thì lớp đó im hẳn: các lần nhắc lại sau đó không rung, notification nhắc lại cũng không kêu, cho tới khi
+  xác nhận hoặc có cảnh báo mới của lớp đó. Mỗi lớp tính 30 s riêng.
 - Kết quả thử trên iPhone 12 (iOS 27.0.1) với nút "Phát file demo":
 
 | Trạng thái | Kết quả |
@@ -223,6 +225,7 @@ lỗi. Đã thử trên iPhone 12: không có dòng đó thì không rung, có t
 | Mở app, chuông bật | rung lặp liên tục; xác nhận thì dừng ngay |
 | Khoá máy, chuông bật | rung lặp liên tục; "Xác nhận" trên notification dừng |
 | Khoá máy, công tắc Im lặng | rung lặp liên tục; một lần "Xác nhận" dừng hết |
+| Mở app, không xác nhận, giới hạn 30 s | báo cháy / còi xe / còi cấp cứu lần lượt tự hết rung sau 30 s; sau đó không rung lặp nữa |
 | Chế độ Tập trung (Không làm phiền) | chưa thử |
 
 ### Launch argument

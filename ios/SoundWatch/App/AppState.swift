@@ -28,11 +28,11 @@ final class AppState: ObservableObject {
         didSet { UserDefaults.standard.set(showDebug, forKey: "showDebug") }
     }
     @Published var playDemoAloud = true
-    /// DANGER vibration stops by itself after this many minutes; 0 = until ack (default).
-    @Published var dangerVibrationLimitMin = UserDefaults.standard.integer(forKey: "dangerVibrationLimitMin") {
+    /// DANGER vibration of a class stops by itself after this many seconds (default 30); 0 = until ack.
+    @Published var dangerVibrationLimitS = UserDefaults.standard.object(forKey: "dangerVibrationLimitS") as? Int ?? 30 {
         didSet {
-            UserDefaults.standard.set(dangerVibrationLimitMin, forKey: "dangerVibrationLimitMin")
-            haptics.continuousLimit = dangerVibrationLimitMin > 0 ? Double(dangerVibrationLimitMin) * 60 : nil
+            UserDefaults.standard.set(dangerVibrationLimitS, forKey: "dangerVibrationLimitS")
+            haptics.continuousLimit = dangerVibrationLimitS > 0 ? Double(dangerVibrationLimitS) : nil
         }
     }
 
@@ -79,7 +79,7 @@ final class AppState: ObservableObject {
         demo.onSamples = { [weak self] x in self?.engine?.feed(x) }
         demo.onFinished = { [weak self] in Task { @MainActor in self?.demoFinished() } }
         haptics.log = { print("SW_HAPTIC \($0)") }
-        haptics.continuousLimit = dangerVibrationLimitMin > 0 ? Double(dangerVibrationLimitMin) * 60 : nil
+        haptics.continuousLimit = dangerVibrationLimitS > 0 ? Double(dangerVibrationLimitS) : nil
         notifier.onAck = { [weak self] c in Task { @MainActor in self?.acknowledge(classId: c) } }
         notifier.onOpen = { [weak self] c in Task { @MainActor in self?.reopen(classId: c) } }
     }
@@ -181,11 +181,14 @@ final class AppState: ObservableObject {
         let background = !isActive
         if cls.level == .danger && !e.repeatAlert {
             haptics.startContinuous(classId: e.classId, pattern: cls.vibration)  // until ack
-        } else if !(cls.level == .danger && haptics.isLooping(e.classId)) {
+        } else if !(cls.level == .danger && haptics.isVibrationHandled(e.classId)) {
             haptics.playOnce(pattern: cls.vibration, level: cls.level)
         }
         if background {
-            notifier.post(classId: e.classId, cls: cls, confidence: e.confidence, at: date, repeatAlert: e.repeatAlert)
+            // after the vibration limit, DANGER repeats update the notification silently
+            let silent = cls.level == .danger && e.repeatAlert && !haptics.isLooping(e.classId)
+            notifier.post(classId: e.classId, cls: cls, confidence: e.confidence, at: date,
+                          repeatAlert: e.repeatAlert, silent: silent)
         }
         if !e.repeatAlert {
             history.insert(shown, at: 0)

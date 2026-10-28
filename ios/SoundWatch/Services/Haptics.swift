@@ -5,7 +5,9 @@ import Foundation
 /// Vibration for alerts. A class's `vibration` pattern is ms on/off alternating, starting with on.
 ///
 /// - WARN/INFO, and DANGER repeats while nothing is looping: the pattern plays once.
-/// - DANGER: the pattern loops until `stopContinuous` (ack), or until the optional time limit.
+/// - DANGER: the pattern loops until `stopContinuous` (ack), or until `continuousLimit` seconds after
+///   that class's fresh alert. After the limit the class stays silent (its repeats do not vibrate)
+///   until it is acked or a new fresh alert of it starts a new loop.
 ///   In the foreground it loops with Core Haptics (full intensity). In the background Core Haptics
 ///   cannot play, so the system vibration (`kSystemSoundID_Vibrate`) is repeated on a timer instead;
 ///   the app stays alive there because it keeps recording (UIBackgroundModes audio).
@@ -14,13 +16,14 @@ import Foundation
 /// recording (`AudioCapture.configureSession`); iOS mutes them otherwise.
 final class Haptics {
     var log: ((String) -> Void)?
-    /// DANGER vibration stops by itself after this many seconds (nil = until ack).
+    /// DANGER vibration of a class stops by itself this many seconds after it started (nil = until ack).
     var continuousLimit: TimeInterval?
 
     private var engine: CHHapticEngine?
     private var loopPlayer: CHHapticAdvancedPatternPlayer?
     private var bgTimer: DispatchSourceTimer?
-    private var limitTimer: DispatchSourceTimer?
+    private var limitTimers: [Int: DispatchSourceTimer] = [:]
+    private var capped: Set<Int> = []  // DANGER classes whose loop hit the limit, silent until ack
     private var active: [(classId: Int, pattern: [Int])] = []  // looping DANGER classes, newest last
     private var inBackground = false
     private let q = DispatchQueue(label: "soundwatch.haptics")
@@ -49,6 +52,10 @@ final class Haptics {
 
     var loopingClassIds: [Int] { q.sync { active.map(\.classId) } }
     func isLooping(_ classId: Int) -> Bool { q.sync { active.contains { $0.classId == classId } } }
+    /// Looping, or silenced by the time limit: either way a DANGER repeat must not vibrate again.
+    func isVibrationHandled(_ classId: Int) -> Bool {
+        q.sync { capped.contains(classId) || active.contains { $0.classId == classId } }
+    }
 
     func playOnce(pattern ms: [Int], level: Level) {
         guard !ms.isEmpty else { return }
@@ -72,16 +79,18 @@ final class Haptics {
         q.async { [self] in
             active.removeAll { $0.classId == classId }
             active.append((classId, ms))
-            startLimitTimer()
+            capped.remove(classId)
+            startLimitTimer(classId)
             apply()
         }
     }
 
     func stopContinuous(classId: Int) {
         q.async { [self] in
+            capped.remove(classId)
+            limitTimers.removeValue(forKey: classId)?.cancel()
             guard active.contains(where: { $0.classId == classId }) else { return }
             active.removeAll { $0.classId == classId }
-            if active.isEmpty { limitTimer?.cancel(); limitTimer = nil }
             apply()
         }
     }
@@ -89,8 +98,9 @@ final class Haptics {
     func stopAll() {
         q.async { [self] in
             active.removeAll()
-            limitTimer?.cancel()
-            limitTimer = nil
+            capped.removeAll()
+            limitTimers.values.forEach { $0.cancel() }
+            limitTimers.removeAll()
             apply()
         }
     }
@@ -144,19 +154,21 @@ final class Haptics {
         }
     }
 
-    private func startLimitTimer() {
-        limitTimer?.cancel()
-        limitTimer = nil
+    private func startLimitTimer(_ classId: Int) {
+        limitTimers.removeValue(forKey: classId)?.cancel()
         guard let limit = continuousLimit, limit > 0 else { return }
         let t = DispatchSource.makeTimerSource(queue: q)
         t.schedule(deadline: .now() + limit)
         t.setEventHandler { [weak self] in
-            self?.log?("DANGER vibration stopped after the \(Int(limit)) s limit")
-            self?.active.removeAll()
-            self?.apply()
+            guard let self else { return }
+            self.log?("DANGER vibration of class \(classId) stopped after the \(Int(limit)) s limit")
+            self.limitTimers.removeValue(forKey: classId)
+            self.active.removeAll { $0.classId == classId }
+            self.capped.insert(classId)
+            self.apply()
         }
         t.resume()
-        limitTimer = t
+        limitTimers[classId] = t
     }
 
     private static func pattern(_ ms: [Int], level: Level, gap: Double) throws -> CHHapticPattern {
