@@ -1,0 +1,8 @@
+*.xcodeproj/
+*.xcworkspace/
+SoundWatch/Info.plist
+Local.xcconfig
+build/
+DerivedData/
+xcuserdata/
+Packages/LiteRTC/TensorFlowLiteC.xcframework/

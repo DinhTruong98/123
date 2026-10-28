@@ -1,0 +1,5 @@
+// cp Local.xcconfig.example Local.xcconfig, then fill in.
+// Bundle id must be unique for your Apple ID, e.g. com.<your-name>.soundwatch
+SW_BUNDLE_ID = com.yourname.soundwatch
+// Team ID: Xcode > Settings > Accounts > (Apple ID) > Personal Team, or leave empty and pick the team in Xcode.
+SW_TEAM_ID =

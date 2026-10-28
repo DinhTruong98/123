@@ -1,0 +1,6 @@
+// Bundle id + signing team. Do not edit here: copy Local.xcconfig.example to Local.xcconfig
+// (git-ignored) and set your own values there.
+SW_BUNDLE_ID = com.example.soundwatch
+SW_TEAM_ID =
+
+#include? "Local.xcconfig"
