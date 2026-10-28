@@ -16,8 +16,8 @@ doctor:
 	$(PY) doctor
 
 data:
-	$(PY) download
-	$(PY) build-dataset
+	$(PY) download --with-fsd50k
+	$(PY) build-dataset --with-fsd50k
 
 data-quick:
 	$(PY) download --quick

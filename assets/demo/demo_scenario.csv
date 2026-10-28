@@ -1,8 +1,8 @@
 class_key,class_id,onset_s,offset_s,snr_db,source_clip
-smoke_alarm,0,2.0,5.5,10.0,smoke_alarm/esc50_5-211408-A-37.wav
+smoke_alarm,0,2.0,5.5,10.0,smoke_alarm/esc50_5-219242-A-37.wav
 car_horn,1,10.89,14.39,10.0,car_horn/us8k_fold10_28808-1-0-0.wav
 siren,2,19.78,23.28,10.0,siren/us8k_fold10_93567-8-0-14.wav
-baby_cry,3,28.67,32.17,10.0,baby_cry/esc50_5-198411-D-20.wav
+baby_cry,3,28.67,32.17,10.0,baby_cry/fsd50k_eval_332162.wav
 door_knock,4,37.56,39.22,10.0,door_knock/esc50_5-251426-B-30.wav
 dog_bark,5,44.61,48.11,10.0,dog_bark/us8k_fold10_22973-3-0-1.wav
 water_running,6,53.5,57.0,10.0,water_running/esc50_5-201664-A-18.wav

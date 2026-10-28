@@ -2,7 +2,8 @@
 
 Outputs (see docs/IMPLEMENTATION_PLAN.md WP1):
 - ``paths.WINDOWS/{train,val,test}.npz``: ``wave (N,16000) float16``, ``label (N,) int16``,
-  ``source_clip (N,) <U`` (e.g. ``esc50/1-100032-A-0.wav``, ``us8k/fold1/7061-6-0-0.wav``)
+  ``source_clip (N,) <U`` (e.g. ``esc50/1-100032-A-0.wav``, ``us8k/fold1/7061-6-0-0.wav``,
+  ``fsd50k/dev/12345.wav`` with ``--with-fsd50k``)
 - ``paths.WINDOWS/summary.json``: window counts per class per split (+ clip counts, drops)
 - ``paths.NOISE/{train,test}/*.wav``: full background clips, 16 kHz mono PCM16
 - ``paths.DATA/events/{val,test}/<class_key>/*.wav``: full alert-class clips, 16 kHz mono PCM16
@@ -25,10 +26,12 @@ from scipy.signal import resample_poly
 
 from soundwatch import paths
 from soundwatch.config import Config, load_config
-from soundwatch.data import download, label_map
+from soundwatch.data import download, fsd50k, label_map
 
 SPLITS = ("train", "val", "test")
 ESC50_FOLDS = {1: "train", 2: "train", 3: "train", 4: "val", 5: "test"}
+FSD50K_SPLITS = {"train": "train", "val": "val", "eval": "test"}  # FSD50K dev train/val, eval
+CLOCK_ALARM_MIN_FSD_TRAIN = 60  # `--clock-alarm auto`: background once FSD50K has this many smoke clips
 US8K_FOLDS = {**{f: "train" for f in range(1, 9)}, 9: "val", 10: "test"}
 SILENCE_DB = 20.0
 BG_CAP_FACTOR = 3.0
@@ -41,16 +44,18 @@ class ClipRecord:
     path: str  # absolute path of the source audio
     label: int
     split: str
+    max_windows: int | None = None  # cap (evenly spaced) after silent-window dropping
+    active_s: tuple[float, ...] | None = None  # FSD50K: start times of YAMNet patches with the event
 
 
 # ---------------------------------------------------------------- collection
 
 
-def collect_esc50(root: Path, cfg: Config) -> list[ClipRecord]:
+def collect_esc50(root: Path, cfg: Config, clock_alarm_background: bool = False) -> list[ClipRecord]:
     df = pd.read_csv(root / "meta" / "esc50.csv")
     out = []
     for r in df.itertuples(index=False):
-        lab = label_map.map_esc50(r.category, cfg)
+        lab = label_map.map_esc50(r.category, cfg, clock_alarm_background)
         if lab is None:
             continue
         out.append(
@@ -68,6 +73,24 @@ def collect_us8k(root: Path, cfg: Config) -> list[ClipRecord]:
             continue
         rel = f"fold{int(r['fold'])}/{r['slice_file_name']}"
         out.append(ClipRecord(f"us8k/{rel}", str(root / "audio" / rel), lab, US8K_FOLDS[int(r["fold"])]))
+    return out
+
+
+def collect_fsd50k(root: Path, selection: pd.DataFrame, cfg: Config, max_windows: int) -> list[ClipRecord]:
+    """Kept rows of ``raw/fsd50k/selection.csv`` (columns fname, split, fsd_split, target)."""
+    out = []
+    for r in selection.to_dict("records"):
+        rel = f"{r['split']}/{r['fname']}.wav"
+        out.append(
+            ClipRecord(
+                f"fsd50k/{rel}",
+                str(root / rel),
+                label_map.map_fsd50k(r["target"], cfg),
+                FSD50K_SPLITS[r["fsd_split"]],
+                max_windows,
+                fsd50k.active_starts(r.get("active_patches")) if "active_patches" in r else None,
+            )
+        )
     return out
 
 
@@ -103,12 +126,35 @@ def window_rms_db(w: np.ndarray) -> np.ndarray:
     return 20.0 * np.log10(rms + 1e-10)
 
 
-def drop_silent(w: np.ndarray, rel_db: float = SILENCE_DB) -> np.ndarray:
-    """Keep windows whose RMS is within ``rel_db`` of the clip's loudest window."""
+def voiced_mask(w: np.ndarray, rel_db: float = SILENCE_DB) -> np.ndarray:
+    """Windows whose RMS is within ``rel_db`` of the clip's loudest window."""
     db = window_rms_db(w)
     if db.max() <= -190.0:  # digital silence everywhere
-        return w[:0]
-    return w[db >= db.max() - rel_db]
+        return np.zeros(len(w), bool)
+    return db >= db.max() - rel_db
+
+
+def drop_silent(w: np.ndarray, rel_db: float = SILENCE_DB) -> np.ndarray:
+    """Keep windows whose RMS is within ``rel_db`` of the clip's loudest window."""
+    return w[voiced_mask(w, rel_db)]
+
+
+def active_window_mask(
+    n: int, win_s: float, hop_s: float, starts: tuple[float, ...], patch_s: float = fsd50k.PATCH_S
+) -> np.ndarray:
+    """Windows whose centre lies inside one of the active patches [start, start + patch_s]."""
+    centres = np.arange(n) * hop_s + win_s / 2
+    if not starts:
+        return np.zeros(n, bool)
+    st = np.asarray(starts)[None, :]
+    return ((centres[:, None] >= st) & (centres[:, None] <= st + patch_s)).any(axis=1)
+
+
+def cap_windows(w: np.ndarray, n: int | None) -> np.ndarray:
+    """At most ``n`` windows, evenly spaced over the clip (first and last included)."""
+    if n is None or len(w) <= n:
+        return w
+    return w[np.round(np.linspace(0, len(w) - 1, n)).astype(int)]
 
 
 @dataclass(frozen=True)
@@ -121,19 +167,22 @@ class _Task:
     save_to: str | None  # write full 16 kHz clip here (noise bank / event clips)
 
 
-def _process(t: _Task) -> tuple[ClipRecord, np.ndarray, int, str | None]:
+def _process(t: _Task) -> tuple[ClipRecord, np.ndarray, int, int, str | None]:
     try:
         x = load_audio(t.rec.path, t.sr)
     except Exception as e:  # noqa: BLE001 - report and skip unreadable clips
-        return t.rec, np.zeros((0, t.win), np.float16), 0, f"{t.rec.source_clip}: {e!r}"
+        return t.rec, np.zeros((0, t.win), np.float16), 0, 0, f"{t.rec.source_clip}: {e!r}"
     w = frame_windows(x, t.win, t.hop)
     n_all = len(w)
-    if t.is_alert:
-        w = drop_silent(w)
+    keep = voiced_mask(w) if t.is_alert else np.ones(n_all, bool)
+    n_voiced = int(keep.sum())
+    if t.rec.active_s is not None:  # FSD50K: only windows where YAMNet hears the event
+        keep &= active_window_mask(n_all, t.win / t.sr, t.hop / t.sr, t.rec.active_s)
+    w = cap_windows(w[keep], t.rec.max_windows)
     if t.save_to:
         Path(t.save_to).parent.mkdir(parents=True, exist_ok=True)
         sf.write(t.save_to, x, t.sr, subtype="PCM_16")
-    return t.rec, w.astype(np.float16), n_all - len(w), None
+    return t.rec, w.astype(np.float16), n_all - n_voiced, n_voiced - len(w), None
 
 
 # ---------------------------------------------------------------- build
@@ -198,10 +247,11 @@ def build(
     per_split: dict[str, tuple[list[np.ndarray], list[int], list[str]]] = {s: ([], [], []) for s in SPLITS}
     clips = {s: np.zeros(cfg.num_classes, int) for s in SPLITS}
     silent = {s: np.zeros(cfg.num_classes, int) for s in SPLITS}
+    capped = {s: np.zeros(cfg.num_classes, int) for s in SPLITS}
     errors: list[str] = []
 
     def consume(it) -> None:
-        for i, (rec, w, n_drop, err) in enumerate(it, 1):
+        for i, (rec, w, n_drop, n_cap, err) in enumerate(it, 1):
             if err:
                 errors.append(err)
             else:
@@ -211,6 +261,7 @@ def build(
                 srcs.extend([rec.source_clip] * len(w))
                 clips[rec.split][rec.label] += 1
                 silent[rec.split][rec.label] += n_drop
+                capped[rec.split][rec.label] += n_cap
             if verbose and i % 1000 == 0:
                 print(f"  processed {i}/{len(tasks)} clips", flush=True)
 
@@ -227,6 +278,7 @@ def build(
         "windows_before_bg_cap": {},
         "clips": {},
         "silent_windows_dropped": {},
+        "windows_filtered": {},  # FSD50K: removed by the YAMNet-activity filter or the per-clip cap
         "errors": errors,
         "seed": seed,
     }
@@ -248,6 +300,7 @@ def build(
         )
         summary["clips"][s] = dict(zip(cfg.class_keys, clips[s].tolist(), strict=True))
         summary["silent_windows_dropped"][s] = dict(zip(cfg.class_keys, silent[s].tolist(), strict=True))
+        summary["windows_filtered"][s] = dict(zip(cfg.class_keys, capped[s].tolist(), strict=True))
     with open(out_dir / "summary.json", "w", encoding="utf-8") as f:
         json.dump(summary, f, indent=2)
     if verbose:
@@ -275,6 +328,30 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--quick", action="store_true", help="ESC-50 only")
     parser.add_argument("--workers", type=int, default=4)
     parser.add_argument("--seed", type=int, default=1234)
+    parser.add_argument(
+        "--with-fsd50k",
+        action="store_true",
+        help="add the YAMNet-verified FSD50K baby_cry / smoke_alarm clips (run `download --with-fsd50k`)",
+    )
+    parser.add_argument(
+        "--clock-alarm",
+        choices=("auto", "smoke_alarm", "background"),
+        default="auto",
+        help="ESC-50 clock_alarm label: smoke_alarm proxy, background, or auto (background iff FSD50K "
+        f"gives >= {CLOCK_ALARM_MIN_FSD_TRAIN} train smoke_alarm clips)",
+    )
+    parser.add_argument(
+        "--fsd50k-max-windows", type=int, default=fsd50k.MAX_WINDOWS, help="window cap per FSD50K clip"
+    )
+
+
+def resolve_clock_alarm(mode: str, fsd_records: list[ClipRecord], cfg: Config) -> bool:
+    """True -> map ESC-50 clock_alarm to background."""
+    if mode != "auto":
+        return mode == "background"
+    smoke = label_map.key_to_id("smoke_alarm", cfg)
+    n = sum(r.label == smoke and r.split == "train" for r in fsd_records)
+    return n >= CLOCK_ALARM_MIN_FSD_TRAIN
 
 
 def main(args: argparse.Namespace) -> int:
@@ -282,16 +359,33 @@ def main(args: argparse.Namespace) -> int:
     if not download.esc50_ready():
         print("ESC-50 missing: run `python -m soundwatch download` first")
         return 1
-    records = collect_esc50(download.esc50_dir(), cfg)
+    fsd_records: list[ClipRecord] = []
+    if args.with_fsd50k:
+        try:
+            kept = fsd50k.kept_clips()
+        except FileNotFoundError as e:
+            print(e)
+            return 1
+        fsd_records = collect_fsd50k(fsd50k.fsd_dir(), kept, cfg, args.fsd50k_max_windows)
+    clock_bg = resolve_clock_alarm(args.clock_alarm, fsd_records, cfg)
+    records = collect_esc50(download.esc50_dir(), cfg, clock_alarm_background=clock_bg)
     if not args.quick:
         if not download.us8k_ready():
             print("UrbanSound8K missing: run `python -m soundwatch download` (or use --quick)")
             return 1
         records += collect_us8k(download.us8k_dir(), cfg)
+    records += fsd_records
     src = "quick: ESC-50 only" if args.quick else "ESC-50 + US8K"
-    print(f"building dataset from {len(records)} clips ({src})")
+    if fsd_records:
+        src += f" + {len(fsd_records)} FSD50K clips"
+    print(
+        f"building dataset from {len(records)} clips ({src}); "
+        f"ESC-50 clock_alarm -> {'background' if clock_bg else 'smoke_alarm'}"
+    )
     summary = build(records, cfg, workers=args.workers, seed=args.seed)
     summary["quick"] = bool(args.quick)
+    summary["with_fsd50k"] = bool(args.with_fsd50k)
+    summary["clock_alarm"] = "background" if clock_bg else "smoke_alarm"
     with open(paths.WINDOWS / "summary.json", "w", encoding="utf-8") as f:
         json.dump(summary, f, indent=2)
     missing = [k for k, v in summary["windows"]["test"].items() if v == 0]

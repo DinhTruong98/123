@@ -3,7 +3,9 @@
 - ESC-50: ``git clone --depth 1`` (zip downloads from codeload are blocked in the dev env).
 - UrbanSound8K: Zenodo record 1203745, HTTP Range resume, md5 verified, extracted,
   tarball deleted afterwards (unless ``--keep-archives``).
-- FSD50K: only with ``--with-fsd50k`` (not implemented in the PoC -> prints a notice).
+- FSD50K: only with ``--with-fsd50k``: metadata + *selected* baby-cry / smoke-alarm clips fetched
+  from the split audio zips with HTTP Range requests, then verified with YAMNet
+  (see :mod:`soundwatch.data.fsd50k`; writes ``raw/fsd50k/selection.csv``).
 """
 
 from __future__ import annotations
@@ -130,7 +132,12 @@ def download_us8k(raw: Path | None = None, keep_archive: bool = False) -> Path:
 
 def add_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--quick", action="store_true", help="ESC-50 only")
-    parser.add_argument("--with-fsd50k", action="store_true", help="also FSD50K (not implemented in PoC)")
+    parser.add_argument(
+        "--with-fsd50k",
+        action="store_true",
+        help="also FSD50K baby_cry / smoke_alarm clips (selective download + YAMNet check, ~0.3 GB)",
+    )
+    parser.add_argument("--fsd50k-rescore", action="store_true", help="recompute the FSD50K YAMNet selection")
     parser.add_argument("--keep-archives", action="store_true", help="keep the US8K tarball after extraction")
 
 
@@ -139,5 +146,7 @@ def main(args: argparse.Namespace) -> int:
     if not args.quick:
         download_us8k(keep_archive=args.keep_archives)
     if args.with_fsd50k:
-        print("[fsd50k] not implemented in the PoC (dataset too large); skipped")
+        from soundwatch.data import fsd50k
+
+        fsd50k.run(rescore=args.fsd50k_rescore)
     return 0

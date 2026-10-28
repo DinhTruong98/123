@@ -62,7 +62,7 @@ PoC gồm 4 khối chạy trên PC:
 
 - Python **3.11** (uv), **tensorflow-cpu 2.21.0 + keras 3.15.1** — đã kiểm tra: train Keras, convert full-int8 TFLite, chạy `tf.lite.Interpreter` đều OK. Version pin trong `pyproject.toml` / `uv.lock`; agent không tự thêm dependency mà không ghi chú.
 - **YAMNet**: không dùng `tensorflow_hub` (tfhub.dev bị chặn trong môi trường dev). Tải trọng số `https://storage.googleapis.com/audioset/yamnet.h5` + code model (`yamnet.py`, `params.py`, `features.py`) từ `https://raw.githubusercontent.com/tensorflow/models/master/research/audioset/yamnet/` vào `artifacts/cache/yamnet/`.
-- **ESC-50**: tải bằng `git clone --depth 1 https://github.com/karolpiczak/ESC-50` (zip qua codeload bị chặn). **UrbanSound8K**: Zenodo record 1203745. **FSD50K**: tắt mặc định (quá lớn).
+- **ESC-50**: tải bằng `git clone --depth 1 https://github.com/karolpiczak/ESC-50` (zip qua codeload bị chặn). **UrbanSound8K**: Zenodo record 1203745. **FSD50K**: chỉ tải chọn lọc (HTTP Range trên split-zip, ~170 MB) các clip baby_cry / smoke_alarm, lọc theo nhãn + tag Freesound + điểm YAMNet (`download --with-fsd50k`, `build-dataset --with-fsd50k`). Thêm: smoke_alarm 340/67/90, baby_cry 604/101/195 cửa sổ (train/val/test). FSD50K rất ít chuông báo khói thật nên ESC-50 `clock_alarm` vẫn được giữ làm smoke_alarm.
 - `sounddevice` import lazy trong `MicSource` (container dev không có PortAudio; trên máy thật thì có).
 - Mọi CLI command là một module có `add_arguments(parser)` và `main(args) -> int`, đăng ký trong `src/soundwatch/__main__.py`. Module mỗi WP đã có stub; agent chỉ thay stub của mình.
 - Đường dẫn chuẩn: `src/soundwatch/paths.py`. Config: `soundwatch.config.load_config()`.

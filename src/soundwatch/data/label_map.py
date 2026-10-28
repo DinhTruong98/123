@@ -6,6 +6,11 @@ Class names verified against ``ESC-50/meta/esc50.csv`` (column ``category``) and
 Target indices follow ``Config.class_keys`` (background is always last).
 A mapping function returns ``None`` for source classes that are dropped (US8K ``gun_shot``).
 ESC-50 ``cat`` is deliberately kept in background so the model learns cat != baby.
+
+ESC-50 ``clock_alarm`` is a *proxy* for smoke_alarm (default). Once enough real smoke-alarm clips
+exist (FSD50K, see :mod:`soundwatch.data.fsd50k`) it can be sent to background instead with
+``clock_alarm_background=True`` (``build-dataset --clock-alarm background``).
+FSD50K clips are pre-selected per target class, so :func:`map_fsd50k` maps a target key directly.
 """
 
 from __future__ import annotations
@@ -68,9 +73,14 @@ def key_to_id(key: str, cfg: Config | None = None) -> int:
     return _config(cfg).class_keys.index(key)
 
 
-def esc50_key(category: str) -> str:
+FSD50K_TARGETS: tuple[str, ...] = ("baby_cry", "smoke_alarm")
+
+
+def esc50_key(category: str, clock_alarm_background: bool = False) -> str:
     if category not in ESC50_CATEGORIES:
         raise KeyError(f"unknown ESC-50 category: {category!r}")
+    if clock_alarm_background and category == "clock_alarm":
+        return BACKGROUND
     return ESC50_TO_KEY.get(category, BACKGROUND)
 
 
@@ -80,9 +90,16 @@ def us8k_key(cls: str) -> str | None:
     return US8K_TO_KEY[cls]
 
 
-def map_esc50(category: str, cfg: Config | None = None) -> int | None:
+def map_esc50(category: str, cfg: Config | None = None, clock_alarm_background: bool = False) -> int | None:
     """ESC-50 ``category`` -> target class id (never None: unmapped -> background)."""
-    return key_to_id(esc50_key(category), cfg)
+    return key_to_id(esc50_key(category, clock_alarm_background), cfg)
+
+
+def map_fsd50k(target: str, cfg: Config | None = None) -> int:
+    """FSD50K selection target (``baby_cry`` / ``smoke_alarm``) -> target class id."""
+    if target not in FSD50K_TARGETS:
+        raise KeyError(f"unknown FSD50K target: {target!r}")
+    return key_to_id(target, cfg)
 
 
 def map_us8k(cls: str, cfg: Config | None = None) -> int | None:
@@ -96,6 +113,8 @@ def map_label(dataset: str, name: str, cfg: Config | None = None) -> int | None:
         return map_esc50(name, cfg)
     if dataset == "us8k":
         return map_us8k(name, cfg)
+    if dataset == "fsd50k":
+        return map_fsd50k(name, cfg)
     raise KeyError(f"unknown dataset {dataset!r}")
 
 
