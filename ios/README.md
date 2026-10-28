@@ -144,10 +144,19 @@ Trên iPhone 12 (iOS 27.0.1, bản Release, cài qua Wi-Fi):
 | Mục | Kết quả |
 |---|---|
 | Quyền micro | Hiện hộp thoại tiếng Việt; sau khi cho phép thì nghe liên tục (RMS, gate cập nhật mỗi 0.5 s) |
-| "Phát file demo" (real-time, `-demo`) | 12/12 sự kiện trùng Python: 6/7 âm, cùng thời điểm, kể cả các lần nhắc DANGER |
+| "Phát file demo" (real-time, `-demo`) | 12/12 sự kiện trùng Python: 6/7 âm, cùng thời điểm, kể cả các lần nhắc DANGER ; có luật 4b: DANGER ở 3.0 / 12.0 / 22.0 s, đúng `demo_expected_events.json` |
 | Feature + suy luận / hop (Debug panel) | ~0.9 ms + ~3.2 ms, tối đa 4.9 ms |
 
 Log cảnh báo (`SW_ALERT ...`) xem bằng `xcrun devicectl device process launch --console --device <UDID> <SW_BUNDLE_ID>`.
+
+Thử tay luật 4b trên máy (chưa làm, cần người phát âm thật):
+
+- [ ] Còi cấp cứu / còi xe **vụt qua 1–2 s** (xe thật hoặc clip từ loa máy khác, cách 1–3 m): ghi âm gì, dài bao nhiêu,
+  có báo không, độ trễ nhìn thấy. Bật bảng Debug: cảnh báo phải hiện ngay hop đầu tiên thanh `siren`/`car_horn` chạm
+  đỉnh (1.00), không cần 2 hop.
+- [ ] Nghe nền 15–30 phút (trong nhà, rồi ngoài đường), không có còi thật: đếm số lần báo nhầm DANGER (tab Lịch sử giữ 10
+  dòng; hoặc đếm dòng `SW_ALERT` không có `repeat` qua `devicectl … --console`). Số đo trên máy trước khi có luật: chưa
+  có. Trên kịch bản tổng hợp, luật tăng báo nhầm khoảng +8–9 lần/giờ (`docs/danger_fast_path.md`).
 
 ## Dùng app
 
