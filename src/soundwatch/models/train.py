@@ -41,16 +41,22 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
                    help="knowledge distillation from cached teacher logits (default)")
     g.add_argument("--no-distill", dest="distill", action="store_false")
     parser.add_argument("--tag", default=None, help="run name (default: distill / nodistill)")
-    parser.add_argument("--width", type=int, default=64)
+    parser.add_argument("--width", type=int, default=96, help="DS-CNN stem width")
     parser.add_argument("--blocks", type=int, default=4)
     parser.add_argument("--dropout", type=float, default=0.3)
-    parser.add_argument("--block-widths", default=None,
+    parser.add_argument("--arch", choices=["dscnn", "mbv2"], default="dscnn",
+                        help="dscnn (DS-CNN, optionally pyramid) or mbv2 (models/mbnet.py)")
+    parser.add_argument("--width-mult", type=float, default=1.0, help="mbv2 width multiplier")
+    parser.add_argument("--mixup-alpha", type=float, default=0.0, help="mixup Beta(a, a); 0 = off")
+    parser.add_argument("--p-mixup", type=float, default=0.5, help="fraction of batches mixed")
+    parser.add_argument("--block-widths", default="96,192,192,192,192",
                         help="comma list, one per block (overrides --width/--blocks), e.g. 64,128,128,128")
-    parser.add_argument("--block-strides", default=None, help="comma list, e.g. 1,2,1,1")
-    parser.add_argument("--epochs", type=int, default=None, help="default 60 (1 with --quick)")
+    parser.add_argument("--block-strides", default="1,2,1,1,1",
+                        help="comma list; --block-widths '' --block-strides '' = plain plan DS-CNN")
+    parser.add_argument("--epochs", type=int, default=None, help="default 45 (1 with --quick)")
     parser.add_argument("--batch-size", type=int, default=128)
     parser.add_argument("--lr", type=float, default=1e-3)
-    parser.add_argument("--patience", type=int, default=10)
+    parser.add_argument("--patience", type=int, default=15)
     parser.add_argument("--alpha", type=float, default=0.5)
     parser.add_argument("--temperature", type=float, default=4.0)
     parser.add_argument("--aug-copies", type=int, default=2, help="offline augmented copies of train")
@@ -59,11 +65,11 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--p-specaug", type=float, default=0.8)
     parser.add_argument("--max-per-class", type=int, default=3000,
                         help="per-epoch cap of windows per class (random subset each epoch; 0 = no cap)")
-    parser.add_argument("--max-background", type=int, default=None,
+    parser.add_argument("--max-background", type=int, default=6000,
                         help="per-epoch cap for the background class (default: --max-per-class)")
-    parser.add_argument("--label-smoothing", type=float, default=0.0)
+    parser.add_argument("--label-smoothing", type=float, default=0.1)
     parser.add_argument("--max-class-weight", type=float, default=4.0)
-    parser.add_argument("--cw-power", type=float, default=0.5,
+    parser.add_argument("--cw-power", type=float, default=0.0,
                         help="class weight = inverse frequency ** power (0 = off, 1 = full)")
     parser.add_argument("--seed", type=int, default=1234)
     parser.add_argument("--threads", type=int, default=None)
@@ -131,11 +137,13 @@ class StudentSequence(_PyDatasetBase):
 
     def __init__(self, versions: list[np.ndarray], targets: np.ndarray, weights: np.ndarray, stats: dict,
                  batch_size: int, seed: int, p_specaug: float = 0.8, labels: np.ndarray | None = None,
-                 max_per_class: int = 0, caps: dict[int, int] | None = None):  # fmt: skip
+                 max_per_class: int = 0, caps: dict[int, int] | None = None, mixup_alpha: float = 0.0,
+                 p_mixup: float = 0.5):  # fmt: skip
         super().__init__(workers=1, use_multiprocessing=False)
         self.versions, self.targets, self.weights = versions, targets, weights
         self.stats, self.batch_size, self.seed, self.p_specaug = stats, batch_size, seed, p_specaug
         self.labels, self.max_per_class, self.caps = labels, max_per_class, caps or {}
+        self.mixup_alpha, self.p_mixup = mixup_alpha, p_mixup
         self.epoch = 0
         self._shuffle()
 
@@ -174,7 +182,15 @@ class StudentSequence(_PyDatasetBase):
         rng = np.random.default_rng((self.seed, self.epoch, idx))
         for i in np.nonzero(rng.random(len(sel)) < self.p_specaug)[0]:
             x[i] = spec_augment(x[i], rng, fill=0.0)
-        return x[..., None], self.targets[sel], self.weights[sel]
+        t, w = self.targets[sel], self.weights[sel]
+        if self.mixup_alpha > 0 and len(sel) > 1 and rng.random() < self.p_mixup:
+            # mixup: convex combination of examples, one-hot targets and teacher logits alike
+            lam = rng.beta(self.mixup_alpha, self.mixup_alpha, size=len(sel)).astype(np.float32)
+            perm = rng.permutation(len(sel))
+            x = lam[:, None, None] * x + (1 - lam[:, None, None]) * x[perm]
+            t = lam[:, None] * t + (1 - lam[:, None]) * t[perm]
+            w = lam * w + (1 - lam) * w[perm]
+        return x[..., None], t, w
 
     def on_epoch_end(self) -> None:
         self.epoch += 1
@@ -230,6 +246,16 @@ def _subsample(d: dict, n: int, seed: int) -> dict:
     return {k: v[idx] for k, v in d.items()}
 
 
+def build_student(args: argparse.Namespace, cfg: Config, arch: dict):
+    from soundwatch.models.dscnn import build_dscnn
+    from soundwatch.models.mbnet import build_mbv2
+
+    shape = (cfg.audio.n_frames, cfg.audio.n_mels, 1)
+    if getattr(args, "arch", "dscnn") == "mbv2":
+        return build_mbv2(shape, cfg.num_classes, args.width_mult, dropout=args.dropout)
+    return build_dscnn(shape, cfg.num_classes, args.width, args.blocks, args.dropout, **arch)
+
+
 def _int_list(s: str | None) -> list[int] | None:
     return [int(v) for v in s.split(",")] if s else None
 
@@ -237,14 +263,14 @@ def _int_list(s: str | None) -> list[int] | None:
 def run(args: argparse.Namespace) -> dict:
     from soundwatch.audio.features import compute_feature_stats, normalize, save_stats
     from soundwatch.models.distill import kd_loss, pack_targets
-    from soundwatch.models.dscnn import build_dscnn, count_macs, count_params
+    from soundwatch.models.dscnn import count_macs, count_params
 
     cfg = load_config(args.config)
     quick = bool(args.quick)
     tag = args.tag or ("distill" if args.distill else "nodistill")
     if quick and not tag.endswith("quick"):
         tag += "_quick"
-    epochs = args.epochs or (1 if quick else 60)
+    epochs = args.epochs or (1 if quick else 45)
     common.setup_tf(args.threads, seed=args.seed)
     t_start = time.time()
 
@@ -291,12 +317,12 @@ def run(args: argparse.Namespace) -> dict:
     cw = common.class_weights(np.repeat(np.arange(C), capped), C, clip=(0.25, args.max_class_weight),
                               power=args.cw_power)
     seq = StudentSequence([feats["train"], *aug], targets, cw[y_tr], stats, args.batch_size, args.seed,
-                          args.p_specaug, labels=y_tr, max_per_class=args.max_per_class, caps=caps)
+                          args.p_specaug, labels=y_tr, max_per_class=args.max_per_class, caps=caps,
+                          mixup_alpha=args.mixup_alpha, p_mixup=args.p_mixup)
     x_val = normalize(feats["val"], stats)[..., None]
     x_test = normalize(feats["test"], stats)[..., None]
 
-    model = build_dscnn((cfg.audio.n_frames, cfg.audio.n_mels, 1), C, args.width, args.blocks, args.dropout,
-                        **arch)
+    model = build_student(args, cfg, arch)
     sched = keras.optimizers.schedules.CosineDecay(args.lr, decay_steps=len(seq) * epochs, alpha=0.01)
     alpha = args.alpha if args.distill else 1.0
     model.compile(optimizer=keras.optimizers.Adam(sched), loss=kd_loss(C, alpha, args.temperature,
@@ -315,8 +341,7 @@ def run(args: argparse.Namespace) -> dict:
     mon.restore_best(model)
 
     # fresh, uncompiled copy (the compiled one references the custom KD loss)
-    clean = build_dscnn((cfg.audio.n_frames, cfg.audio.n_mels, 1), C, args.width, args.blocks, args.dropout,
-                        **arch)
+    clean = build_student(args, cfg, arch)
     clean.set_weights(model.get_weights())
     paths.MODELS.mkdir(parents=True, exist_ok=True)
     model_path = paths.MODELS / f"student_{tag}.keras"
@@ -325,7 +350,8 @@ def run(args: argparse.Namespace) -> dict:
     metrics: dict = {
         "tag": tag, "distill": bool(args.distill), "model_path": str(model_path.relative_to(paths.ROOT))
         if model_path.is_relative_to(paths.ROOT) else str(model_path),
-        "width": args.width, "blocks": args.blocks, "arch": arch,
+        "width": args.width, "blocks": args.blocks,
+        "arch": {"type": args.arch, "width_mult": args.width_mult} | arch,
         "params": count_params(model), "macs": count_macs(model),
         "best_epoch": mon.best_epoch, "epochs_run": mon.epochs_run, "best_val_macro_f1": mon.best_f1,
         "feature_time_s": round(t_feat, 1), "train_time_s": round(t_train, 1),

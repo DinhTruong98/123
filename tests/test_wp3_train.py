@@ -11,6 +11,8 @@ pytest.importorskip("keras")
 
 from soundwatch import paths  # noqa: E402
 
+TINY = ["--block-widths", "8", "--block-strides", "1", "--width", "8", "--batch-size", "16"]
+
 
 def _make_split(rng: np.random.Generator, n: int, split: str) -> dict:
     t = np.arange(16000) / 16000.0
@@ -47,7 +49,7 @@ def _args(argv: list[str]) -> argparse.Namespace:
 def test_train_student_quick_nodistill(tiny_env):
     from soundwatch.models import train
 
-    m = train.run(_args(["--quick", "--no-distill", "--width", "8", "--blocks", "1", "--batch-size", "16"]))
+    m = train.run(_args(["--quick", "--no-distill", *TINY]))
     assert m["epochs_run"] == 1
     assert (tiny_env / "models" / "student_nodistill_quick.keras").exists()
     assert (tiny_env / "models" / "student_nodistill_quick_metrics.json").exists()
@@ -64,6 +66,13 @@ def test_train_student_quick_distill(tiny_env):
 
     np.save(tiny_env / "cache" / "teacher_logits_train.npy", logits)
     common.mark_cache(tiny_env / "cache" / "teacher_logits_train.npy", "train", len(logits))
-    m = train.run(_args(["--quick", "--distill", "--width", "8", "--blocks", "1", "--batch-size", "16"]))
+    m = train.run(_args(["--quick", "--distill", *TINY]))
     assert m["distill"] is True
     assert (tiny_env / "models" / "student_distill_quick.keras").exists()
+
+
+def test_train_student_quick_mixup(tiny_env):
+    from soundwatch.models import train
+
+    m = train.run(_args(["--quick", "--no-distill", "--mixup-alpha", "0.4", "--p-mixup", "1.0", *TINY]))
+    assert m["epochs_run"] == 1

@@ -60,3 +60,14 @@ def test_teacher_head_shapes():
     m = build_head(8)
     assert m.input_shape == (None, 1024)
     assert m.output_shape == (None, 8)
+
+
+def test_dscnn_pyramid_variant_macs():
+    m = build_dscnn(block_widths=[64, 128, 128, 128], block_strides=[1, 2, 1, 1])
+    assert m.output_shape == (None, 8)
+    conv0 = 25 * 20 * 64 * 40
+    b1 = 25 * 20 * 64 * 9 + 25 * 20 * 64 * 64
+    b2 = 13 * 10 * 64 * 9 + 13 * 10 * 64 * 128  # stride-2 depthwise -> 13x10
+    b34 = 2 * (13 * 10 * 128 * 9 + 13 * 10 * 128 * 128)
+    assert count_macs(m) == conv0 + b1 + b2 + b34 + 128 * 8
+    assert count_macs(m) <= 10_000_000

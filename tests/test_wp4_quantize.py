@@ -70,3 +70,15 @@ def test_c_string_roundtrip():
     decoded = bytes(lit[1:-1], "ascii").decode("unicode_escape").encode("latin-1").decode("utf-8")
     assert decoded == s
     assert export_c.ascii_fold("Đèn đỏ Còi cấp cứu") == "Den do Coi cap cuu"
+
+
+def test_mbv2_int8_ops_are_tflm(tmp_path):
+    from soundwatch.models.dscnn import count_macs
+    from soundwatch.models.mbnet import build_mbv2
+
+    m = build_mbv2(width_mult=0.25, blocks=((1, 8, 1, 1), (2, 8, 2, 2)), head=16)
+    assert m.output_shape == (None, 8) and count_macs(m) > 0
+    rep = np.random.default_rng(0).normal(size=(10, 49, 40, 1)).astype(np.float32)
+    info = quantize.inspect_tflite(quantize.convert(with_softmax(m), rep))
+    assert info["unsupported_ops"] == []
+    assert "ADD" in info["op_set"]
