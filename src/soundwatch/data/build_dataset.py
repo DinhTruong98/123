@@ -94,6 +94,35 @@ def collect_fsd50k(root: Path, selection: pd.DataFrame, cfg: Config, max_windows
     return out
 
 
+# windows kept per custom clip (evenly spaced): VN clips are 5-15 s, so this keeps VN data at roughly a
+# quarter to a third of each alert class instead of swamping the original data (docs/vn_siren_finetune.md)
+CUSTOM_MAX_WINDOWS = {"background": 4, "car_horn": 4}
+CUSTOM_MAX_WINDOWS_DEFAULT = 6
+
+
+def collect_custom(manifest: Path, cfg: Config, skip_low: bool = True) -> list[ClipRecord]:
+    """Clips listed in a custom-data ``manifest.csv`` (e.g. project/vn-sound-data): columns ``file`` (relative
+    to the manifest), ``class_key``, ``split`` (already grouped by channel), ``label_confidence``.
+    ``source_clip`` is ``vn/<file>`` so the VN part of every split can be evaluated on its own."""
+    df = pd.read_csv(manifest)
+    out = []
+    for r in df.to_dict("records"):
+        if r["class_key"] not in cfg.class_keys:
+            continue
+        if skip_low and r.get("label_confidence") == "low":
+            continue
+        out.append(
+            ClipRecord(
+                f"vn/{r['file']}",
+                str(manifest.parent / r["file"]),
+                label_map.key_to_id(r["class_key"], cfg),
+                r["split"],
+                CUSTOM_MAX_WINDOWS.get(r["class_key"], CUSTOM_MAX_WINDOWS_DEFAULT),
+            )
+        )
+    return out
+
+
 # ---------------------------------------------------------------- audio
 
 
@@ -343,6 +372,15 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--fsd50k-max-windows", type=int, default=fsd50k.MAX_WINDOWS, help="window cap per FSD50K clip"
     )
+    parser.add_argument(
+        "--custom-manifest",
+        default=None,
+        help="also add clips from a custom manifest.csv (e.g. ../vn-sound-data/manifest.csv); "
+        "its split column is used",
+    )
+    parser.add_argument(
+        "--custom-keep-low", action="store_true", help="keep custom clips with label_confidence=low"
+    )
 
 
 def resolve_clock_alarm(mode: str, fsd_records: list[ClipRecord], cfg: Config) -> bool:
@@ -375,9 +413,15 @@ def main(args: argparse.Namespace) -> int:
             return 1
         records += collect_us8k(download.us8k_dir(), cfg)
     records += fsd_records
+    custom: list[ClipRecord] = []
+    if args.custom_manifest:
+        custom = collect_custom(Path(args.custom_manifest).resolve(), cfg, skip_low=not args.custom_keep_low)
+        records += custom
     src = "quick: ESC-50 only" if args.quick else "ESC-50 + US8K"
     if fsd_records:
         src += f" + {len(fsd_records)} FSD50K clips"
+    if custom:
+        src += f" + {len(custom)} custom clips"
     print(
         f"building dataset from {len(records)} clips ({src}); "
         f"ESC-50 clock_alarm -> {'background' if clock_bg else 'smoke_alarm'}"
@@ -386,6 +430,8 @@ def main(args: argparse.Namespace) -> int:
     summary["quick"] = bool(args.quick)
     summary["with_fsd50k"] = bool(args.with_fsd50k)
     summary["clock_alarm"] = "background" if clock_bg else "smoke_alarm"
+    summary["custom_manifest"] = str(Path(args.custom_manifest).resolve()) if args.custom_manifest else None
+    summary["custom_clips"] = len(custom)
     with open(paths.WINDOWS / "summary.json", "w", encoding="utf-8") as f:
         json.dump(summary, f, indent=2)
     missing = [k for k, v in summary["windows"]["test"].items() if v == 0]

@@ -28,6 +28,7 @@ COMMANDS: dict[str, tuple[str, str]] = {
     "tune": ("soundwatch.eval.tune", "tune post-processing (smoothing, k-of-n, thresholds) on val scenarios"),
     "fa-analysis": ("soundwatch.eval.fa_analysis", "trace background false alarms to source clips + YAMNet"),
     "eval-fast-path": ("soundwatch.eval.fast_path", "before/after metrics of the DANGER fast path"),
+    "eval-vn": ("soundwatch.eval.vn", "compare int8 models on custom VN windows vs original data"),
     "benchmark": ("soundwatch.eval.benchmark", "model size / MACs / latency benchmark"),
     "report": ("soundwatch.eval.report", "assemble artifacts/reports/report.md"),
     "run": ("soundwatch.engine.run", "run real-time engine (+ watch simulator UI)"),
