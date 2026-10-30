@@ -12,6 +12,7 @@ và mẫu rung:
 
 Bản PoC chạy **hoàn toàn trên máy tính**: pipeline train (YAMNet teacher → DS-CNN student, distill, int8), engine
 real-time dùng **đúng file `.tflite` int8** sẽ nạp xuống MCU, và cửa sổ pygame mô phỏng mặt đồng hồ tròn 240×240.
+Cùng model đó còn chạy trên **iPhone thật** qua app SwiftUI trong [`ios/`](ios/README.md).
 Phần cứng đích: **ESP32-S3 có PSRAM** + TFLite Micro / ESP-NN. Kế hoạch chi tiết, contract và trạng thái:
 [docs/IMPLEMENTATION_PLAN.md](docs/IMPLEMENTATION_PLAN.md).
 
@@ -52,16 +53,16 @@ Kết quả `make demo-headless` (model có sẵn, config hiện tại) so với
 
 | Lớp | Âm thanh (s) | Cảnh báo đầu tiên (s) | Độ trễ (s) |
 |---|---|---|---|
-| smoke_alarm – Báo cháy | 2.00–5.50 | 3.5 | 1.50 |
-| car_horn – Còi xe | 10.89–14.39 | 12.5 | 1.61 |
-| siren – Còi cấp cứu | 19.78–23.28 | 22.5 | 2.72 |
+| smoke_alarm – Báo cháy | 2.00–5.50 | 3.0 | 1.00 |
+| car_horn – Còi xe | 10.89–14.39 | 12.0 | 1.11 |
+| siren – Còi cấp cứu | 19.78–23.28 | 22.0 | 2.22 |
 | baby_cry – Em bé khóc | 28.67–32.17 | 30.5 | 1.83 |
 | door_knock – Gõ cửa | 37.56–39.22 | 39.0 | 1.44 |
 | dog_bark – Chó sủa | 44.61–48.11 | **bỏ sót** | – |
 | water_running – Nước chảy | 53.50–57.00 | 56.0 | 2.50 |
 
-6/7 sự kiện được phát hiện, không báo nhầm. Các lớp DANGER còn được nhắc lại mỗi 5 s (`[repeat]`) tới khi xác
-nhận. Chạy real-time có UI cho cùng kết quả, UI đạt 30 FPS (giới hạn của vòng lặp; khả năng ~160 FPS).
+6/7 sự kiện được phát hiện, không báo nhầm. Nhờ luật hai tầng (mục "Hậu xử lý"), ba lớp DANGER báo sớm hơn 0.5 s so
+với chỉ dùng k-of-n. Các lớp DANGER còn được nhắc lại mỗi 5 s (`[repeat]`) tới khi xác nhận. Chạy real-time có UI cho cùng kết quả, UI đạt 30 FPS (giới hạn của vòng lặp; khả năng ~160 FPS).
 (`t` của cảnh báo là thời điểm **cuối** cửa sổ 1 s đang phân tích.)
 
 ## Toàn bộ pipeline
@@ -86,9 +87,10 @@ báo cáo tổng hợp `artifacts/reports/report.md`.
 | `download`, `build-dataset` | tải dataset; cắt cửa sổ 1 s, chia split, noise bank (`--quick`, `--with-fsd50k`) |
 | `train-teacher`, `train-student` | YAMNet + head; DS-CNN student (`--distill` / `--no-distill`) |
 | `quantize`, `export`, `export-icons`, `export-golden` | int8 TFLite; `model_data.cc`, `feature_params.h`, `labels.h`; `icons.h`; golden vectors |
-| `make-scenarios` | sinh kịch bản streaming (`--split test|val`, `--out`, `--no-demo`) |
+| `make-scenarios` | sinh kịch bản streaming (`--split test|val`, `--out`, `--no-demo`; sự kiện ngắn: `--classes danger --event-lengths 0.5,1,1.5`) |
 | `eval`, `eval-streaming` | đánh giá offline (F1, confusion matrix); streaming (recall sự kiện, báo nhầm/giờ, độ trễ, quét ngưỡng) |
 | `tune` | quét smooth_n × k_of_n × bg_margin × ngưỡng từng lớp trên kịch bản **val** |
+| `eval-fast-path` | so sánh trước/sau luật hai tầng DANGER trên test, val và kịch bản sự kiện ngắn → `artifacts/reports/fast_path.json` |
 | `fa-analysis` | truy báo nhầm trên nền về clip gốc + chấm bằng YAMNet |
 | `benchmark`, `report` | kích thước / MACs / thời gian / ước tính MCU; gom `report.md` (`--measure-ui-fps`) |
 | `run` | engine real-time + UI (`--source mic|file.wav`, `--headless`, `--fast`, `--dummy`, `--record-gif`, `--ui-stats`) |
@@ -99,7 +101,8 @@ báo cáo tổng hợp `artifacts/reports/report.md`.
 ```
 config/soundwatch.yaml     # MỌI tham số: audio/feature, hậu xử lý, model, UI, lớp (nhãn, icon, màu, rung, ngưỡng)
 assets/                    # icons (Material Icons), font Be Vietnam Pro, model int8 có sẵn, kịch bản demo
-docs/                      # kế hoạch triển khai + ảnh cho README
+docs/                      # kế hoạch triển khai, số liệu luật hai tầng, kế hoạch còi VN, ảnh cho README
+ios/                       # app iPhone (SwiftUI + LiteRT C), xem ios/README.md
 src/soundwatch/
   audio/   features.py (log-mel numpy thuần), sources.py (mic/file/array), ringbuffer.py
   data/    download, label_map, build_dataset, augment, fsd50k, scenarios
@@ -122,16 +125,25 @@ Chi tiết và đối chiếu mục tiêu: `artifacts/reports/report.md` (sinh b
 | Recall offline smoke_alarm / car_horn / siren | 0.90 / 0.73 / 0.56 | ≥ 0.85 |
 | Sụt float → int8 | +0.08 điểm % | ≤ 2 |
 | Model int8 / tensor arena / MACs | 208 KB / ~117 KB / 24.5 M | ≤ 500 KB / 512 KB / 50 M (ESP32-S3) |
-| Streaming: recall sự kiện (tổng / DANGER TB) | 0.40 / 0.54 (SNR 20 dB: 0.74, 0 dB: 0.21) | – |
-| Báo nhầm / giờ (chỉ âm nền) | 23 | ≤ 2 |
-| Độ trễ onset → cảnh báo (median / p90) | 1.43 s / 3.2 s | ≤ 1.5 s |
+| Streaming: recall sự kiện (tổng / DANGER TB) | 0.42 / 0.59 | – |
+| Sự kiện DANGER ngắn 0.5–1.5 s: recall / trễ median | 0.38 / 0.81 s | – |
+| Báo nhầm / giờ (chỉ âm nền) | 32 (23 nếu tắt luật hai tầng) | ≤ 2 |
+| Độ trễ onset → cảnh báo (median / p90) | 1.25 s / 3.0 s | ≤ 1.5 s |
 | Feature + suy luận trên PC | ~0.5 ms / cửa sổ | ≤ 20 ms |
 | UI | 30 FPS | ≥ 30 |
 | Ước tính ESP32-S3 240 MHz + ESP-NN | ~51–102 ms / suy luận | – |
 
-Hậu xử lý (`config/soundwatch.yaml`) được chọn bằng `tune` trên kịch bản **val**, không dùng test: smooth_n 1,
-k_of_n 2/2 (2 hop liên tiếp trên ngưỡng), ngưỡng 0.90–0.99. Muốn trễ median ≤ 1.5 s thì không cấu hình nào đạt
-≤ 2 hay ≤ 5 báo nhầm/giờ trên val, nên đã chọn ngân sách 10/giờ. Trên test đo được 23/giờ.
+### Hậu xử lý
+
+Tham số trong `config/soundwatch.yaml` được chọn trên kịch bản **val**, không dùng test:
+
+- `tune`: smooth_n 1, k_of_n 2/2 (2 hop liên tiếp trên ngưỡng), ngưỡng 0.90–0.99. Muốn trễ median ≤ 1.5 s thì không
+  cấu hình nào đạt ≤ 2 hay ≤ 5 báo nhầm/giờ trên val, nên đã chọn ngân sách 10/giờ.
+- **Luật hai tầng cho DANGER** (`danger_fast_threshold: 0.99609375`, quy tắc 4b trong `engine/postprocess.py`): lớp
+  DANGER báo ngay ở **một** hop có xác suất bão hoà 255/256, không chờ đủ 2 hop. Lý do: xe cấp cứu chạy vụt qua chỉ
+  kêu khoảng 1 s. Trên val: recall DANGER 0.55 → 0.62, sự kiện DANGER ngắn 0.32 → 0.50, trễ median của siren 1.71 →
+  1.04 s; đổi lại báo nhầm trên nền 10 → 18/giờ (test 23 → 32/giờ). Đặt `null` để tắt. Số liệu đầy đủ:
+  [docs/danger_fast_path.md](docs/danger_fast_path.md).
 
 ![confusion matrix student int8](docs/images/confusion_student_int8.png)
 
@@ -161,6 +173,16 @@ k_of_n 2/2 (2 hop liên tiếp trên ngưỡng), ngưỡng 0.90–0.99. Muốn t
 | Mô phỏng rung | motor ERM/LRA qua DRV2605 hoặc GPIO + transistor |
 | Thread + `queue.Queue` | FreeRTOS task + queue |
 
+## App iPhone
+
+`ios/` là app SwiftUI chạy đúng `student_int8.tflite` trên micro iPhone (LiteRT C API, feature bằng Accelerate),
+port nguyên PostProcessor (kể cả luật hai tầng) và đọc tham số từ `ios/SoundWatch/Resources/soundwatch_config.json`.
+Khi đổi config hoặc model ở phía Python, chạy lại `uv run python ios/scripts/export_ios_assets.py` để cập nhật tài
+nguyên của app. Build, cài bằng Apple ID miễn phí (USB hoặc Wi-Fi) và XCTest: xem [ios/README.md](ios/README.md).
+
+Đã chạy trên iPhone 12 (Release): feature + suy luận khoảng 4 ms mỗi hop. "Phát file demo" cho 12/12 cảnh báo trùng
+bản Python (6/7 âm, cùng thời điểm).
+
 ## Thu dữ liệu thật (giảm lệch miền)
 
 ```bash
@@ -170,17 +192,21 @@ uv run python -m soundwatch record --class background --seconds 10 --count 20
 
 Clip được lưu ở `artifacts/data/custom/<lớp>/<YYYYmmdd-HHMMSS>.wav` (16 kHz mono). `build-dataset` chưa đọc thư
 mục này. Cách dùng dự kiến: cắt cửa sổ 1 s như các clip khác rồi thêm vào `train.npz`, giữ lại vài bản ghi mỗi lớp
-làm tập test "micro thật". Sau đó fine-tune vài epoch từ `student_float.keras` với learning rate nhỏ và quantize lại.
+làm tập test "micro thật". Sau đó fine-tune vài epoch từ `student_distill.keras` với learning rate nhỏ và quantize
+lại. Kế hoạch cụ thể cho còi xe ưu tiên Việt Nam (lượng dữ liệu, chia tập theo buổi thu, chế độ thu clip trên
+iPhone): [docs/vn_siren_finetune.md](docs/vn_siren_finetune.md).
 
 ## Hạn chế
 
 - `siren` yếu nhất (recall offline 0.56) và gây nhiều báo nhầm nhất. Model nhầm các âm có cao độ ổn định (nhạc đường
   phố, máy khoan, điều hoà, động cơ) thành còi. `fa-analysis` với YAMNet cho thấy chỉ ~6 % báo nhầm là do nhiễu
   nhãn (nền thật sự có còi/chó). Phần còn lại là lỗi của model.
-- Model int8 quá tự tin (xác suất bão hoà ở 0.996), nên chỉnh ngưỡng không giảm được báo nhầm về mức 2/giờ.
+- Model int8 quá tự tin (xác suất bão hoà ở 0.996), nên chỉnh ngưỡng không giảm được báo nhầm về mức 2/giờ. Luật
+  hai tầng làm báo nhầm tăng thêm khoảng 8–9 lần/giờ.
+- Model chỉ học còi nước ngoài, nên còi xe ưu tiên Việt Nam có thể bị bỏ sót (xem `docs/vn_siren_finetune.md`).
 - `smoke_alarm` một phần vẫn dùng proxy ESC-50 `clock_alarm`. FSD50K chỉ được tải chọn lọc (baby_cry, smoke_alarm).
 - Kịch bản streaming là âm tổng hợp, chỉ ~1 giờ nền test, nên số báo nhầm/giờ có sai số lớn.
-- Chưa đo lệch miền với micro thật, vì container phát triển không có micro.
+- App đã chạy micro thật trên iPhone 12, nhưng chưa đo định lượng lệch miền (bỏ sót / báo nhầm với âm thật).
 - Softmax single-label: không xử lý nhiều âm cùng lúc.
 
 ## Giấy phép
