@@ -45,8 +45,9 @@ Rules (evaluated once per hop, i.e. per `update(probs, t_audio)` call):
 9b. (vn-v3, opt-in) A mode may override how a class is *shown* (`label`, `icon`): events of that
    class carry `AlertEvent.label` / `.icon` while the mode is active (None otherwise, so configs
    without overrides emit exactly the same events). `display(c)` gives the effective (label, icon).
-   'auto' may also use evidence from the model itself (config.AutoModeConfig: an EMA of hops where
-   p(car_horn) >= horn_prob, with hysteresis, plus a minimum dwell time between switches).
+   'auto' may also use evidence from the model itself (config.AutoModeConfig: an EMA of a weighted sum
+   of the per-hop probabilities, e.g. car_horn minus the household classes, with hysteresis, plus a
+   minimum dwell time between switches).
 10. (vn-v3, opt-in `flip_guard_hops`) Flip guard for two classes that sound alike (default siren /
    smoke_alarm): while an occurrence of one of them is active (rule 5), a fresh alert of the other one
    is withheld unless its smoothed prob has exceeded the active one's by more than
@@ -100,8 +101,8 @@ class PostProcessor:
         self._auto_t0: float | None = None
         self._label: list[str | None] = [None] * self.num_classes  # display overrides of the mode
         self._icon: list[str | None] = [None] * self.num_classes
-        self.horn_rate = 0.0  # auto: EMA of horn hops (vn-v3)
-        self._horn_t: float | None = None
+        self.street_score = 0.0  # auto: EMA of the weighted sound evidence (vn-v3)
+        self._score_t: float | None = None
         self._last_switch_t: float | None = None
         fg = getattr(cfg, "flip_guard_hops", None)
         self._flip = None if fg is None else tuple(self._keys.index(k) for k in cfg.flip_guard_pair)
@@ -128,8 +129,8 @@ class PostProcessor:
         self._peak = np.zeros(self.num_classes, dtype=np.float32)  # max smoothed prob in occurrence
         self._rms.clear()
         self._auto_t0 = None
-        self.horn_rate = 0.0
-        self._horn_t = None
+        self.street_score = 0.0
+        self._score_t = None
         self._last_switch_t = None
         self._dom = np.zeros(2, dtype=np.int64)
 
@@ -180,8 +181,8 @@ class PostProcessor:
         if name == AUTO_MODE:
             self._rms.clear()
             self._auto_t0 = None
-            self.horn_rate = 0.0
-            self._horn_t = None
+            self.street_score = 0.0
+            self._score_t = None
             target = self.mode if self.mode is not None else AUTO_LOW_MODE
             self._apply_mode(target, t_audio, f"{reason}: auto")
         else:
@@ -230,26 +231,26 @@ class PostProcessor:
             h = a.hysteresis_db / 2.0
             loud, quiet = med > a.street_above_dbfs + h, med < a.street_above_dbfs - h
         street_ev = indoor_ev = False
-        if a.uses_horn:
-            x = 1.0 if float(probs[self._keys.index(a.horn_class)]) >= a.horn_prob else 0.0
-            dt = 0.0 if self._horn_t is None else max(0.0, t - self._horn_t)
-            alpha = 1.0 if self._horn_t is None else 1.0 - float(np.exp(-dt / a.evidence_window_s))
-            self.horn_rate += alpha * (x - self.horn_rate)
-            self._horn_t = t
-            street_ev = self.horn_rate >= a.street_horn_rate
-            indoor_ev = self.horn_rate < a.street_horn_rate * a.horn_release
-        if t - self._auto_t0 + 1e-9 < (min(a.min_s, a.window_s) if not a.uses_horn else a.min_s):
+        if a.uses_sound:
+            x = sum(w * float(probs[self._keys.index(k)]) for k, w in a.street_evidence)
+            dt = 0.0 if self._score_t is None else max(0.0, t - self._score_t)
+            alpha = 1.0 if self._score_t is None else 1.0 - float(np.exp(-dt / a.evidence_window_s))
+            self.street_score += alpha * (x - self.street_score)
+            self._score_t = t
+            street_ev = self.street_score >= a.street_score_above
+            indoor_ev = self.street_score < a.street_score_above - a.score_hysteresis
+        if t - self._auto_t0 + 1e-9 < (min(a.min_s, a.window_s) if not a.uses_sound else a.min_s):
             return
         if self._last_switch_t is not None and t - self._last_switch_t + 1e-9 < a.min_dwell_s:
             return
-        if a.uses_rms and a.uses_horn:
+        if a.uses_rms and a.uses_sound:
             to_street, to_indoor = street_ev and not quiet, indoor_ev and not loud
-        elif a.uses_horn:
+        elif a.uses_sound:
             to_street, to_indoor = street_ev, indoor_ev
         else:
             to_street, to_indoor = loud, quiet
         why = (f"median RMS {med:.1f} dBFS" if a.uses_rms else "") + (
-            (", " if a.uses_rms else "") + f"horn rate {self.horn_rate:.3f}" if a.uses_horn else "")
+            (", " if a.uses_rms else "") + f"street score {self.street_score:.3f}" if a.uses_sound else "")
         if self.mode != AUTO_HIGH_MODE and to_street:
             self._apply_mode(AUTO_HIGH_MODE, t, f"auto: {why}")
             self._last_switch_t = t
@@ -258,8 +259,8 @@ class PostProcessor:
             self._last_switch_t = t
 
     @property
-    def _auto_horn(self) -> bool:
-        return self.modes is not None and self.modes.auto is not None and self.modes.auto.uses_horn
+    def _auto_sound(self) -> bool:
+        return self.modes is not None and self.modes.auto is not None and self.modes.auto.uses_sound
 
     def is_pending(self, class_id: int) -> bool:
         """True while a DANGER alert of this class waits for ack (and is being repeated)."""
@@ -274,7 +275,7 @@ class PostProcessor:
             raise ValueError(f"expected {self.num_classes} probs, got {p.shape[0]}")
         t = float(t_audio)
         tw = time.time() if t_wall is None else float(t_wall)
-        if self.mode_selector == AUTO_MODE and (rms_dbfs is not None or self._auto_horn):
+        if self.mode_selector == AUTO_MODE and (rms_dbfs is not None or self._auto_sound):
             self._auto_update(t, rms_dbfs, p)
 
         self._hist[self._hist_pos] = p

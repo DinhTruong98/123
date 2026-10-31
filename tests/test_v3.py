@@ -126,7 +126,7 @@ def test_mode_display_overrides_parse(tmp_path):
     assert m.spec("indoor").label_map == {"siren": "Còi hú báo cháy"}
     assert m.spec("indoor").icon_map == {"siren": "fire.png"}
     assert m.spec("street").icon_map == {}
-    assert m.auto.uses_rms and not m.auto.uses_horn
+    assert m.auto.uses_rms and not m.auto.uses_sound
 
 
 @pytest.mark.parametrize("bad", [
@@ -134,8 +134,9 @@ def test_mode_display_overrides_parse(tmp_path):
     {"indoor": {"label": {"siren": "  "}}},
     {"indoor": {"icon": {"background": "ear.png"}}},
     {"auto": {"street_above_dbfs": None}},
-    {"auto": {"street_horn_rate": 0.1, "horn_class": "truck"}},
-    {"auto": {"street_horn_rate": 0.1, "evidence_window_s": 0}},
+    {"auto": {"street_evidence": {"truck": 1.0}}},
+    {"auto": {"street_evidence": {"car_horn": 1.0}, "evidence_window_s": 0}},
+    {"auto": {"street_evidence": [1, 2]}},
 ])
 def test_mode_display_and_auto_invalid(tmp_path, bad):
     with pytest.raises(ConfigError):
@@ -154,7 +155,8 @@ def test_v3_config_loads_with_icons():
     assert cfg.class_keys == load_config().class_keys  # 8-class contract unchanged
     assert cfg.class_by_key("siren").label_vi == "Còi hú"
     assert cfg.modes.spec("street").label_map["siren"].startswith("Xe ưu tiên")
-    assert cfg.modes.auto.uses_horn and cfg.modes.auto.uses_rms
+    assert cfg.modes.auto.uses_sound and cfg.modes.auto.uses_rms
+    assert cfg.modes.auto.evidence_map["car_horn"] > 0 > cfg.modes.auto.evidence_map["baby_cry"]
 
 
 # ---------------------------------------------------------------- PostProcessor: rule 9b
@@ -199,28 +201,27 @@ def _auto_cfg(tmp_path, **auto):
     return _cfg(tmp_path, m)
 
 
-def test_auto_horn_evidence_switches_with_hysteresis(tmp_path):
-    cfg = _auto_cfg(tmp_path, street_above_dbfs=None, street_horn_rate=0.1, horn_prob=0.5,
-                    evidence_window_s=20, min_s=5)
+def test_auto_sound_evidence_switches_with_hysteresis(tmp_path):
+    cfg = _auto_cfg(tmp_path, street_above_dbfs=None, street_evidence={"car_horn": 1.0, "baby_cry": -1.0},
+                    street_score_above=0.1, score_hysteresis=0.05, evidence_window_s=20, min_s=5)
     pp = PostProcessor(cfg.classes, cfg.postprocess, cfg.modes)
     assert pp.mode == "indoor" and pp.mode_selector == "auto"
-    horn, bg = _p(cfg, "car_horn", 0.6), _p(cfg, "background")
+    horn, bg, baby = _p(cfg, "car_horn", 0.6), _p(cfg, "background"), _p(cfg, "baby_cry", 0.3)
     _run(pp, [bg] * 40)  # 20 s of quiet indoor sound
-    assert pp.mode == "indoor"
-    _run(pp, ([horn] + [bg] * 3) * 20, t0=21.0)  # a horn every 2 s: rate ~0.25
-    assert pp.mode == "street" and pp.horn_rate > 0.1
-    t_switch = pp.mode_log[-1][0]
-    assert 21.0 < t_switch < 41.0 and "horn rate" in pp.mode_log[-1][3]
-    # rate decays below 0.1 * 0.5 only after a while (hysteresis), then back to indoor
-    _run(pp, [bg] * 20, t0=61.0)
+    assert pp.mode == "indoor" and pp.street_score == 0.0
+    _run(pp, ([horn] + [bg] * 3) * 20, t0=21.0)  # horn every 2 s: mean evidence 0.15
+    assert pp.mode == "street" and pp.street_score > 0.1
+    assert 21.0 < pp.mode_log[-1][0] <= 61.0 and "street score" in pp.mode_log[-1][3]
+    _run(pp, [bg] * 10, t0=61.0)  # score decays but stays above 0.05 for a while (hysteresis)
     assert pp.mode == "street"
-    _run(pp, [bg] * 200, t0=71.0)
-    assert pp.mode == "indoor"
+    _run(pp, [baby] * 60, t0=66.0)  # household sound pulls the score below 0.05
+    assert pp.mode == "indoor" and pp.street_score < 0.05
 
 
 def test_auto_min_dwell_and_rms_veto(tmp_path):
-    cfg = _auto_cfg(tmp_path, street_above_dbfs=-35, window_s=10, hysteresis_db=4, street_horn_rate=0.1,
-                    horn_prob=0.5, evidence_window_s=5, min_s=2, min_dwell_s=30)
+    cfg = _auto_cfg(tmp_path, street_above_dbfs=-35, window_s=10, hysteresis_db=4,
+                    street_evidence={"car_horn": 1.0}, street_score_above=0.2, score_hysteresis=0.1,
+                    evidence_window_s=5, min_s=2, min_dwell_s=30)
     horn, bg = _p(cfg, "car_horn", 0.9), _p(cfg, "background")
     # loud street with horns -> street; then quiet without horns: stays street for >= 30 s (dwell)
     pp = PostProcessor(cfg.classes, cfg.postprocess, cfg.modes)
@@ -252,7 +253,7 @@ def test_auto_rms_only_unchanged(tmp_path):
     assert pp.mode == "street"
     _run(pp, [bg] * 30, t0=26.0, rms=-40)
     assert pp.mode == "indoor"
-    assert pp.horn_rate == 0.0
+    assert pp.street_score == 0.0
 
 
 # ---------------------------------------------------------------- outputs: log, console, engine status
@@ -310,17 +311,17 @@ def test_ios_export_modes_display_and_auto():
     assert st["label"]["siren"].startswith("Xe ưu tiên") and st["icon"] == {"siren": "siren.png"}
     assert st["sf_symbol"] == {"siren": "light.beacon.max.fill"}
     assert v3["modes"]["indoor"]["sf_symbol"] == {"siren": "flame.fill"}
-    assert v3["auto"]["street_horn_rate"] > 0 and v3["auto"]["horn_class"] == "car_horn"
+    assert v3["auto"]["street_evidence"]["car_horn"] == 1.0 and "street_score_above" in v3["auto"]
 
 
-def test_labels_header_mode_display_and_horn():
+def test_labels_header_mode_display_and_sound():
     from soundwatch.models.export_c import labels_header
 
     h2 = labels_header(load_config(paths.ROOT / "config/soundwatch_vn_v2.yaml"))
-    assert "kModeLabelUtf8" not in h2 and "SW_AUTO_USE_HORN" not in h2
+    assert "kModeLabelUtf8" not in h2 and "SW_AUTO_USE_SOUND" not in h2
     h3 = labels_header(load_config(V3))
     assert "kModeLabelUtf8" in h3 and "kModeIconName" in h3 and "kModeLabelAscii" in h3
-    assert "SW_AUTO_USE_HORN 1" in h3 and "SW_AUTO_HORN_CLASS SW_CLASS_CAR_HORN" in h3
+    assert "SW_AUTO_USE_SOUND 1" in h3 and "kAutoEvidenceWeight" in h3
     assert '"Xe uu tien' in h3
 
 
@@ -335,7 +336,7 @@ def test_writes_shared_stats_only_for_default_runs():
 
 def test_auto_config_dataclass_defaults():
     a = AutoModeConfig()
-    assert a.uses_rms and not a.uses_horn and a.min_dwell_s == 0.0
+    assert a.uses_rms and not a.uses_sound and a.min_dwell_s == 0.0
 
 
 # ---------------------------------------------------------------- simulator UI

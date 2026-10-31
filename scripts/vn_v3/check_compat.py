@@ -1,3 +1,4 @@
+# ruff: noqa: E501
 """Backward-compatibility check (vn-v3): the default config/model must export exactly the iOS resources in
 ios/SoundWatch/Resources (config JSON + demo expected events / per-hop probs). Nothing is written.
 

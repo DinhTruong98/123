@@ -136,13 +136,13 @@ def _mode_json(sp) -> dict:
 
 
 def _auto_json(a) -> dict:
-    """auto settings; the vn-v3 street-sound evidence keys only when it is used."""
+    """auto settings; the vn-v3 sound-evidence keys only when they are used."""
     d = {"street_above_dbfs": a.street_above_dbfs, "window_s": a.window_s, "hysteresis_db": a.hysteresis_db,
          "min_s": a.min_s}
-    if a.uses_horn or a.min_dwell_s:
-        d.update({"street_horn_rate": a.street_horn_rate, "horn_prob": a.horn_prob,
-                  "horn_release": a.horn_release, "evidence_window_s": a.evidence_window_s,
-                  "min_dwell_s": a.min_dwell_s, "horn_class": a.horn_class})
+    if a.uses_sound or a.min_dwell_s:
+        d.update({"street_evidence": a.evidence_map, "street_score_above": a.street_score_above,
+                  "score_hysteresis": a.score_hysteresis, "evidence_window_s": a.evidence_window_s,
+                  "min_dwell_s": a.min_dwell_s})
     return d
 
 

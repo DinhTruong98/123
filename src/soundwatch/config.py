@@ -118,36 +118,39 @@ class AutoModeConfig:
     Level evidence (vn-v2): running median of the per-hop RMS (dBFS) over the last `window_s` seconds,
     "loud" above `street_above_dbfs` + hysteresis_db / 2, "quiet" below it - hysteresis_db / 2
     (`street_above_dbfs: null` = no level evidence).
-    Street-sound evidence (vn-v3, optional, off while `street_horn_rate` is null): `horn_rate` = an
-    exponential moving average (time constant `evidence_window_s`) of "the model's `horn_class`
-    probability >= `horn_prob` at this hop" - the model itself hears the street (horn beeps are
-    everywhere in VN traffic). "Street" evidence when horn_rate >= street_horn_rate, "indoor" evidence
-    when it is < street_horn_rate * `horn_release` (hysteresis).
-    Decision: with one kind of evidence, switch to street / indoor on loud / quiet (or street /
-    indoor evidence). With both: street needs street-sound evidence and a level that is not "quiet";
-    indoor needs indoor evidence and a level that is not "loud" (so a loud TV without horns does not
-    turn baby_cry off, and a quiet room hearing a far road does not either).
-    No decision before `min_s` seconds of history (stays in the start-up mode), and no automatic
-    switch less than `min_dwell_s` after the previous switch. MCU cost: the 60-value RMS ring of
-    vn-v2 plus one float (horn_rate) and one timestamp."""
+    Sound evidence (vn-v3, optional, off while `street_evidence` is empty): the model itself hears the
+    street. `street_score` = exponential moving average (time constant `evidence_window_s`) of
+    sum_k w_k * p_k over the per-hop probabilities, with weights `street_evidence` (class key -> w; e.g.
+    car_horn +1 and the household classes baby_cry / door_knock / water_running -1). "Street" evidence
+    when street_score >= `street_score_above`, "indoor" evidence when it is below that minus
+    `score_hysteresis`.
+    Decision: with one kind of evidence, switch to street / indoor on loud / quiet (or street / indoor
+    sound evidence). With both: street needs street evidence and a level that is not "quiet"; indoor
+    needs indoor evidence and a level that is not "loud".
+    No decision before `min_s` seconds of history (stays in the start-up mode), and no automatic switch
+    less than `min_dwell_s` after the previous one. MCU cost: the 60-value RMS ring of vn-v2 plus one
+    float (street_score) and two timestamps."""
     street_above_dbfs: float | None = -35.0
     window_s: float = 30.0
     hysteresis_db: float = 0.0
     min_s: float = 5.0
-    street_horn_rate: float | None = None
-    horn_prob: float = 0.5
-    horn_release: float = 0.5
+    street_evidence: tuple[tuple[str, float], ...] = ()
+    street_score_above: float = 0.0
+    score_hysteresis: float = 0.0
     evidence_window_s: float = 60.0
     min_dwell_s: float = 0.0
-    horn_class: str = "car_horn"
 
     @property
     def uses_rms(self) -> bool:
         return self.street_above_dbfs is not None
 
     @property
-    def uses_horn(self) -> bool:
-        return self.street_horn_rate is not None
+    def uses_sound(self) -> bool:
+        return bool(self.street_evidence)
+
+    @property
+    def evidence_map(self) -> dict[str, float]:
+        return dict(self.street_evidence)
 
 
 AUTO_MODE = "auto"
@@ -243,16 +246,21 @@ def _parse_modes(raw: dict | None, keys: list[str], check_icons: bool = False) -
         body = body or {}
         if name == AUTO_MODE:
             try:
-                auto = AutoModeConfig(**{k: (v if k == "horn_class" or v is None else float(v))
-                                         for k, v in body.items()})
+                ev = body.get("street_evidence") or {}
+                if not isinstance(ev, dict):
+                    raise ValueError("street_evidence must be a mapping class -> weight")
+                num = {k: (None if v is None else float(v)) for k, v in body.items()
+                       if k != "street_evidence"}
+                auto = AutoModeConfig(**num, street_evidence=tuple((str(k), float(v)) for k, v in ev.items()))
             except (TypeError, ValueError) as e:
                 raise ConfigError(f"modes.auto: {e}") from e
             if auto.window_s <= 0 or auto.evidence_window_s <= 0:
                 raise ConfigError("modes.auto.window_s / evidence_window_s must be > 0")
-            if not (auto.uses_rms or auto.uses_horn):
-                raise ConfigError("modes.auto: needs street_above_dbfs and/or street_horn_rate")
-            if auto.uses_horn and auto.horn_class not in keys[:-1]:
-                raise ConfigError(f"modes.auto.horn_class: unknown alert class {auto.horn_class!r}")
+            if not (auto.uses_rms or auto.uses_sound):
+                raise ConfigError("modes.auto: needs street_above_dbfs and/or street_evidence")
+            for k, _ in auto.street_evidence:
+                if k not in keys:
+                    raise ConfigError(f"modes.auto.street_evidence: unknown class {k!r}")
             continue
         unknown = set(body) - {"disable", "level", "label", "icon"}
         if unknown:

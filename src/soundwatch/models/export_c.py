@@ -213,14 +213,15 @@ def _modes_lines(cfg: Config) -> list[str]:
                     f"#define SW_AUTO_MIN_MS      {int(round(a.min_s * 1000))}"]
         else:
             out += ["#define SW_AUTO_USE_RMS 0", f"#define SW_AUTO_MIN_MS      {int(round(a.min_s * 1000))}"]
-        if a.uses_horn:  # vn-v3: street-sound evidence from the model (EMA of horn hops)
-            out += ["// auto (vn-v3): horn_rate += (1 - exp(-dt/tau)) * ((p[horn] >= HORN_PROB) - horn_rate)",
-                    "// street evidence: horn_rate >= STREET_HORN_RATE; indoor: < STREET_HORN_RATE * RELEASE",
-                    "#define SW_AUTO_USE_HORN 1",
-                    f"#define SW_AUTO_HORN_CLASS SW_CLASS_{c_ident(a.horn_class)}",
-                    f"#define SW_AUTO_HORN_PROB  {a.horn_prob:.4f}f",
-                    f"#define SW_AUTO_STREET_HORN_RATE {a.street_horn_rate:.4f}f",
-                    f"#define SW_AUTO_HORN_RELEASE {a.horn_release:.4f}f",
+        if a.uses_sound:  # vn-v3: street evidence from the model (EMA of a weighted sum of probs)
+            w = a.evidence_map
+            out += ["// auto (vn-v3): score += (1-exp(-dt/tau)) * (sum_c kAutoEvidenceWeight[c]*p[c]-score)",
+                    "// street evidence: score >= SCORE_ABOVE; indoor: score < SCORE_ABOVE - SCORE_HYST",
+                    "#define SW_AUTO_USE_SOUND 1",
+                    "static const float kAutoEvidenceWeight[SW_NUM_CLASSES] = {"
+                    + ", ".join(f"{w.get(c.key, 0.0):.4f}f" for c in cls) + "};",
+                    f"#define SW_AUTO_SCORE_ABOVE {a.street_score_above:.4f}f",
+                    f"#define SW_AUTO_SCORE_HYST {a.score_hysteresis:.4f}f",
                     f"#define SW_AUTO_EVIDENCE_TAU_MS {int(round(a.evidence_window_s * 1000))}",
                     f"#define SW_AUTO_MIN_DWELL_MS {int(round(a.min_dwell_s * 1000))}"]
     return out + [""]
