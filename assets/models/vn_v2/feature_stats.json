@@ -1,0 +1,36 @@
+{
+  "mean": -2.148079443279617,
+  "std": 4.093753412658013,
+  "n_windows": 39418,
+  "params": {
+    "sample_rate": 16000,
+    "window_samples": 16000,
+    "n_fft": 512,
+    "frame_step": 320,
+    "n_frames": 49,
+    "n_mels": 40,
+    "fmin": 20.0,
+    "fmax": 8000.0,
+    "log_eps": 1e-06,
+    "window": "hann_periodic",
+    "mel_scale": "htk",
+    "mel_norm": null,
+    "log": "natural",
+    "frontend": "logmel",
+    "output": "softmax",
+    "window_s": 1.0
+  },
+  "calibration": {
+    "temperature": [
+      2.1104433319056097
+    ],
+    "fit_split": "val",
+    "folded_into": "last Dense (logits)"
+  },
+  "model": {
+    "run": "v2_sm_lm",
+    "arch": "DS-CNN 96-192 (train-student default)",
+    "distill": true,
+    "train_smoke_vn_cap": 2
+  }
+}

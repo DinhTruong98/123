@@ -1,0 +1,71 @@
+# SoundWatch config for the VN v2 model (branch vn-v2, docs/vn_v2_results.md).
+# Model assets/models/vn_v2/* (front-end and output activation come from its feature_stats.json).
+# Post-processing thresholds chosen on val only (see the doc); context modes added (opt-in).
+audio:
+  sample_rate: 16000
+  window_s: 1.0
+  hop_s: 0.5
+  n_fft: 512
+  frame_step: 320
+  n_mels: 40
+  fmin: 20.0
+  fmax: 8000.0
+  log_eps: 1.0e-6
+  gate_dbfs: -55.0
+
+# vn-v2 post-processing, chosen on VAL scenarios only (val + vn_val + short_val; test only reported),
+# docs/vn_v2_results.md section 5. The model is temperature-calibrated (T = 2.11 folded into the last
+# Dense), so outputs no longer sit at 255/256 and thresholds are no longer all 0.99. Search: smoothing
+# x k-of-n x danger_fast_threshold, greedy per-class thresholds (DANGER x2) under background FA/h
+# <= the deployed model's (val 22, vn_val 32), median latency <= 1.5 s, and every class keeping
+# >= its val recall with config/soundwatch.yaml minus 0.05. The search picked siren 255/256 + fast path
+# 0.95; siren 0.95 gives identical val results and keeps siren alerting with the fast path off.
+postprocess:
+  smooth_n: 1
+  k_of_n: [2, 3]
+  danger_repeat_s: 5.0
+  danger_clear_s: 10.0
+  # bg_margin: 0.2   # optional: require smoothed[c] - smoothed[background] >= bg_margin (default off)
+  # DANGER fast path (postprocess.py rule 4b): a DANGER class alerts on a single hop >= this value.
+  danger_fast_threshold: 0.95
+
+# Context modes (opt-in, postprocess.py rule 9; absent section = no modes). street: no INFO/WARN
+# alerts for dog_bark / baby_cry, car_horn demoted to INFO (no fast path, no repeats) - street noise
+# and dogs caused most VN background false alarms. auto: street while the running median of the
+# per-hop RMS over 30 s is above -35 dBFS (placeholder: calibrate with the real watch microphone).
+modes:
+  default: indoor
+  indoor: {}
+  street: {disable: [dog_bark, baby_cry], level: {car_horn: 0}}
+  auto: {street_above_dbfs: -35, window_s: 30, hysteresis_db: 3}
+
+model:
+  tflite_path: assets/models/vn_v2/student_int8.tflite
+  stats_path: assets/models/vn_v2/feature_stats.json
+  # fallback used by `run` when artifacts/ has no trained model yet
+  bundled_tflite_path: assets/models/vn_v2/student_int8.tflite
+  bundled_stats_path: assets/models/vn_v2/feature_stats.json
+
+ui:
+  watch_size: 240
+  scale: 2
+  window: [960, 600]
+  fps: 30
+  alert_timeout_s: 6.0
+  history_len: 10
+  font: assets/fonts/BeVietnamPro-Bold.ttf
+  font_regular: assets/fonts/BeVietnamPro-Regular.ttf
+
+# Order = model output index. `background` MUST be last.
+# Thresholds: chosen on val for the vn-v2 model (see postprocess above).
+# level: 0 = info, 1 = warn, 2 = danger
+# vibration: on/off durations in ms, alternating, starting with "on" (odd length, or empty)
+classes:
+  - {key: smoke_alarm,   label_vi: "Báo cháy",            level: 2, icon: fire.png,  color: [230, 40, 40],   vibration: [800, 200, 800, 200, 800], threshold: 0.7, cooldown_s: 3}
+  - {key: car_horn,      label_vi: "Còi xe",              level: 2, icon: car.png,   color: [230, 40, 40],   vibration: [150, 100, 150, 100, 150], threshold: 0.8, cooldown_s: 3}
+  - {key: siren,         label_vi: "Còi cấp cứu",         level: 2, icon: siren.png, color: [230, 40, 40],   vibration: [600, 150, 200, 150, 600], threshold: 0.95, cooldown_s: 3}
+  - {key: baby_cry,      label_vi: "Em bé khóc",          level: 1, icon: baby.png,  color: [255, 140, 0],   vibration: [500, 250, 500],           threshold: 0.85, cooldown_s: 8}
+  - {key: door_knock,    label_vi: "Gõ cửa / Chuông cửa", level: 1, icon: door.png,  color: [255, 140, 0],   vibration: [150, 150, 150],           threshold: 0.3, cooldown_s: 8}
+  - {key: dog_bark,      label_vi: "Chó sủa",             level: 0, icon: dog.png,   color: [40, 140, 255],  vibration: [200],                     threshold: 0.95, cooldown_s: 15}
+  - {key: water_running, label_vi: "Nước chảy",           level: 0, icon: water.png, color: [40, 140, 255],  vibration: [600],                     threshold: 0.9, cooldown_s: 30}
+  - {key: background,    label_vi: "Yên tĩnh",            level: 0, icon: ear.png,   color: [120, 120, 120], vibration: [],                        threshold: 1.01, cooldown_s: 0}
