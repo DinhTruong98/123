@@ -17,13 +17,17 @@ ios/
   scripts/
     export_ios_assets.py      sinh SoundWatch/Resources từ repo Python
     fetch_litert.sh           tải LiteRT C chính thức, kiểm SHA-256, đóng gói lại xcframework tĩnh
+    make_app_icon.py          vẽ icon app (light / dark / tinted) và logo launch screen
+  docs/screenshots/           ảnh chụp trên iPhone 12
   SoundWatch/
     App/        SoundWatchApp, AppState (ObservableObject)
     Core/       SoundWatchConfig, RingBuffer, FeatureExtractor (Accelerate), TFLiteClassifier,
                 PostProcessor, Engine, WavReader
     Audio/      AudioCapture (AVAudioEngine → 16 kHz), DemoFilePlayer
     Services/   Haptics (Core Haptics), Notifier (local notification)
-    UI/         ContentView: mặt đồng hồ, cảnh báo, lịch sử, cài đặt, debug
+    UI/         ContentView (tab Nghe / Lịch sử / Cài đặt, mặt đồng hồ, debug), Theme (màu, độ tương phản)
+    Assets.xcassets  AppIcon, LaunchLogo, LaunchBackground, AccentColor
+    SoundWatch.entitlements   Time Sensitive (chỉ dùng với team trả phí, xem dưới)
     Resources/  student_int8.tflite, soundwatch_config.json, demo_scenario.wav,
                 golden_features.json, demo_expected_events.json (2 file cuối chỉ cho test)
   SoundWatchTests/            XCTest: golden feature, classifier, postprocessor, end-to-end
@@ -104,7 +108,7 @@ xcodebuild -project SoundWatch.xcodeproj -scheme SoundWatch -configuration Relea
   -destination 'id=<UDID>' -derivedDataPath build -allowProvisioningUpdates build
 xcrun devicectl device install app --device <UDID> build/Build/Products/Release-iphoneos/SoundWatch.app
 xcrun devicectl device process launch --device <UDID> <SW_BUNDLE_ID>
-xcrun devicectl device process launch --device <UDID> <SW_BUNDLE_ID> -demo   # mở và phát file demo
+xcrun devicectl device process launch --device <UDID> <SW_BUNDLE_ID> -- -demo   # mở và phát file demo
 ```
 
 Bundle id và team lấy từ `Local.xcconfig`. Lần đầu `-allowProvisioningUpdates` tạo App ID và provisioning profile
@@ -128,6 +132,7 @@ silicon (LiteRT không có lát x86_64 cho simulator).
 | `ClassifierTests` | input golden case 4 đã chuẩn hoá → xác suất khớp Python `TFLiteClassifier` trong ±1/256; SF Symbols tồn tại |
 | `PostProcessorTests` | port `tests/test_wp5_postprocess.py`: 8 test cũ (tham số của `tests/_legacy_cfg.py`, tắt luật 4b) + `bg_margin`, và 7 test `test_fast_path_*` (cấu hình đã tune, `dangerFastThreshold` = 255/256) |
 | `EndToEndTests` | Engine offline trên `demo_scenario.wav`: sự kiện không lặp khớp `demo_expected_events.json` (cùng lớp, cùng hop: lệch ≤ 0.25 s); tắt luật 4b thì test này fail |
+| `ThemeTests` | mọi SF Symbol dùng trong UI tồn tại; chữ trên nền cảnh báo đạt tương phản ≥ 4.5:1 |
 
 Kết quả (Xcode 27.1, simulator iOS 27.1, Mac Apple silicon):
 
@@ -160,15 +165,91 @@ Thử tay luật 4b trên máy (chưa làm, cần người phát âm thật):
 
 ## Dùng app
 
-- Màn hình chính: mặt đồng hồ tròn. Lúc nghe: giờ, "Đang nghe…", vòng cung mức âm lượng (−80…0 dBFS).
-- Cảnh báo: nền màu theo mức (đỏ DANGER, cam WARN, xanh INFO), icon, nhãn, độ tin cậy, giờ phát hiện. DANGER nhấp nháy
-  2 Hz và giữ tới khi chạm "Nhấn để xác nhận" (ack gửi về PostProcessor, dừng nhắc lại). WARN/INFO tự tắt sau 6 s.
-- Rung theo mẫu `vibration` của từng lớp; DANGER cường độ 1.0, WARN 0.7, INFO 0.5. DANGER lặp lại thì rung lại nhưng
-  không thêm dòng lịch sử.
-- **Lịch sử**: 10 sự kiện gần nhất. **Cài đặt**: bật/tắt từng lớp (lưu lại giữa các lần mở).
+| Đang nghe | Cảnh báo nguy hiểm | Lịch sử | Cài đặt |
+|---|---|---|---|
+| ![](docs/screenshots/1-idle.png) | ![](docs/screenshots/2-alert-danger.png) | ![](docs/screenshots/3-history.png) | ![](docs/screenshots/4-settings.png) |
+
+| Notification khi app chạy nền | Màn hình khoá (bản xem trước đang ẩn) |
+|---|---|
+| ![](docs/screenshots/5-notification-banner.png) | ![](docs/screenshots/6-lockscreen.png) |
+
+- 3 tab: **Nghe**, **Lịch sử**, **Cài đặt**. Có cảnh báo mới thì app tự về tab Nghe. Hỗ trợ light/dark mode và
+  Dynamic Type.
+- **Nghe**: trạng thái (đang nghe / đang phát demo / micro tắt, kèm mức dB), mặt đồng hồ tròn với giờ và vòng cung âm
+  lượng (−80…0 dBFS, xanh → đỏ), 3 cảnh báo gần nhất, bảng debug nếu bật.
+- **Cảnh báo**: nền màu theo mức, icon lớn, nhãn tiếng Việt cỡ largeTitle, mức độ, độ tin cậy, giờ phát hiện. Chữ trên
+  nền đạt độ tương phản ≥ 4.5:1 (đỏ DANGER được làm đậm để chữ trắng đọc được; cam/xanh dùng chữ đen). DANGER nhấp nháy
+  2 Hz, cả nền trang cũng nháy, và giữ tới khi chạm "Nhấn để xác nhận" (ack về PostProcessor, dừng nhắc lại). Bật
+  Reduce Motion thì không nháy, chỉ giữ viền sáng. WARN/INFO tự tắt sau 6 s.
+- Rung theo mẫu `vibration` của từng lớp (xem mục Rung bên dưới): DANGER rung lặp liên tục tới khi xác nhận, WARN/INFO
+  rung một lần.
+- **Lịch sử**: 10 sự kiện gần nhất, giờ và "bao lâu trước", nút Xoá.
+- **Cài đặt**: bật/tắt từng lớp theo nhóm mức độ (lưu giữa các lần mở), trạng thái quyền thông báo, bật bảng debug,
+  phát file demo, thông tin model.
 - **Debug**: xác suất 8 lớp với vạch ngưỡng, RMS dBFS, cờ gated, thời gian feature/suy luận (và max mỗi hop), nút
-  "Phát file demo" (đưa `demo_scenario.wav` vào Engine theo thời gian thực, tuỳ chọn phát ra loa). Khi phát demo, micro
-  tạm dừng; hết file thì quay lại micro.
-- Mở app với launch argument `-demo` (Xcode: Edit Scheme → Run → Arguments) thì phát file demo ngay và hiện Debug.
-- Nền / khoá màn hình: `UIBackgroundModes: audio` giữ micro chạy; cảnh báo DANGER và WARN gửi notification (DANGER có
-  nút "Xác nhận"), kèm rung hệ thống.
+  "Phát file demo". Khi phát demo, micro vẫn chạy nhưng mẫu của micro bị bỏ qua; hết file thì nghe micro tiếp. Nhờ
+  vậy chuyển nguồn không phải khởi động lại ghi âm (iOS không cho bắt đầu ghi âm khi app đang ở nền).
+
+### Notification (app chạy nền / khoá màn hình)
+
+`UIBackgroundModes: audio` giữ micro chạy khi khoá màn hình. Mỗi cảnh báo (mọi mức) gửi một notification:
+
+- tiêu đề: emoji + nhãn ("🔥 Báo cháy"); subtitle: mức độ · độ tin cậy · giờ; nội dung: việc cần làm;
+- ảnh đính kèm: icon của lớp trên nền màu của mức độ;
+- gom nhóm theo lớp (`threadIdentifier`). DANGER chỉ giữ một notification mỗi lớp, lần nhắc lại thay thế lần trước;
+- nhấn giữ: DANGER có **Xác nhận** (ack PostProcessor, dừng nhắc lại), WARN/INFO có **Đã thấy**. Chạm vào notification
+  thì mở app và hiện lại cảnh báo;
+- rung: xem mục Rung.
+
+Nếu iPhone đặt "Hiện bản xem trước: Khi được mở khoá" (mặc định), màn hình khoá chỉ hiện "Cảnh báo nguy hiểm" /
+"Cảnh báo âm thanh". Muốn thấy đủ nhãn khi đang khoá: Cài đặt → Thông báo → SoundWatch → Hiện bản xem trước → Luôn luôn.
+
+**Time Sensitive**: code đặt `interruptionLevel = .timeSensitive` cho DANGER (vượt qua Focus / tóm tắt theo lịch), nhưng
+cần entitlement `com.apple.developer.usernotifications.time-sensitive`. Đã thử: Personal Team (Apple ID miễn phí) **không
+ký được** ("Personal development teams … do not support the Time Sensitive Notifications capability"). Vì vậy mặc định
+tắt; iOS tự hạ về mức `.active`. Có tài khoản Apple Developer Program thì thêm
+`SW_ENTITLEMENTS = SoundWatch/SoundWatch.entitlements` vào `Local.xcconfig`.
+
+**Critical Alerts** (kêu cả khi tắt tiếng / Không làm phiền) cần Apple duyệt entitlement riêng, nên không làm.
+
+### Rung
+
+Thu âm và rung chạy cùng lúc chỉ khi audio session gọi `setAllowHapticsAndSystemSoundsDuringRecording(true)`
+(`AudioCapture.configureSession`). Thiếu dòng này thì iOS nuốt cả Core Haptics lẫn `kSystemSoundID_Vibrate` mà không báo
+lỗi. Đã thử trên iPhone 12: không có dòng đó thì không rung, có thì rung.
+
+| Mức | Rung |
+|---|---|
+| DANGER | Lặp mẫu `vibration` của lớp liên tục (nghỉ 0.6 s giữa hai lần) tới khi xác nhận, tối đa 30 s kể từ cảnh báo của lớp đó (mặc định). App mở: Core Haptics, cường độ 1.0. App ở nền / khoá máy: `kSystemSoundID_Vibrate` lặp theo timer (Core Haptics không chạy ở nền; app vẫn sống nhờ đang thu âm) |
+| WARN / INFO | Mẫu `vibration` một lần (cường độ 0.7 / 0.5); ở nền: một lần rung hệ thống |
+
+- Xác nhận (chạm mặt đồng hồ, hoặc "Xác nhận" trên notification) dừng **mọi** rung DANGER đang chạy và ack các lớp đó,
+  vì mặt đồng hồ chỉ hiện cảnh báo mới nhất. DANGER mới tới sau đó lại rung.
+- Cài đặt → "Rung khi nguy hiểm": mặc định **tối đa 30 giây** (Dinh chọn); có thêm 1 phút, 2 phút, "Đến khi xác nhận".
+  Hết thời gian thì lớp đó im hẳn: các lần nhắc lại sau đó không rung, notification nhắc lại cũng không kêu, cho tới khi
+  xác nhận hoặc có cảnh báo mới của lớp đó. Mỗi lớp tính 30 s riêng.
+- Kết quả thử trên iPhone 12 (iOS 27.0.1) với nút "Phát file demo":
+
+| Trạng thái | Kết quả |
+|---|---|
+| Mở app, chuông bật | rung lặp liên tục; xác nhận thì dừng ngay |
+| Khoá máy, chuông bật | rung lặp liên tục; "Xác nhận" trên notification dừng |
+| Khoá máy, công tắc Im lặng | rung lặp liên tục; một lần "Xác nhận" dừng hết |
+| Mở app, không xác nhận, giới hạn 30 s | báo cháy / còi xe / còi cấp cứu lần lượt tự hết rung sau 30 s; sau đó không rung lặp nữa |
+| Chế độ Tập trung (Không làm phiền) | chưa thử |
+
+### Launch argument
+
+| Argument | Tác dụng |
+|---|---|
+| `-demo` | phát file demo ngay khi mở |
+| `-demoDelay N` | (cùng `-demo`) chờ N giây rồi mới phát, để kịp khoá máy khi thử notification |
+| `-tab history` / `-tab settings` | mở thẳng tab đó và giữ nguyên (chụp màn hình) |
+
+Trong Xcode: Edit Scheme → Run → Arguments. Với `devicectl` phải đặt sau `--`, nếu không `-tab` bị hiểu là `-t`:
+`xcrun devicectl device process launch --device <UDID> <SW_BUNDLE_ID> -- -demo -demoDelay 30`.
+
+### Icon
+
+`uv run ios/scripts/make_app_icon.py` vẽ lại icon 1024×1024 (light: glyph trắng trên nền gradient đỏ cam; dark: glyph
+gradient trên nền trong suốt; tinted: glyph trắng trên nền đen) và logo launch screen vào `SoundWatch/Assets.xcassets`.

@@ -18,6 +18,8 @@ final class AudioCapture {
         let s = AVAudioSession.sharedInstance()
         try s.setCategory(.playAndRecord, mode: .measurement,
                           options: [.defaultToSpeaker, .mixWithOthers, .allowBluetoothA2DP])
+        // iOS mutes Core Haptics and system vibration while recording unless this is set
+        try s.setAllowHapticsAndSystemSoundsDuringRecording(true)
         try s.setActive(true)
     }
 
@@ -92,7 +94,7 @@ final class DemoFilePlayer {
             throw NSError(domain: "SoundWatch", code: 6, userInfo: [NSLocalizedDescriptionKey: "demo WAV phải là \(sampleRate) Hz"])
         }
         if playAloud {
-            try AudioCapture.configureSession()
+            if AVAudioSession.sharedInstance().category != .playAndRecord { try AudioCapture.configureSession() }
             player = try AVAudioPlayer(contentsOf: url)
             player?.play()
         }
