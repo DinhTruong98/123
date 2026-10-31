@@ -4,9 +4,9 @@ struct ContentView: View {
     @EnvironmentObject var state: AppState
     @State private var tab = Self.launchTab ?? .listen
 
-    enum Tab: String, Hashable { case listen, history, settings }
+    enum Tab: String, Hashable { case listen, compare, history, settings }
 
-    /// Launch argument `-tab history|settings` (screenshots): open that tab and stay there.
+    /// Launch argument `-tab compare|history|settings` (screenshots): open that tab and stay there.
     private static let launchTab: Tab? = {
         let args = ProcessInfo.processInfo.arguments
         guard let i = args.firstIndex(of: "-tab"), i + 1 < args.count else { return nil }
@@ -18,6 +18,11 @@ struct ContentView: View {
             ListenView()
                 .tabItem { Label("Nghe", systemImage: "waveform.circle.fill") }
                 .tag(Tab.listen)
+            if state.models.count > 1 {
+                CompareView()
+                    .tabItem { Label("So sánh", systemImage: "rectangle.split.2x1.fill") }
+                    .tag(Tab.compare)
+            }
             HistoryView()
                 .tabItem { Label("Lịch sử", systemImage: "clock.arrow.circlepath") }
                 .tag(Tab.history)
@@ -25,9 +30,10 @@ struct ContentView: View {
                 .tabItem { Label("Cài đặt", systemImage: "gearshape.fill") }
                 .tag(Tab.settings)
         }
-        // a new alert always brings the watch face to the front
-        .onChange(of: state.currentAlert) { _, a in
-            if a != nil, Self.launchTab == nil { withAnimation { tab = .listen } }
+        // a new alert brings the faces to the front (both models side by side when B is bundled)
+        .onChange(of: state.currentAlerts.map { $0?.id }) { old, new in
+            guard Self.launchTab == nil, zip(old, new).contains(where: { $1 != nil && $0 != $1 }) else { return }
+            withAnimation { tab = state.models.count > 1 ? .compare : .listen }
         }
     }
 }
@@ -72,8 +78,8 @@ private struct PageBackground: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
-        if let a = state.currentAlert, state.class_(a.classId).level == .danger {
-            let c = state.class_(a.classId).alertColor
+        if let a = state.currentAlert, state.effectiveLevel(a) == .danger {
+            let c = state.displayClass(a).alertColor
             TimelineView(.periodic(from: .now, by: 0.25)) { ctx in
                 let on = reduceMotion || Int(ctx.date.timeIntervalSinceReferenceDate * 4) % 2 == 0
                 c.opacity(on ? 0.35 : 0.12).ignoresSafeArea()
@@ -136,7 +142,7 @@ struct WatchFace: View {
     var body: some View {
         ZStack {
             if let a = state.currentAlert {
-                AlertFace(alert: a, cls: state.class_(a.classId)) { state.acknowledgeCurrent() }
+                AlertFace(alert: a, cls: state.displayClass(a)) { state.acknowledgeCurrent() }
                     .id(a.id)
                     .transition(.asymmetric(insertion: .scale(scale: 0.6).combined(with: .opacity),
                                             removal: .opacity))
@@ -279,7 +285,7 @@ private struct RecentAlerts: View {
                 VStack(spacing: 0) {
                     ForEach(Array(state.history.prefix(3).enumerated()), id: \.element.id) { i, a in
                         if i > 0 { Divider().padding(.leading, 70) }
-                        AlertRow(alert: a, cls: state.class_(a.classId)).padding(.horizontal, 14).padding(.vertical, 10)
+                        AlertRow(alert: a, cls: state.displayClass(a)).padding(.horizontal, 14).padding(.vertical, 10)
                     }
                 }
                 .background(.background, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
@@ -289,8 +295,10 @@ private struct RecentAlerts: View {
 }
 
 struct AlertRow: View {
+    @EnvironmentObject var state: AppState
     let alert: ShownAlert
     let cls: SoundClass
+    var showFeedback = false
 
     var body: some View {
         HStack(spacing: 14) {
@@ -300,10 +308,25 @@ struct AlertRow: View {
                 .frame(width: 44, height: 44)
                 .background(cls.alertColor.gradient, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
             VStack(alignment: .leading, spacing: 2) {
-                Text(cls.labelVi).font(.headline)
+                HStack(spacing: 6) {
+                    Text(cls.labelVi).font(.headline)
+                    if state.models.count > 1 {
+                        Text(state.models[alert.model].short).font(.caption2.weight(.heavy))
+                            .padding(.horizontal, 5).padding(.vertical, 1)
+                            .background(Color.primary.opacity(0.12), in: Capsule())
+                            .accessibilityLabel("model \(state.models[alert.model].name)")
+                    }
+                    if alert.disagree {
+                        Image(systemName: "exclamationmark.triangle.fill").font(.caption).foregroundStyle(.yellow)
+                            .accessibilityLabel("model kia không báo")
+                    }
+                }
                 Text("\(cls.level.name) · \(Int((alert.confidence * 100).rounded()))%")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
+                if showFeedback && (state.sessionActive || alert.verdict != nil) {
+                    VerdictButtons(alert: alert).padding(.top, 2)
+                }
             }
             Spacer(minLength: 8)
             VStack(alignment: .trailing, spacing: 2) {
@@ -314,7 +337,7 @@ struct AlertRow: View {
                     .foregroundStyle(.secondary)
             }
         }
-        .accessibilityElement(children: .combine)
+        .accessibilityElement(children: showFeedback ? .contain : .combine)
     }
 }
 
@@ -332,7 +355,7 @@ struct HistoryView: View {
                 } else {
                     List {
                         Section {
-                            ForEach(state.history) { a in AlertRow(alert: a, cls: state.class_(a.classId)) }
+                            ForEach(state.history) { a in AlertRow(alert: a, cls: state.displayClass(a), showFeedback: true) }
                         } footer: {
                             Text("Giữ \(state.config.ui.historyLen) cảnh báo gần nhất. Lần nhắc lại của cảnh báo nguy hiểm không được tính.")
                         }
@@ -406,6 +429,26 @@ struct SettingsView: View {
                     Text("Âm nguy hiểm làm máy rung liên tục cho tới khi bạn xác nhận hoặc hết thời gian chọn ở trên, cả khi khoá màn hình. Khi app chạy nền hoặc khoá màn hình, mỗi cảnh báo còn được gửi thành thông báo; cảnh báo nguy hiểm có nút Xác nhận.")
                 }
 
+                if state.models.count > 1 {
+                    Section {
+                        Picker("Model rung & thông báo", selection: $state.alertModel) {
+                            ForEach(state.models.indices, id: \.self) { m in
+                                Text("\(state.models[m].short) · \(state.models[m].name)").tag(m)
+                            }
+                        }
+                        Picker("Chế độ của B", selection: $state.modeB) {
+                            Text("Trong nhà").tag("indoor")
+                            Text("Ngoài đường").tag("street")
+                            Text("Tự động").tag("auto")
+                        }
+                        Toggle("Lưu 10 s audio khi hai model không đồng ý", isOn: $state.saveDisagreementAudio)
+                    } header: {
+                        Text("So sánh 2 model")
+                    } footer: {
+                        Text("Cả hai model luôn chạy trên cùng micro; chỉ model được chọn rung và gửi thông báo. Audio được lưu chỉ nằm trong app, kèm phiên đo khi xuất, và có thể chứa tiếng người xung quanh.")
+                    }
+                }
+
                 Section("Demo & debug") {
                     Toggle("Hiện bảng debug", isOn: $state.showDebug)
                     Toggle("Phát demo ra loa", isOn: $state.playDemoAloud)
@@ -444,17 +487,26 @@ struct DebugPanel: View {
         VStack(alignment: .leading, spacing: 10) {
             Label("Debug", systemImage: "waveform.path.ecg").font(.headline)
             let s = state.status
-            ForEach(0..<state.config.numClasses, id: \.self) { c in
-                let cls = state.class_(c)
-                ProbBar(label: cls.key, value: Double(s?.probs[c] ?? 0),
-                        threshold: Double(cls.threshold), color: cls.uiColor)
+            ForEach(state.models.indices, id: \.self) { m in
+                if state.models.count > 1 {
+                    Text("\(state.models[m].short) · \(state.models[m].name)\(state.activeMode(m).map { " · \(modeName($0))" } ?? "")")
+                        .font(.subheadline.weight(.semibold)).padding(.top, m > 0 ? 6 : 0)
+                }
+                ForEach(0..<state.config.numClasses, id: \.self) { c in
+                    let cls = state.models[m].config.classes[c]
+                    ProbBar(label: cls.key, value: Double(s.flatMap { m < $0.models.count ? $0.models[m].probs[c] : nil } ?? 0),
+                            threshold: Double(cls.threshold), color: cls.uiColor)
+                }
             }
             Divider()
             Grid(alignment: .leading, horizontalSpacing: 16, verticalSpacing: 4) {
                 row("RMS", String(format: "%.1f dBFS", s?.rmsDbfs ?? -120))
                 row("Gated", (s?.gated ?? true) ? "có (dưới \(Int(state.config.audio.gateDbfs)) dBFS)" : "không")
                 row("Feature", String(format: "%.2f ms", state.timing.featureMs))
-                row("Suy luận", String(format: "%.2f ms", state.timing.inferMs))
+                ForEach(state.models.indices, id: \.self) { m in
+                    row("Suy luận \(state.models[m].short)",
+                        String(format: "%.2f ms", m < state.timing.inferMs.count ? state.timing.inferMs[m] : 0))
+                }
                 row("Tổng max", String(format: "%.2f ms / hop", state.timing.maxTotalMs))
                 row("t_audio", String(format: "%.1f s", s?.tAudio ?? 0))
             }
