@@ -13,8 +13,11 @@ Rules (evaluated once per hop, i.e. per `update(probs, t_audio)` call):
 4b. DANGER fast path (only if the optional `cfg.danger_fast_threshold` is set): a DANGER class also
    counts as triggered at a hop where smoothed[c] >= danger_fast_threshold (and, if `bg_margin` is
    set, smoothed[c] - smoothed[background] >= bg_margin), without waiting for k-of-n. All other
-   conditions of rule 4 still apply (enabled, cooldown, no active occurrence, acked or not). It
-   changes nothing else: hit history, last-above time, repeats, ack and clear are as in 2, 3, 5.
+   conditions of rule 4 still apply (enabled, cooldown, no active occurrence, acked or not). Hit
+   history, repeats and ack are as in 2, 3, 5. A fast-path hit also counts as "above" for the
+   occurrence clear timer of rule 5 (otherwise, with danger_fast_threshold < threshold, an occurrence
+   started by the fast path would end at the next hop and the class could re-alert after cooldown_s);
+   with danger_fast_threshold >= threshold (every config before vn-v2) this changes nothing.
    Suggested value: 255/256 = 0.99609375, the saturation level of the int8 output (scale 1/256,
    zero point -128), compared in float32. WARN / INFO classes are not affected.
 5. DANGER classes: a fresh alert starts an active occurrence that is *pending ack*. While pending,
@@ -130,6 +133,10 @@ class PostProcessor:
         """Effective level of a class (mode overrides applied)."""
         return Level(int(self._level[class_id]))
 
+    def _ev_level(self, c: int) -> int | None:
+        """AlertEvent.level: the effective level, only when modes are configured."""
+        return None if self.modes is None else int(self._level[c])
+
     # ------------------------------------------------------------------ modes
     def set_mode(self, name: str, t_audio: float | None = None, reason: str = "manual") -> None:
         """Switch to a named mode or to 'auto' (see module doc, rule 9)."""
@@ -222,6 +229,9 @@ class PostProcessor:
             if margin is not None:
                 fast_hit &= (self.smoothed - self.smoothed[self.background_id]) >= float(margin)
             triggered |= fast_hit
+            # a fast-path hit also keeps the occurrence alive (rule 4b); with the usual
+            # danger_fast_threshold >= threshold this changes nothing (fast_hit implies above)
+            self._last_above[fast_hit] = t
         self._last_above[above] = t
 
         events: list[AlertEvent] = []
@@ -242,11 +252,12 @@ class PostProcessor:
                 continue
             if danger and self._active[c]:
                 if self._pending[c] and since >= self.cfg.danger_repeat_s:
-                    events.append(AlertEvent(c, float(self._peak[c]), t, tw, repeat=True))
+                    events.append(AlertEvent(c, float(self._peak[c]), t, tw, repeat=True,
+                                             level=self._ev_level(c)))
                     self._last_emit[c] = t
                 continue
             if triggered[c]:
-                events.append(AlertEvent(c, conf, t, tw, repeat=False))
+                events.append(AlertEvent(c, conf, t, tw, repeat=False, level=self._ev_level(c)))
                 self._last_emit[c] = t
                 if danger:
                     self._active[c] = True

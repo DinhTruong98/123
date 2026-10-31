@@ -173,8 +173,8 @@ def main(argv: list[str] | None = None) -> int:
     args = ap.parse_args(argv)
     MODEL = Path(args.model) if args.model else MODEL
     STATS = Path(args.stats) if args.stats else STATS
-    cfg = load_config(args.config)
     stats = F.load_stats(STATS)
+    cfg = F.apply_meta_to_config(load_config(args.config), F.model_meta(stats))  # e.g. a 2 s model
     OUT.mkdir(parents=True, exist_ok=True)
     shutil.copyfile(MODEL, OUT / MODEL.name)
     shutil.copyfile(DEMO_WAV, OUT / DEMO_WAV.name)

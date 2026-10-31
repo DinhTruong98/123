@@ -35,6 +35,9 @@ class AlertEvent:
     t_audio: float
     t_wall: float
     repeat: bool = False  # True when a DANGER alert is re-emitted while waiting for ack
+    # effective level when context modes are configured (e.g. car_horn -> INFO in `street`);
+    # None = the class's configured level (always None without a `modes:` config section)
+    level: int | None = None
 
 
 @dataclass(frozen=True)

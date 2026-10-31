@@ -74,7 +74,8 @@ def load_feature_stats(path: Path | None) -> dict:
 
 def format_alert(ev: AlertEvent, cfg: Config) -> str:
     sc = cfg.classes[ev.class_id]
-    s = f"[t={ev.t_audio:.1f}s] {Level(sc.level).name} {sc.label_vi} ({ev.confidence:.2f})"
+    lvl = sc.level if getattr(ev, "level", None) is None else ev.level
+    s = f"[t={ev.t_audio:.1f}s] {Level(lvl).name} {sc.label_vi} ({ev.confidence:.2f})"
     return s + " [repeat]" if ev.repeat else s
 
 

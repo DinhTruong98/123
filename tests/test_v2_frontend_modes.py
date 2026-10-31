@@ -265,8 +265,10 @@ def test_indoor_mode_identical(tmp_path):
     cfg = _cfg_with_modes(tmp_path)
     rng = np.random.default_rng(1)
     seq = [rng.dirichlet(np.ones(8) * 0.1).astype(np.float32) for _ in range(400)]
-    assert _run(PostProcessor(cfg.classes, cfg.postprocess), seq) == \
-        _run(PostProcessor(cfg.classes, cfg.postprocess, cfg.modes), seq)
+    a = _run(PostProcessor(cfg.classes, cfg.postprocess), seq)
+    b = _run(PostProcessor(cfg.classes, cfg.postprocess, cfg.modes), seq)
+    assert a == [dataclasses.replace(e, level=None) for e in b]
+    assert all(e.level == int(cfg.classes[e.class_id].level) for e in b)
 
 
 def test_street_mode_disables_and_downgrades(tmp_path):
@@ -374,6 +376,7 @@ def test_headers_modes_and_frontend(tmp_path):
     lines = export_c._frontend_lines({"params": F.feature_params(None, F.ModelMeta.make("pcen", "sigmoid"))})
     txt = "\n".join(lines)
     assert "SW_FRONTEND_PCEN    1" in txt and "SW_OUTPUT_SIGMOID   1" in txt and "SW_PCEN_S" in txt
+    assert "SW_PCEN_BIAS        2.0f" in txt  # valid C float literal
 
 
 def test_ios_export_extras(tmp_path):
@@ -399,3 +402,30 @@ def test_custom_max_windows_train_only():
     assert custom_max_windows("smoke_alarm", "val") == 6 == custom_max_windows("smoke_alarm", "test")
     assert custom_max_windows("car_horn", "train") == 4
     assert custom_max_windows("siren", "train") == 6
+
+
+def test_fast_path_below_threshold_keeps_occurrence():
+    """danger_fast_threshold < threshold: the fast-path alert starts an occurrence that is kept alive
+    by further fast hits (no second fresh alert after the cooldown, repeats instead)."""
+    cfg = load_config()
+    siren = cfg.class_keys.index("siren")
+    cls = tuple(dataclasses.replace(c, threshold=0.99609375) if c.key == "siren" else c for c in cfg.classes)
+    pp = PostProcessor(cls, dataclasses.replace(cfg.postprocess, danger_fast_threshold=0.95))
+    seq = [_p(cfg, "siren", 0.96)] + [_p(cfg, "siren", 0.99609375)] * 6 + [_p(cfg, "siren", 0.6)]
+    ev = _run(pp, seq)
+    fresh = [e for e in ev if not e.repeat and e.class_id == siren]
+    assert len(fresh) == 1 and pp.is_pending(siren)
+
+
+def test_alert_event_level_with_modes(tmp_path):
+    from soundwatch.engine.logger import event_to_dict
+    from soundwatch.engine.run import format_alert
+
+    cfg = _cfg_with_modes(tmp_path)
+    ev = _run(PostProcessor(cfg.classes, cfg.postprocess, cfg.modes, "street"), [_p(cfg, "car_horn")] * 3)
+    assert ev and all(e.level == int(Level.INFO) for e in ev)
+    assert format_alert(ev[0], cfg).split()[1] == "INFO"
+    assert event_to_dict(ev[0], cfg.classes)["level"] == "INFO"
+    ev0 = _run(PostProcessor(cfg.classes, cfg.postprocess), [_p(cfg, "car_horn")] * 3)
+    assert ev0 and all(e.level is None for e in ev0)
+    assert format_alert(ev0[0], cfg).split()[1] == "DANGER"

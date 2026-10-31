@@ -131,6 +131,11 @@ def _frontend_lines(stats: dict) -> list[str]:
     meta = model_meta(stats)
     if meta.is_default:
         return []
+
+    def cf(v: float) -> str:  # C float literal (always with '.' or exponent: "2f" is not valid C)
+        t = f"{float(v):.9g}"
+        return (t if any(ch in t for ch in ".e") else t + ".0") + "f"
+
     p = stats.get("params", {})
     sr, step = int(p.get("sample_rate", 16000)), int(p.get("frame_step", 320))
     out = ["// Model front-end (feature_stats.json params, vn-v2)",
@@ -147,11 +152,11 @@ def _frontend_lines(stats: dict) -> list[str]:
             "//   M[0] = E[0]; M[t] = (1 - S) * M[t-1] + S * E[t]   (E = mel power, per mel band)",
             "//   pcen = powf(E / powf(EPS + M, GAIN) + BIAS, POWER) - powf(BIAS, POWER)",
             "// then x = (pcen - SW_FEATURE_MEAN) / SW_FEATURE_STD.",
-            f"#define SW_PCEN_S           {pcen_smoothing_coef(pc['time_constant_s'], sr, step):.9g}f",
-            f"#define SW_PCEN_GAIN        {pc['gain']:.9g}f",
-            f"#define SW_PCEN_BIAS        {pc['bias']:.9g}f",
-            f"#define SW_PCEN_POWER       {pc['power']:.9g}f",
-            f"#define SW_PCEN_EPS         {pc['eps']:.9g}f",
+            f"#define SW_PCEN_S           {cf(pcen_smoothing_coef(pc['time_constant_s'], sr, step))}",
+            f"#define SW_PCEN_GAIN        {cf(pc['gain'])}",
+            f"#define SW_PCEN_BIAS        {cf(pc['bias'])}",
+            f"#define SW_PCEN_POWER       {cf(pc['power'])}",
+            f"#define SW_PCEN_EPS         {cf(pc['eps'])}",
             f"// time constant {pc['time_constant_s']:g} s",
         ]
     return out + [""]

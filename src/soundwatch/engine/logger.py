@@ -8,7 +8,7 @@ import time
 from pathlib import Path
 
 from soundwatch import paths
-from soundwatch.types import AlertEvent, SoundClass
+from soundwatch.types import AlertEvent, Level, SoundClass
 
 
 def default_log_path() -> Path:
@@ -21,7 +21,7 @@ def event_to_dict(event: AlertEvent, classes: list[SoundClass] | tuple[SoundClas
         "class_id": event.class_id,
         "key": sc.key,
         "label_vi": sc.label_vi,
-        "level": sc.level.name,
+        "level": (sc.level if getattr(event, "level", None) is None else Level(event.level)).name,
         "confidence": round(float(event.confidence), 4),
         "t_audio": round(float(event.t_audio), 3),
         "t_wall": float(event.t_wall),
