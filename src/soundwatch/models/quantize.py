@@ -227,6 +227,9 @@ def main(args: argparse.Namespace) -> int:
     int8_path.write_bytes(int8_tfl)
     if out_dir is not None:
         save_stats(stats, out_dir / "feature_stats.json")
+    elif Path(stats_path).resolve() != Path(cfg.model.stats_path).resolve():
+        # keep the int8 model and its stats file a pair (vn-v3): the run's stats go next to the model
+        save_stats(stats, cfg.model.stats_path)
     print(f"[quantize] converted in {time.time() - t0:.1f}s: float {len(float_tfl) / 1024:.1f} KB, "
           f"int8 {len(int8_tfl) / 1024:.1f} KB -> {int8_path}")
 

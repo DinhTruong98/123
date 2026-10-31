@@ -8,7 +8,8 @@ Data flow
       normalized with feature_stats.json, SpecAugment applied online (cheap, numpy).
 
 Outputs (tag defaults to "distill" / "nodistill")
-  models/feature_stats.json (+ a per-run copy models/feature_stats_<tag>.json), models/student_<tag>.keras
+  models/feature_stats_<tag>.json (+ models/feature_stats.json for the default tags distill / nodistill only,
+  see writes_shared_stats), models/student_<tag>.keras
   (logits), models/student_<tag>_metrics.json, logs/<tag>/epochs.csv + config.json
 
 vn-v2 options (all off by default = the historical recipe):
@@ -332,6 +333,18 @@ def augmented_copies(waves: np.ndarray, cfg: Config, k: int, seed: int, cache: b
     return out
 
 
+DEFAULT_TAGS = ("distill", "nodistill")
+
+
+def writes_shared_stats(tag: str, quick: bool) -> bool:
+    """Whether a run also writes the shared models/feature_stats.json (the stats file of
+    models/student_int8.tflite). Only the default recipe runs (`distill` / `nodistill`, the Makefile) and
+    quick smoke tests do; experiment runs (`--tag <name>`) write feature_stats_<tag>.json only, so an
+    experiment can no longer desync the shared stats from the deployed artifacts/models/student_int8.tflite
+    (vn-v3; `quantize --tag <name>` reads the per-run file)."""
+    return quick or tag in DEFAULT_TAGS
+
+
 def _subsample(d: dict, n: int, seed: int) -> dict:
     if len(d["label"]) <= n:
         return d
@@ -404,8 +417,8 @@ def run(args: argparse.Namespace) -> dict:
                                     for i in range(0, len(x), 4096)]) if len(x) else x
                  for s, x in feats.items()}
     stats = compute_feature_stats(feats["train"], cfg.audio, meta)
-    stats_path = paths.MODELS / ("feature_stats_quick.json" if quick else "feature_stats.json")
-    save_stats(stats, stats_path)
+    if writes_shared_stats(tag, quick):
+        save_stats(stats, paths.MODELS / ("feature_stats_quick.json" if quick else "feature_stats.json"))
     save_stats(stats, paths.MODELS / f"feature_stats_{tag}.json")
     aug = augmented_copies(data["train"]["wave"], cfg, 1 if quick else args.aug_copies, args.seed,
                            cache=not quick)
