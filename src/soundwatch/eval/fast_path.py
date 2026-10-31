@@ -39,6 +39,8 @@ SETS = {
     "val": paths.DATA / "scenarios_val",
     "short_test": paths.DATA / "scenarios_short_test",
     "short_val": paths.DATA / "scenarios_short_val",
+    "vn_test": paths.DATA / "scenarios_vn_test",
+    "vn_val": paths.DATA / "scenarios_vn_val",
 }
 _LEN_RE = re.compile(r"@([0-9.]+)s\+")
 
@@ -148,6 +150,8 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
         "--values", default="0.9921875,0.99609375", help="danger_fast_threshold candidates (comma-separated)"
     )
     parser.add_argument("--out-dir", default=None, help="report dir (default artifacts/reports)")
+    parser.add_argument("--model", default=None, help="int8 .tflite to evaluate (default: config model)")
+    parser.add_argument("--stats", default=None, help="feature_stats.json for --model (default: config)")
 
 
 def main(args: argparse.Namespace) -> int:
@@ -157,11 +161,12 @@ def main(args: argparse.Namespace) -> int:
     cfg = load_config(args.config)
     base = with_fast(cfg, None)
     values = [float(v) for v in args.values.split(",") if v.strip()]
-    clf = load_classifier(cfg.model.resolved_tflite())
-    stats = load_stats(cfg.model.resolved_stats())
+    model = Path(args.model) if args.model else cfg.model.resolved_tflite()
+    clf = load_classifier(model)
+    stats = load_stats(Path(args.stats) if args.stats else cfg.model.resolved_stats())
     out_dir = Path(args.out_dir) if args.out_dir else paths.REPORTS
     out_dir.mkdir(parents=True, exist_ok=True)
-    result: dict = {"model": str(cfg.model.resolved_tflite()), "values": values, "sets": {}}
+    result: dict = {"model": str(model), "values": values, "sets": {}}
     for name in args.sets.split(","):
         scen_dir = SETS[name]
         scen = list_scenarios(scen_dir)

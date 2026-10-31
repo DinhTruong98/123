@@ -5,7 +5,7 @@ Outputs (see docs/IMPLEMENTATION_PLAN.md WP1):
   ``source_clip (N,) <U`` (e.g. ``esc50/1-100032-A-0.wav``, ``us8k/fold1/7061-6-0-0.wav``,
   ``fsd50k/dev/12345.wav`` with ``--with-fsd50k``)
 - ``paths.WINDOWS/summary.json``: window counts per class per split (+ clip counts, drops)
-- ``paths.NOISE/{train,test}/*.wav``: full background clips, 16 kHz mono PCM16
+- ``paths.NOISE/{train,val,test}/*.wav``: full background clips, 16 kHz mono PCM16
 - ``paths.DATA/events/{val,test}/<class_key>/*.wav``: full alert-class clips, 16 kHz mono PCM16
 """
 
@@ -223,7 +223,8 @@ def _flat_name(source_clip: str) -> str:
 
 def _save_target(rec: ClipRecord, cfg: Config, noise_dir: Path, events_dir: Path) -> str | None:
     if rec.label == cfg.background_id:
-        if rec.split in ("train", "test"):
+        # val too: scenarios built from 1 s windows would splice capped, non-contiguous windows
+        if rec.split in ("train", "val", "test"):
             return str(noise_dir / rec.split / _flat_name(rec.source_clip))
         return None
     if rec.split in ("val", "test"):

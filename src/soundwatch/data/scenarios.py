@@ -605,6 +605,11 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
         "--classes", default=None, help="comma-separated class keys to use (default all); 'danger' = DANGER"
     )
     parser.add_argument(
+        "--source-filter",
+        default=None,
+        help="comma list: only use event and noise clips whose name contains one of these (VN data: vn_,vn/)",
+    )
+    parser.add_argument(
         "--event-lengths",
         default=None,
         help="comma-separated lengths in s (e.g. 0.5,1,1.5): cut every event to random excerpts of "
@@ -626,6 +631,19 @@ def main(args: argparse.Namespace) -> int:
         else:
             keys = [k.strip() for k in args.classes.split(",") if k.strip()]
         lib = Library(cfg, lib.noise, {k: v for k, v in lib.events.items() if k in keys})
+    if args.source_filter:
+        subs = [t for t in args.source_filter.split(",") if t]
+
+        def keep(name: str) -> bool:
+            return any(t in name for t in subs)
+
+        lib = Library(
+            cfg,
+            [(n, w) for n, w in lib.noise if keep(n)],
+            {k: [(n, w) for n, w in v if keep(n)] for k, v in lib.events.items()},
+        )
+        print(f"[scenarios] source filter {subs}: {len(lib.noise)} noise clips, "
+              + ", ".join(f"{k}={len(v)}" for k, v in lib.events.items()))
     if args.event_lengths:
         lengths = tuple(float(v) for v in args.event_lengths.split(","))
         rng = np.random.default_rng(args.seed + 1000)
