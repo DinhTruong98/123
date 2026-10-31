@@ -5,7 +5,15 @@
   models/student_int8.tflite    full int8 (int8 input/output), the model the engine + firmware run
   models/quant_metrics.json     ops, sizes, arena estimate, quant params, float-keras / float-tflite /
                                 int8-tflite metrics on val + test
-  assets/models/student_int8.tflite + feature_stats.json   bundled copy for the demo
+  assets/models/student_int8.tflite + feature_stats.json   bundled copy for the demo (not with --no-copy)
+
+vn-v2 options: the output activation (softmax / sigmoid) and the front-end come from the run's
+feature stats (`params`, see audio.features.ModelMeta); `--stats` picks them (default
+models/feature_stats_<tag>.json when it exists, else the config path). `--out-dir DIR` writes all
+outputs (and a copy of the stats as feature_stats.json) to DIR instead of artifacts/models.
+`--calibrate` fits a temperature on val (one for softmax, one per class for sigmoid), folds it into
+the last Dense layer (no new ops) and reports ECE / reliability / saturation before vs after
+(`calibration` in quant_metrics.json).
 """
 
 from __future__ import annotations
@@ -22,7 +30,7 @@ from soundwatch.models import common
 
 # Builtin ops that TFLite Micro supports and that this model family may use.
 TFLM_OPS = {"CONV_2D", "DEPTHWISE_CONV_2D", "FULLY_CONNECTED", "MEAN", "AVERAGE_POOL_2D", "SOFTMAX",
-            "RESHAPE", "RELU", "QUANTIZE", "DEQUANTIZE", "ADD", "MUL", "MAX_POOL_2D"}
+            "RESHAPE", "RELU", "QUANTIZE", "DEQUANTIZE", "ADD", "MUL", "MAX_POOL_2D", "LOGISTIC"}
 
 
 def add_arguments(parser: argparse.ArgumentParser) -> None:
@@ -32,6 +40,13 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--seed", type=int, default=1234)
     parser.add_argument("--no-copy", action="store_true", help="do not copy the int8 model to assets/models")
     parser.add_argument("--threads", type=int, default=None)
+    parser.add_argument("--stats", default=None,
+                        help="feature_stats.json of the run (default models/feature_stats_<tag>.json if "
+                        "present, else config model.stats_path)")
+    parser.add_argument("--out-dir", default=None,
+                        help="write outputs here instead of artifacts/models (implies no default paths)")
+    parser.add_argument("--calibrate", action="store_true",
+                        help="fit temperature on val and fold it into the last Dense layer")
 
 
 def convert(model, rep_data: np.ndarray | None = None) -> bytes:
@@ -134,35 +149,82 @@ def tflite_predict(content: bytes, x: np.ndarray) -> np.ndarray:
     return res
 
 
+def _resolve_stats(args, cfg):
+    from pathlib import Path
+
+    if getattr(args, "stats", None):
+        return Path(args.stats)
+    per_run = paths.MODELS / f"feature_stats_{args.tag}.json"
+    return per_run if per_run.exists() else cfg.model.stats_path
+
+
 def main(args: argparse.Namespace) -> int:
+    from pathlib import Path
+
     import keras
 
-    from soundwatch.audio.features import load_stats, normalize
-    from soundwatch.models.dscnn import count_macs, count_params, with_softmax
+    from soundwatch.audio.features import load_stats, logmel_to_features, model_meta, normalize, save_stats
+    from soundwatch.eval import calibration as cal
+    from soundwatch.models.dscnn import count_macs, count_params, with_output
 
     cfg = load_config(args.config)
     common.setup_tf(args.threads, seed=args.seed)
     src = paths.MODELS / f"student_{args.tag}.keras"
     if not src.exists():
         raise FileNotFoundError(f"{src} not found (run train-student first)")
-    stats = load_stats(cfg.model.stats_path)
+    stats_path = _resolve_stats(args, cfg)
+    stats = load_stats(stats_path)
+    meta = model_meta(stats)
+    out_dir = Path(args.out_dir) if getattr(args, "out_dir", None) else None
+    dst = out_dir if out_dir is not None else paths.MODELS
+    dst.mkdir(parents=True, exist_ok=True)
     base = keras.models.load_model(src, compile=False)
-    probs_model = with_softmax(base)
-    probs_model.save(paths.MODELS / "student_float.keras")
 
     data = {s: common.load_split(s) for s in common.SPLITS}
-    feats = {s: normalize(common.cached_logmel(s, cfg.audio, data[s]["wave"]), stats)[..., None]
-             for s in common.SPLITS}
+
+    def feats_of(s):
+        lm = common.cached_logmel(s, cfg.audio, data[s]["wave"])
+        return normalize(np.concatenate([logmel_to_features(lm[i:i + 4096], meta, cfg.audio)
+                                         for i in range(0, len(lm), 4096)]), stats)[..., None]
+
+    feats = {s: feats_of(s) for s in common.SPLITS}
+    calib: dict | None = None
+    if getattr(args, "calibrate", False):
+        z = {s: base.predict(feats[s], batch_size=512, verbose=0) for s in ("val", "test")}
+        temp = cal.fit_temperature(z["val"], data["val"]["label"], meta.output)
+        calib = {"output": meta.output, "temperature": temp.tolist(), "fit_split": "val",
+                 "float_before": {}, "float_after": {}}
+        for s in ("val", "test"):
+            y = data[s]["label"]
+            calib["float_before"][s] = cal.calibration_report(cal.probs_from_logits(z[s], meta.output), y)
+            calib["float_after"][s] = cal.calibration_report(
+                cal.probs_from_logits(z[s], meta.output, temp), y)
+            calib["float_before"][s]["nll"] = cal.nll(z[s], y, meta.output)
+            calib["float_after"][s]["nll"] = cal.nll(z[s], y, meta.output, temp)
+        # int8 "before" for the report: convert the uncalibrated model once
+        rng0 = np.random.default_rng(args.seed)
+        rep0 = feats["train"][rng0.choice(len(feats["train"]), min(args.n_rep, len(feats["train"])),
+                                          replace=False)]
+        int8_before = convert(with_output(base, meta.output), rep0)
+        calib["int8_before"] = {s: cal.calibration_report(tflite_predict(int8_before, feats[s]),
+                                                          data[s]["label"]) for s in ("val", "test")}
+        cal.fold_temperature(base, temp)
+        print(f"[quantize] calibration: temperature {np.round(temp, 3).tolist()} folded into the last Dense")
+    probs_model = with_output(base, meta.output)
+    probs_model.save(dst / "student_float.keras")
+
     rng = np.random.default_rng(args.seed)
     rep = feats["train"][rng.choice(len(feats["train"]), min(args.n_rep, len(feats["train"])), replace=False)]
 
     t0 = time.time()
     float_tfl = convert(probs_model)
     int8_tfl = convert(probs_model, rep)
-    (paths.MODELS / "student_float.tflite").write_bytes(float_tfl)
-    int8_path = cfg.model.tflite_path
+    (dst / "student_float.tflite").write_bytes(float_tfl)
+    int8_path = (out_dir / "student_int8.tflite") if out_dir is not None else cfg.model.tflite_path
     int8_path.parent.mkdir(parents=True, exist_ok=True)
     int8_path.write_bytes(int8_tfl)
+    if out_dir is not None:
+        save_stats(stats, out_dir / "feature_stats.json")
     print(f"[quantize] converted in {time.time() - t0:.1f}s: float {len(float_tfl) / 1024:.1f} KB, "
           f"int8 {len(int8_tfl) / 1024:.1f} KB -> {int8_path}")
 
@@ -181,6 +243,8 @@ def main(args: argparse.Namespace) -> int:
         "size_bytes": {"tflite_float": len(float_tfl), "tflite_int8": len(int8_tfl)},
         "params": count_params(base), "macs": count_macs(base), "int8": info,
     }
+    if not meta.is_default:
+        result["frontend"] = {"frontend": meta.frontend, "output": meta.output, "stats": str(stats_path)}
     for s in ("val", "test"):
         y = data[s]["label"]
         preds = {
@@ -196,14 +260,24 @@ def main(args: argparse.Namespace) -> int:
             preds["tflite_int8"].argmax(1) == preds["keras_float"].argmax(1)))
         result[s]["int8_vs_float_max_abs_prob_diff"] = float(np.abs(
             preds["tflite_int8"] - preds["keras_float"]).max())
+        if calib is not None:
+            calib.setdefault("int8_after", {})[s] = cal.calibration_report(preds["tflite_int8"], y)
         for k in preds:
             print(common.format_metrics_row(f"{s} {k}", result[s][k], cfg))
         print(f"[quantize] {s}: int8 drop acc {result[s]['int8_drop_accuracy_pts']:+.2f} pts, "
               f"macro-F1 {result[s]['int8_drop_macro_f1_pts']:+.2f} pts, "
               f"agreement {result[s]['int8_vs_float_top1_agreement']:.4f}")
-    common.write_json(result, paths.MODELS / "quant_metrics.json")
+    if calib is not None:
+        result["calibration"] = calib
+        for s in ("val", "test"):
+            b, a = calib["int8_before"][s], calib["int8_after"][s]
+            print(f"[quantize] {s} int8 calibration: ECE top {b['ece_top_label']:.4f} -> "
+                  f"{a['ece_top_label']:.4f}, class-wise {b['ece_classwise_mean']:.4f} -> "
+                  f"{a['ece_classwise_mean']:.4f}, saturated windows {b['saturated_windows']} -> "
+                  f"{a['saturated_windows']} / {a['n']}")
+    common.write_json(result, dst / "quant_metrics.json")
 
-    if not args.no_copy:
+    if not args.no_copy and out_dir is None:
         for a, b in ((int8_path, cfg.model.bundled_tflite_path),
                      (cfg.model.stats_path, cfg.model.bundled_stats_path)):
             b.parent.mkdir(parents=True, exist_ok=True)

@@ -45,6 +45,19 @@ def kd_loss(num_classes: int, alpha: float = 0.5, temperature: float = 4.0, labe
     return loss
 
 
+def bce_loss():
+    """Multi-label loss for the sigmoid head: mean binary cross-entropy over the C outputs.
+    y_true (N, C) holds the (soft) targets built by the data pipeline (hard union of the mixed
+    labels, optionally blended with teacher probabilities)."""
+    import keras
+
+    def loss(y_true, y_pred):
+        return keras.losses.binary_crossentropy(y_true, y_pred, from_logits=True)
+
+    loss.__name__ = "bce_multilabel"
+    return loss
+
+
 def kd_loss_numpy(labels: np.ndarray, student_logits: np.ndarray, teacher_logits: np.ndarray,
                   alpha: float = 0.5, temperature: float = 4.0) -> np.ndarray:  # fmt: skip
     """Reference implementation (tests)."""

@@ -8,8 +8,19 @@ Data flow
       normalized with feature_stats.json, SpecAugment applied online (cheap, numpy).
 
 Outputs (tag defaults to "distill" / "nodistill")
-  models/feature_stats.json, models/student_<tag>.keras (logits), models/student_<tag>_metrics.json,
-  logs/<tag>/epochs.csv + config.json
+  models/feature_stats.json (+ a per-run copy models/feature_stats_<tag>.json), models/student_<tag>.keras
+  (logits), models/student_<tag>_metrics.json, logs/<tag>/epochs.csv + config.json
+
+vn-v2 options (all off by default = the historical recipe):
+  --frontend pcen   features = PCEN (audio.features) computed online from the cached log-mel versions;
+                    stats and the model front-end metadata go to feature_stats.json `params`.
+  --output sigmoid  multi-label head: BCE over the C outputs (background = "no alert sound"); with
+                    --distill the target of un-mixed samples is alpha * hard + (1 - alpha) * teacher
+                    softmax (T = 1), mixed samples use the hard union only.
+  --p-mix P         mix augmentation (sigmoid only): with probability P a second window is added in
+                    the mel-power domain (another event class at a relative level of +-mix_event_db,
+                    or background / an event over background at 0..20 dB SNR); targets = union,
+                    background = 1 only if no event is present.
 """
 
 from __future__ import annotations
@@ -75,6 +86,16 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--threads", type=int, default=None)
     parser.add_argument("--quick", action="store_true",
                         help="smoke test: <=2000 train windows, 1 epoch, no caches, outputs tagged *_quick")
+    parser.add_argument("--frontend", choices=["logmel", "pcen"], default="logmel",
+                        help="feature front-end (pcen: fixed PCEN, see audio/features.py)")
+    parser.add_argument("--output", choices=["softmax", "sigmoid"], default="softmax",
+                        help="output activation: softmax (CE/KD) or sigmoid (multi-label BCE)")
+    parser.add_argument("--p-mix", type=float, default=0.0,
+                        help="sigmoid only: probability of mixing a second window into a sample")
+    parser.add_argument("--mix-event-db", type=float, default=6.0,
+                        help="event+event mixes: relative level uniform in +-this many dB")
+    parser.add_argument("--mix-p-background", type=float, default=0.3,
+                        help="event samples: probability that the mix partner is background")
 
 
 # ---------------------------------------------------------------------------------------------------
@@ -138,12 +159,20 @@ class StudentSequence(_PyDatasetBase):
     def __init__(self, versions: list[np.ndarray], targets: np.ndarray, weights: np.ndarray, stats: dict,
                  batch_size: int, seed: int, p_specaug: float = 0.8, labels: np.ndarray | None = None,
                  max_per_class: int = 0, caps: dict[int, int] | None = None, mixup_alpha: float = 0.0,
-                 p_mixup: float = 0.5):  # fmt: skip
+                 p_mixup: float = 0.5, meta=None, audio_cfg=None,
+                 multilabel: dict | None = None):  # fmt: skip
+        """`meta` (audio.features.ModelMeta): front-end applied to the cached log-mel versions.
+        `multilabel` (sigmoid head): {"background_id", "alpha", "label_smoothing", "teacher_probs"
+        (N, C) or None, "p_mix", "mix_event_db", "mix_p_background"}; `targets` is then unused and
+        the (B, C) BCE targets are built per batch (see module doc)."""
         super().__init__(workers=1, use_multiprocessing=False)
         self.versions, self.targets, self.weights = versions, targets, weights
         self.stats, self.batch_size, self.seed, self.p_specaug = stats, batch_size, seed, p_specaug
         self.labels, self.max_per_class, self.caps = labels, max_per_class, caps or {}
         self.mixup_alpha, self.p_mixup = mixup_alpha, p_mixup
+        self.meta, self.audio_cfg, self.multilabel = meta, audio_cfg, multilabel
+        if multilabel is not None and labels is None:
+            raise ValueError("multilabel training needs labels")
         self.epoch = 0
         self._shuffle()
 
@@ -168,21 +197,84 @@ class StudentSequence(_PyDatasetBase):
     def __len__(self) -> int:
         return int(np.ceil(self.n / self.batch_size))
 
-    def __getitem__(self, idx: int):
-        from soundwatch.audio.features import normalize
-        from soundwatch.data.augment import spec_augment
-
-        sel = self.order[idx * self.batch_size:(idx + 1) * self.batch_size]
-        ver = self.version[sel]
+    def _gather(self, sel: np.ndarray, ver: np.ndarray) -> np.ndarray:
         x = np.empty((len(sel), *self.versions[0].shape[1:]), np.float32)
         for v in np.unique(ver):
             m = ver == v
             x[m] = self.versions[v][sel[m]]
-        x = normalize(x, self.stats)
+        return x
+
+    def _multilabel_batch(self, sel: np.ndarray, x: np.ndarray, rng: np.random.Generator):
+        """Mix augmentation on log-mel x (in place) + (B, C) BCE targets."""
+        ml = self.multilabel
+        bg = int(ml["background_id"])
+        y = self.labels[sel]
+        n_cls = int(ml["num_classes"])
+        hard = np.zeros((len(sel), n_cls), np.float32)
+        hard[np.arange(len(sel)), y] = 1.0
+        mixed = np.zeros(len(sel), bool)
+        p_mix = float(ml.get("p_mix", 0.0))
+        if p_mix > 0:
+            pool = self.order
+            pool_lab = self.labels[pool]
+            bg_pool = pool[pool_lab == bg]
+            ev_pool = pool[pool_lab != bg]
+            for i in np.nonzero(rng.random(len(sel)) < p_mix)[0]:
+                yi = int(y[i])
+                if yi == bg:
+                    if not len(ev_pool):
+                        continue
+                    j = int(ev_pool[rng.integers(len(ev_pool))])
+                    snr = rng.uniform(0.0, 20.0)  # event over this background
+                    sign = +1.0
+                elif len(bg_pool) and rng.random() < ml.get("mix_p_background", 0.3):
+                    j = int(bg_pool[rng.integers(len(bg_pool))])
+                    snr = rng.uniform(0.0, 20.0)  # this event over the background partner
+                    sign = -1.0
+                else:
+                    other = ev_pool[self.labels[ev_pool] != yi]
+                    if not len(other):
+                        continue
+                    j = int(other[rng.integers(len(other))])
+                    e = float(ml.get("mix_event_db", 6.0))
+                    snr = rng.uniform(-e, e)  # partner level relative to this event
+                    sign = +1.0
+                xj = self.versions[int(rng.integers(len(self.versions)))][j].astype(np.float32)
+                # mel power energies (log-sum-exp); log g sets 10*log10(g*Ej / Ei) = sign * snr
+                li = float(np.logaddexp.reduce(x[i].ravel()))
+                lj = float(np.logaddexp.reduce(xj.ravel()))
+                log_g = li - lj + sign * snr * np.log(10.0) / 10.0
+                x[i] = np.logaddexp(x[i], xj + np.float32(log_g))
+                yj = int(self.labels[j])
+                hard[i, yj] = 1.0
+                mixed[i] = True
+        has_event = hard[:, :bg].max(axis=1) > 0 if bg > 0 else np.zeros(len(sel), bool)
+        hard[:, bg] = np.where(has_event, 0.0, 1.0)
+        ls = float(ml.get("label_smoothing", 0.0))
+        t = hard * (1.0 - ls) + 0.5 * ls
+        tp = ml.get("teacher_probs")
+        a = float(ml.get("alpha", 1.0))
+        if tp is not None and a < 1.0:
+            um = ~mixed
+            t[um] = a * t[um] + (1.0 - a) * tp[sel[um]]
+        return t.astype(np.float32)
+
+    def __getitem__(self, idx: int):
+        from soundwatch.audio.features import logmel_to_features, normalize
+        from soundwatch.data.augment import spec_augment
+
+        sel = self.order[idx * self.batch_size:(idx + 1) * self.batch_size]
+        ver = self.version[sel]
+        x = self._gather(sel, ver)
         rng = np.random.default_rng((self.seed, self.epoch, idx))
+        if self.multilabel is not None:
+            t_ml = self._multilabel_batch(sel, x, rng)
+        if self.meta is not None and self.meta.frontend != "logmel":
+            x = logmel_to_features(x, self.meta, self.audio_cfg)
+        x = normalize(x, self.stats)
         for i in np.nonzero(rng.random(len(sel)) < self.p_specaug)[0]:
             x[i] = spec_augment(x[i], rng, fill=0.0)
-        t, w = self.targets[sel], self.weights[sel]
+        t, w = (t_ml if self.multilabel is not None else self.targets[sel]), self.weights[sel]
         if self.mixup_alpha > 0 and len(sel) > 1 and rng.random() < self.p_mixup:
             # mixup: convex combination of examples, one-hot targets and teacher logits alike
             lam = rng.beta(self.mixup_alpha, self.mixup_alpha, size=len(sel)).astype(np.float32)
@@ -261,8 +353,14 @@ def _int_list(s: str | None) -> list[int] | None:
 
 
 def run(args: argparse.Namespace) -> dict:
-    from soundwatch.audio.features import compute_feature_stats, normalize, save_stats
-    from soundwatch.models.distill import kd_loss, pack_targets
+    from soundwatch.audio.features import (
+        ModelMeta,
+        compute_feature_stats,
+        logmel_to_features,
+        normalize,
+        save_stats,
+    )
+    from soundwatch.models.distill import bce_loss, kd_loss, pack_targets
     from soundwatch.models.dscnn import count_macs, count_params
 
     cfg = load_config(args.config)
@@ -270,6 +368,12 @@ def run(args: argparse.Namespace) -> dict:
     tag = args.tag or ("distill" if args.distill else "nodistill")
     if quick and not tag.endswith("quick"):
         tag += "_quick"
+    output = getattr(args, "output", "softmax")
+    frontend = getattr(args, "frontend", "logmel")
+    default_meta = output == "softmax" and frontend == "logmel"
+    meta = None if default_meta else ModelMeta.make(frontend, output, cfg.audio.window_s)
+    if getattr(args, "p_mix", 0.0) > 0 and output != "sigmoid":
+        raise ValueError("--p-mix needs --output sigmoid (mixed samples have several labels)")
     epochs = args.epochs or (1 if quick else 45)
     common.setup_tf(args.threads, seed=args.seed)
     t_start = time.time()
@@ -291,9 +395,16 @@ def run(args: argparse.Namespace) -> dict:
 
     feats = {s: (common.logmel_batch(d["wave"], cfg.audio) if quick
                  else common.cached_logmel(s, cfg.audio, d["wave"])) for s, d in data.items()}
-    stats = compute_feature_stats(feats["train"], cfg.audio)
+    lm_train = feats["train"]  # the sequence mixes / transforms log-mel versions itself
+    if meta is not None and meta.frontend != "logmel":
+        # model inputs = front-end of the cached log-mel (in chunks to bound memory)
+        feats = {s: np.concatenate([logmel_to_features(x[i:i + 4096], meta, cfg.audio)
+                                    for i in range(0, len(x), 4096)]) if len(x) else x
+                 for s, x in feats.items()}
+    stats = compute_feature_stats(feats["train"], cfg.audio, meta)
     stats_path = paths.MODELS / ("feature_stats_quick.json" if quick else "feature_stats.json")
     save_stats(stats, stats_path)
+    save_stats(stats, paths.MODELS / f"feature_stats_{tag}.json")
     aug = augmented_copies(data["train"]["wave"], cfg, 1 if quick else args.aug_copies, args.seed,
                            cache=not quick)
     if args.low_snr_copies and not quick:
@@ -316,17 +427,28 @@ def run(args: argparse.Namespace) -> dict:
     capped = np.minimum(np.bincount(y_tr, minlength=C), cap_arr)
     cw = common.class_weights(np.repeat(np.arange(C), capped), C, clip=(0.25, args.max_class_weight),
                               power=args.cw_power)
-    seq = StudentSequence([feats["train"], *aug], targets, cw[y_tr], stats, args.batch_size, args.seed,
+    alpha = args.alpha if args.distill else 1.0
+    multilabel = None
+    if output == "sigmoid":
+        tprobs = None
+        if teacher is not None:
+            z = teacher - teacher.max(axis=1, keepdims=True)
+            tprobs = (np.exp(z) / np.exp(z).sum(axis=1, keepdims=True)).astype(np.float32)
+        multilabel = {"num_classes": C, "background_id": cfg.background_id, "alpha": alpha,
+                      "label_smoothing": args.label_smoothing, "teacher_probs": tprobs,
+                      "p_mix": args.p_mix, "mix_event_db": args.mix_event_db,
+                      "mix_p_background": args.mix_p_background}
+    seq = StudentSequence([lm_train, *aug], targets, cw[y_tr], stats, args.batch_size, args.seed,
                           args.p_specaug, labels=y_tr, max_per_class=args.max_per_class, caps=caps,
-                          mixup_alpha=args.mixup_alpha, p_mixup=args.p_mixup)
+                          mixup_alpha=args.mixup_alpha, p_mixup=args.p_mixup, meta=meta,
+                          audio_cfg=cfg.audio, multilabel=multilabel)
     x_val = normalize(feats["val"], stats)[..., None]
     x_test = normalize(feats["test"], stats)[..., None]
 
     model = build_student(args, cfg, arch)
     sched = keras.optimizers.schedules.CosineDecay(args.lr, decay_steps=len(seq) * epochs, alpha=0.01)
-    alpha = args.alpha if args.distill else 1.0
-    model.compile(optimizer=keras.optimizers.Adam(sched), loss=kd_loss(C, alpha, args.temperature,
-                                                                       args.label_smoothing))
+    loss = bce_loss() if output == "sigmoid" else kd_loss(C, alpha, args.temperature, args.label_smoothing)
+    model.compile(optimizer=keras.optimizers.Adam(sched), loss=loss)
     log_dir = paths.LOGS / tag
     run_cfg = {k: v for k, v in vars(args).items() if k != "config"} | {
         "tag": tag, "epochs": epochs, "alpha_effective": alpha, "class_weights": cw.round(3).tolist(),
@@ -356,6 +478,8 @@ def run(args: argparse.Namespace) -> dict:
         "best_epoch": mon.best_epoch, "epochs_run": mon.epochs_run, "best_val_macro_f1": mon.best_f1,
         "feature_time_s": round(t_feat, 1), "train_time_s": round(t_train, 1),
         "stats": {"mean": stats["mean"], "std": stats["std"]},
+        "frontend": frontend, "output": output, "p_mix": float(getattr(args, "p_mix", 0.0)),
+        "stats_path": str(paths.MODELS / f"feature_stats_{tag}.json"),
     }
     for s, x in (("val", x_val), ("test", x_test)):
         pred = model.predict(x, batch_size=512, verbose=0).argmax(1)
