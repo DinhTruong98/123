@@ -95,7 +95,10 @@ final class FeatureExtractor {
     }
 
     /// (logmel - mean) / std, in place.
-    func normalize(_ x: inout [Float]) {
+    func normalize(_ x: inout [Float]) { Self.normalize(&x, mean: mean, invStd: invStd) }
+
+    /// (x - mean) * invStd in place, float32 (features.normalize); per-model stats in the dual engine.
+    static func normalize(_ x: inout [Float], mean: Float, invStd: Float) {
         var negMean = -mean
         var s = invStd
         x.withUnsafeMutableBufferPointer { p in
