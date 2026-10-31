@@ -15,7 +15,7 @@ import argparse
 import json
 import multiprocessing as mp
 import shutil
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from math import gcd
 from pathlib import Path
 
@@ -132,6 +132,55 @@ def collect_custom(manifest: Path, cfg: Config, skip_low: bool = True) -> list[C
             )
         )
     return out
+
+
+RELABEL_DROP = "drop"
+
+
+def load_relabel(path: Path) -> dict[str, tuple[str, str]]:
+    """Label overrides ``{source_clip: (old_class, new_class)}`` from a relabel csv (vn-v3,
+    ``data/vn/relabel_v3.csv``): columns ``file``, ``old_class``, ``new_class`` (a class key or ``drop``),
+    plus free-form ``reason`` etc. ``file`` is relative to the custom manifest (-> ``vn/<file>``) unless it
+    already names a dataset (``esc50/``, ``us8k/``, ``fsd50k/``, ``vn/``)."""
+    df = pd.read_csv(path, dtype=str).fillna("")
+    out: dict[str, tuple[str, str]] = {}
+    for r in df.to_dict("records"):
+        f = r["file"].strip()
+        sid = f if f.split("/", 1)[0] in ("esc50", "us8k", "fsd50k", "vn") else f"vn/{f}"
+        if sid in out:
+            raise ValueError(f"{path}: duplicate entry {f}")
+        out[sid] = (r["old_class"].strip(), r["new_class"].strip())
+    return out
+
+
+def apply_relabel(
+    records: list[ClipRecord], relabel: dict[str, tuple[str, str]], cfg: Config
+) -> tuple[list[ClipRecord], dict]:
+    """Records with the overrides applied: relabelled (VN clips get the window cap of their new class)
+    or dropped. Raises if an entry's ``old_class`` does not match the record or ``new_class`` is unknown.
+    Entries whose clip is not among ``records`` (e.g. skipped low-confidence clips) are only counted."""
+    out = []
+    seen: set[str] = set()
+    counts: dict[str, int] = {}
+    for r in records:
+        if r.source_clip not in relabel:
+            out.append(r)
+            continue
+        old, new = relabel[r.source_clip]
+        seen.add(r.source_clip)
+        if cfg.class_keys[r.label] != old:
+            raise ValueError(f"relabel {r.source_clip}: old_class {old!r} but the clip is "
+                             f"{cfg.class_keys[r.label]!r}")
+        key = f"{old}->{new}"
+        counts[key] = counts.get(key, 0) + 1
+        if new == RELABEL_DROP:
+            continue
+        if new not in cfg.class_keys:
+            raise ValueError(f"relabel {r.source_clip}: unknown new_class {new!r}")
+        cap = custom_max_windows(new, r.split) if r.source_clip.startswith("vn/") else r.max_windows
+        out.append(replace(r, label=label_map.key_to_id(new, cfg), max_windows=cap))
+    info = {"applied": counts, "not_in_records": sorted(set(relabel) - seen)}
+    return out, info
 
 
 # ---------------------------------------------------------------- audio
@@ -409,6 +458,12 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
         "its split column is used",
     )
     parser.add_argument(
+        "--custom-relabel",
+        default=None,
+        help="label overrides csv (file,old_class,new_class[,reason...]; new_class 'drop' removes the clip), "
+        "e.g. data/vn/relabel_v3.csv; the manifest itself is never edited",
+    )
+    parser.add_argument(
         "--custom-keep-low", action="store_true", help="keep custom clips with label_confidence=low"
     )
     parser.add_argument(
@@ -453,6 +508,11 @@ def main(args: argparse.Namespace) -> int:
     if args.custom_manifest:
         custom = collect_custom(Path(args.custom_manifest).resolve(), cfg, skip_low=not args.custom_keep_low)
         records += custom
+    relabel_info = None
+    if getattr(args, "custom_relabel", None):
+        records, relabel_info = apply_relabel(records, load_relabel(Path(args.custom_relabel)), cfg)
+        print(f"relabel {args.custom_relabel}: {relabel_info['applied']} "
+              f"({len(relabel_info['not_in_records'])} entries not among the clips, e.g. low confidence)")
     src = "quick: ESC-50 only" if args.quick else "ESC-50 + US8K"
     if fsd_records:
         src += f" + {len(fsd_records)} FSD50K clips"
@@ -473,6 +533,8 @@ def main(args: argparse.Namespace) -> int:
     summary["clock_alarm"] = "background" if clock_bg else "smoke_alarm"
     summary["custom_manifest"] = str(Path(args.custom_manifest).resolve()) if args.custom_manifest else None
     summary["custom_clips"] = len(custom)
+    if relabel_info is not None:
+        summary["custom_relabel"] = {"path": str(Path(args.custom_relabel).resolve()), **relabel_info}
     with open(wdir / "summary.json", "w", encoding="utf-8") as f:
         json.dump(summary, f, indent=2)
     missing = [k for k, v in summary["windows"]["test"].items() if v == 0]
