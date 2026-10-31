@@ -25,6 +25,38 @@ struct SoundWatchConfig: Decodable {
         var dangerFastThreshold: Double?  // rule 4b, nil = off
     }
 
+    /// Context modes (vn-v2, postprocess.py rule 9); absent = no modes.
+    struct Modes: Decodable {
+        struct Spec: Decodable {
+            var disable: [String] = []
+            var level: [String: Int] = [:]
+
+            init() {}
+
+            init(from decoder: Decoder) throws {  // both keys optional, like the YAML
+                let c = try decoder.container(keyedBy: CodingKeys.self)
+                disable = try c.decodeIfPresent([String].self, forKey: .disable) ?? []
+                level = try c.decodeIfPresent([String: Int].self, forKey: .level) ?? [:]
+            }
+
+            private enum CodingKeys: String, CodingKey { case disable, level }
+        }
+
+        struct Auto: Decodable {
+            let streetAboveDbfs: Double
+            let windowS: Double
+            let hysteresisDb: Double
+            let minS: Double
+        }
+
+        let `default`: String
+        let modes: [String: Spec]
+        let auto: Auto?
+
+        var names: [String] { modes.keys.sorted() + (auto == nil ? [] : [PostProcessor.autoMode]) }
+        func spec(_ name: String) -> Spec { modes[name] ?? Spec() }
+    }
+
     struct UI: Decodable {
         let alertTimeoutS: Double
         let historyLen: Int
@@ -48,6 +80,7 @@ struct SoundWatchConfig: Decodable {
     let featureStats: FeatureStats
     let hann: [Float]
     let melBands: [MelBand]
+    var modes: Modes?
 
     var numClasses: Int { classes.count }
     var backgroundId: Int { classes.count - 1 }
