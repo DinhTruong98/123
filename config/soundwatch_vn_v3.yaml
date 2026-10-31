@@ -18,13 +18,12 @@ audio:
   log_eps: 1.0e-6
   gate_dbfs: -55.0
 
-# vn-v2 post-processing, chosen on VAL scenarios only (val + vn_val + short_val; test only reported),
-# docs/vn_v2_results.md section 5. The model is temperature-calibrated (T = 2.11 folded into the last
-# Dense), so outputs no longer sit at 255/256 and thresholds are no longer all 0.99. Search: smoothing
-# x k-of-n x danger_fast_threshold, greedy per-class thresholds (DANGER x2) under background FA/h
-# <= the deployed model's (val 22, vn_val 32), median latency <= 1.5 s, and every class keeping
-# >= its val recall with config/soundwatch.yaml minus 0.05. The search picked siren 255/256 + fast path
-# 0.95; siren 0.95 gives identical val results and keeps siren alerting with the fast path off.
+# vn-v3 post-processing, chosen on VAL scenarios only (val + vn_val + short_val; test only reported) with
+# the vn-v2 procedure (scripts/vn_v2/select_pp.py, docs/vn_v3_results.md section 5): background FA/h <= the
+# deployed model's (val 22, vn_val 32), median latency <= 1.5 s, every class >= its val recall with
+# config/soundwatch.yaml minus 0.05. The model is temperature-calibrated (T = 1.83 folded into the last
+# Dense). The search picked car_horn / siren 255/256 + fast path 0.9; 0.9 gives identical val results and
+# keeps both alerting with the fast path off.
 postprocess:
   smooth_n: 1
   k_of_n: [2, 3]
@@ -32,7 +31,7 @@ postprocess:
   danger_clear_s: 10.0
   # bg_margin: 0.2   # optional: require smoothed[c] - smoothed[background] >= bg_margin (default off)
   # DANGER fast path (postprocess.py rule 4b): a DANGER class alerts on a single hop >= this value.
-  danger_fast_threshold: 0.95
+  danger_fast_threshold: 0.9
 
 # Context modes (opt-in, postprocess.py rule 9; absent section = no modes). street: no INFO/WARN
 # alerts for dog_bark / baby_cry, car_horn demoted to INFO (no fast path, no repeats).
@@ -57,10 +56,10 @@ modes:
     window_s: 30
     hysteresis_db: 3
     street_evidence: {car_horn: 1.0, baby_cry: -1.0, door_knock: -1.0, water_running: -1.0}
-    street_score_above: 0.0
-    score_hysteresis: 0.01
+    street_score_above: -0.01
+    score_hysteresis: 0.02
     evidence_window_s: 30
-    min_dwell_s: 30
+    min_dwell_s: 60
     min_s: 10
 
 model:
@@ -85,11 +84,11 @@ ui:
 # level: 0 = info, 1 = warn, 2 = danger
 # vibration: on/off durations in ms, alternating, starting with "on" (odd length, or empty)
 classes:
-  - {key: smoke_alarm,   label_vi: "Chuông / bíp báo động", level: 2, icon: fire.png,  color: [230, 40, 40],   vibration: [800, 200, 800, 200, 800], threshold: 0.7, cooldown_s: 3}
-  - {key: car_horn,      label_vi: "Còi xe",              level: 2, icon: car.png,   color: [230, 40, 40],   vibration: [150, 100, 150, 100, 150], threshold: 0.8, cooldown_s: 3}
-  - {key: siren,         label_vi: "Còi hú",              level: 2, icon: siren.png, color: [230, 40, 40],   vibration: [600, 150, 200, 150, 600], threshold: 0.95, cooldown_s: 3}
-  - {key: baby_cry,      label_vi: "Em bé khóc",          level: 1, icon: baby.png,  color: [255, 140, 0],   vibration: [500, 250, 500],           threshold: 0.85, cooldown_s: 8}
+  - {key: smoke_alarm,   label_vi: "Chuông / bíp báo động", level: 2, icon: fire.png,  color: [230, 40, 40],   vibration: [800, 200, 800, 200, 800], threshold: 0.45, cooldown_s: 3}
+  - {key: car_horn,      label_vi: "Còi xe",              level: 2, icon: car.png,   color: [230, 40, 40],   vibration: [150, 100, 150, 100, 150], threshold: 0.9, cooldown_s: 3}
+  - {key: siren,         label_vi: "Còi hú",              level: 2, icon: siren.png, color: [230, 40, 40],   vibration: [600, 150, 200, 150, 600], threshold: 0.9, cooldown_s: 3}
+  - {key: baby_cry,      label_vi: "Em bé khóc",          level: 1, icon: baby.png,  color: [255, 140, 0],   vibration: [500, 250, 500],           threshold: 0.95, cooldown_s: 8}
   - {key: door_knock,    label_vi: "Gõ cửa / Chuông cửa", level: 1, icon: door.png,  color: [255, 140, 0],   vibration: [150, 150, 150],           threshold: 0.3, cooldown_s: 8}
   - {key: dog_bark,      label_vi: "Chó sủa",             level: 0, icon: dog.png,   color: [40, 140, 255],  vibration: [200],                     threshold: 0.95, cooldown_s: 15}
-  - {key: water_running, label_vi: "Nước chảy",           level: 0, icon: water.png, color: [40, 140, 255],  vibration: [600],                     threshold: 0.9, cooldown_s: 30}
+  - {key: water_running, label_vi: "Nước chảy",           level: 0, icon: water.png, color: [40, 140, 255],  vibration: [600],                     threshold: 0.65, cooldown_s: 30}
   - {key: background,    label_vi: "Yên tĩnh",            level: 0, icon: ear.png,   color: [120, 120, 120], vibration: [],                        threshold: 1.01, cooldown_s: 0}
