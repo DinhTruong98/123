@@ -133,6 +133,8 @@ silicon (LiteRT không có lát x86_64 cho simulator).
 | `PostProcessorTests` | port `tests/test_wp5_postprocess.py`: 8 test cũ (tham số của `tests/_legacy_cfg.py`, tắt luật 4b) + `bg_margin`, và 7 test `test_fast_path_*` (cấu hình đã tune, `dangerFastThreshold` = 255/256) |
 | `EndToEndTests` | Engine offline trên `demo_scenario.wav`: sự kiện không lặp khớp `demo_expected_events.json` (cùng lớp, cùng hop: lệch ≤ 0.25 s); tắt luật 4b thì test này fail |
 | `ThemeTests` | mọi SF Symbol dùng trong UI tồn tại; chữ trên nền cảnh báo đạt tương phản ≥ 4.5:1 |
+| `PostProcessorModesTests` | port `tests/test_v2_frontend_modes.py`: không có `modes` thì giống hệt cũ; `indoor` giống hệt (chỉ thêm mức hiệu lực); `street` tắt dog_bark/baby_cry, hạ car_horn xuống INFO (không luật hai tầng, không lặp); đổi chế độ xoá occurrence; `auto` theo trung vị RMS; bản sửa quy tắc 4b (ngưỡng nhanh < ngưỡng lớp vẫn giữ occurrence); `AlertEvent.level` |
+| `DualModelTests` | B (VN v2): config có `modes`, classifier golden khớp Python ±1/256, demo khớp `demo_expected_events_vn2.json` (lệch ≤ 0.25 s); engine 2 model cho mỗi model đúng các sự kiện như khi chạy riêng; lệnh đổi chế độ cho B |
 
 Kết quả (Xcode 27.1, simulator iOS 27.1, Mac Apple silicon):
 
@@ -244,10 +246,64 @@ lỗi. Đã thử trên iPhone 12: không có dòng đó thì không rung, có t
 |---|---|
 | `-demo` | phát file demo ngay khi mở |
 | `-demoDelay N` | (cùng `-demo`) chờ N giây rồi mới phát, để kịp khoá máy khi thử notification |
-| `-tab history` / `-tab settings` | mở thẳng tab đó và giữ nguyên (chụp màn hình) |
+| `-tab compare` / `-tab history` / `-tab settings` | mở thẳng tab đó và giữ nguyên (chụp màn hình) |
+| `-session` | bắt đầu ngay một phiên đo so sánh |
+| `-debug` | bật bảng debug |
 
 Trong Xcode: Edit Scheme → Run → Arguments. Với `devicectl` phải đặt sau `--`, nếu không `-tab` bị hiểu là `-t`:
 `xcrun devicectl device process launch --device <UDID> <SW_BUNDLE_ID> -- -demo -demoDelay 30`.
+
+## So sánh 2 model ngoài đời
+
+Nhánh `ios-dual-model`: app chạy **song song** model A "Hiện tại" (`student_int8.tflite`, `soundwatch_config.json`, không
+đổi) và model B "VN v2" (`student_int8_vn2.tflite`, `soundwatch_config_vn2.json`, sinh bằng
+`uv run python ios/scripts/export_ios_assets.py --suffix vn2 --config config/soundwatch_vn_v2.yaml --model
+assets/models/vn_v2/student_int8.tflite --stats assets/models/vn_v2/feature_stats.json`) trên cùng micro.
+
+- Mỗi hop: một ring buffer, một lần log-mel; mỗi model chuẩn hoá theo stats riêng (A −2.385/4.186, B −2.148/4.094),
+  classifier riêng, PostProcessor riêng (B: `k_of_n` 2/3, `danger_fast_threshold` 0.95, ngưỡng mới, chế độ ngữ cảnh).
+  Gate −55 dBFS dùng chung.
+- Tab **Nghe** vẫn là A như trước. Tab **So sánh**: hai mặt đồng hồ nhỏ A | B; viền vàng khi model kia không báo cùng
+  lớp trong ±2 s; chọn chế độ của B (Trong nhà / Ngoài đường / Tự động, hiện chế độ đang chạy khi Tự động); nút **Có
+  âm thật**; cảnh báo gần đây có nút **Đúng / Sai**. Có cảnh báo mới thì app tự chuyển sang tab này.
+- **Rung và notification chỉ từ một model** (Cài đặt → "Model rung & thông báo", mặc định B), theo mức hiệu lực của
+  model đó (B ở Ngoài đường: car_horn là INFO, rung một lần). Rung DANGER liên tục tối đa 30 s như trước. Xác nhận một
+  cảnh báo là xác nhận âm đó ở cả hai model.
+- Lịch sử gộp cảnh báo của hai model (nhãn A/B, dấu ⚠ khi không khớp). Bảng debug có hai bộ thanh xác suất.
+
+| So sánh A / B | Lịch sử gộp |
+|---|---|
+| ![](docs/screenshots/7-compare-2-models.png) | ![](docs/screenshots/8-history-2-models.png) |
+
+### Cách đo một phiên
+
+1. Tab So sánh → **Bắt đầu phiên**. Chọn chế độ của B cho nơi đang đứng (hoặc Tự động).
+2. Ở mỗi nơi (ngoài đường, quán, trong nhà) 15–30 phút, app mở (hoặc khoá màn hình, app vẫn nghe).
+3. Khi nghe hoặc thấy còi cấp cứu / còi xe / báo cháy / chó sủa thật: **Có âm thật** → chọn lớp, càng sớm càng tốt.
+4. Với mỗi cảnh báo trong "Cảnh báo gần đây" hoặc Lịch sử: bấm **Đúng** nếu có âm đó thật, **Sai** nếu không.
+5. **Thống kê** → xem từng model: số cảnh báo, Đúng / Sai, âm thật bắt được (cảnh báo cùng lớp trong [t − 2 s, t + 5 s]
+   quanh lúc bấm), báo nhầm (Sai) / giờ, số lần không khớp model kia → **Xuất phiên đo** (share sheet: AirDrop / Files).
+6. **Dừng** phiên.
+
+File xuất (trong `Documents/sessions/<ngày-giờ>/` của app): `session.jsonl` (mỗi dòng một bản ghi: `start`,
+`settings`, `alert` {model, class, level, confidence, t_audio, mode, source}, `truth`, `feedback`, `disagreement`,
+`mode_request`, `rms_minute` {mean_dbfs}, `source`, `stop`; mọi dòng có `t` ISO 8601 và `t_s` giây từ đầu phiên),
+`summary.csv` (bảng thống kê trên) và các WAV nếu bật **Lưu 10 s audio khi hai model không đồng ý** (Cài đặt, mặc định
+tắt; 10 s cuối trước lúc phát hiện, 16 kHz mono; có thể chứa tiếng người xung quanh, chỉ nằm trong app, không commit).
+
+### Kết quả trên máy (2026-10-31)
+
+| Mục | Kết quả |
+|---|---|
+| Test (simulator) | 39/39 pass |
+| Demo trên iPhone 14 (Release, iOS 27.0.1), A | 12/12 sự kiện như `demo_expected_events.json` |
+| Demo trên iPhone 14, B | 12/12 như `demo_expected_events_vn2.json` (siren 21.0 s, door_knock 38.5 s, water_running 55.5 s: sớm hơn A 0.5–1 s) |
+| Thời gian mỗi hop trên iPhone 14 (119 hop) | feature 0.48 ms + A 2.05 ms + B 1.74 ms = 4.27 ms trung bình, tối đa 9.84 ms |
+| Thời gian trên simulator (Debug) | feature 3.6 ms, A 0.82 ms, B 0.81 ms |
+| Loa Mac phát 5 clip **tập test** của `vn-sound-data` (không dùng để train B), iPhone 14 đặt cạnh | cứu thương, cứu hoả vụt qua, cảnh sát vụt qua, cảnh sát: **A và B đều báo** siren, khoảng 2 s sau khi bắt đầu phát (B 0.95–0.98, A 0.996). Còi xe (nhãn "medium"): **cả hai không báo**. Không báo nhầm trong các khoảng lặng |
+
+Phiên ngắn bằng loa chỉ là kiểm tra chạy được, không phải đánh giá: âm qua loa laptop khác âm thật ngoài đường. Số so
+sánh thật cần các phiên đo ở mục trên.
 
 ### Icon
 
