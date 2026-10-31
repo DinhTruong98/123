@@ -38,6 +38,8 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
                         help="UI: record the window as an animated GIF (5 fps, half size)")
     parser.add_argument("--ui-stats", default=None, metavar="JSON",
                         help="UI: write frame-rate stats (e.g. artifacts/reports/ui_stats.json)")
+    parser.add_argument("--mode", default=None,
+                        help="context mode at start-up, e.g. indoor / street / auto (config `modes:`)")
 
 
 def _warn(msg: str) -> None:
@@ -107,12 +109,23 @@ def _print_stats(stats: dict) -> None:
 
 
 def main(args: argparse.Namespace) -> int:
+    from soundwatch.audio.features import apply_meta_to_config, model_meta
     from soundwatch.audio.sources import FileSource, MicSource
+    from soundwatch.config import ConfigError, with_mode
     from soundwatch.engine.classifier import DummyClassifier, load_classifier
     from soundwatch.engine.logger import default_log_path
     from soundwatch.engine.pipeline import Engine
 
-    cfg = load_config(getattr(args, "config", None))
+    try:
+        cfg = with_mode(load_config(getattr(args, "config", None)), getattr(args, "mode", None))
+    except ConfigError as e:
+        print(str(e), file=sys.stderr)
+        return 2
+    # the model's own front-end metadata (window length, output activation) from its stats file
+    stats_path = Path(args.stats) if args.stats else cfg.model.resolved_stats()
+    feat_stats = load_feature_stats(stats_path)
+    meta = model_meta(feat_stats)
+    cfg = apply_meta_to_config(cfg, meta)
     sr = cfg.audio.sample_rate
 
     # ---- source
@@ -151,10 +164,7 @@ def main(args: argparse.Namespace) -> int:
         # confidence 1.0 like the (saturating) int8 model, so tuned thresholds up to 0.99 still fire
         classifier = DummyClassifier(cfg.num_classes, sched, confidence=DUMMY_CONFIDENCE)
     else:
-        classifier = load_classifier(model_path)
-
-    stats_path = Path(args.stats) if args.stats else cfg.model.resolved_stats()
-    feat_stats = load_feature_stats(stats_path)
+        classifier = load_classifier(model_path, output="sigmoid" if meta.output == "sigmoid" else None)
 
     log_path = None if args.no_log else (Path(args.log) if args.log else default_log_path())
 
@@ -165,6 +175,8 @@ def main(args: argparse.Namespace) -> int:
                         event_log_path=log_path, emit_logmel=False, max_audio_s=args.max_seconds)
         engine.run()
         _print_stats(engine.stats)
+        for t, old, new, why in engine.stats.get("mode_changes", []):
+            print(f"-- mode {old} -> {new} at t={t:.1f}s ({why})")
         if log_path is not None and sink.n_events:
             print(f"events logged to {log_path}")
         return 0

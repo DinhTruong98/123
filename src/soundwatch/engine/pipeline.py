@@ -32,7 +32,14 @@ from soundwatch.config import Config
 from soundwatch.engine.classifier import Classifier
 from soundwatch.engine.logger import EventLogger
 from soundwatch.engine.postprocess import PostProcessor
-from soundwatch.types import AckCommand, AlertEvent, EngineStopped, SettingsCommand, StatusUpdate
+from soundwatch.types import (
+    AckCommand,
+    AlertEvent,
+    EngineStopped,
+    ModeCommand,
+    SettingsCommand,
+    StatusUpdate,
+)
 
 log = logging.getLogger(__name__)
 
@@ -50,11 +57,16 @@ class Engine:
     event_log_path: JSONL path for AlertEvents (None = no log file).
     emit_logmel: include the un-normalized log-mel in StatusUpdate (debug view); default True.
     max_audio_s: stop (reason "max_seconds") once t_audio reaches this value.
+    mode: start-up context mode (overrides cfg.modes.default; needs a `modes:` config section).
     """
 
     def __init__(self, cfg: Config, source: AudioSource, classifier: Classifier, stats: dict,
                  out_queue: queue.Queue, in_queue: queue.Queue | None = None,
-                 event_log_path=None, emit_logmel: bool = True, max_audio_s: float | None = None):
+                 event_log_path=None, emit_logmel: bool = True, max_audio_s: float | None = None,
+                 mode: str | None = None):
+        # per-model front-end (feature_stats.json params): log-mel / PCEN, window length
+        self.meta = features.model_meta(stats)
+        cfg = features.apply_meta_to_config(cfg, self.meta)
         if classifier.num_classes != cfg.num_classes:
             raise ValueError(f"classifier has {classifier.num_classes} outputs, config has "
                              f"{cfg.num_classes} classes")
@@ -68,7 +80,7 @@ class Engine:
         self.in_queue: queue.Queue = in_queue if in_queue is not None else queue.Queue()
         self.emit_logmel = emit_logmel
         self.max_audio_s = max_audio_s
-        self.postprocessor = PostProcessor(cfg.classes, cfg.postprocess)
+        self.postprocessor = PostProcessor(cfg.classes, cfg.postprocess, cfg.modes, mode)
         self.logger = EventLogger(cfg.classes, event_log_path) if event_log_path is not None else None
 
         a = cfg.audio
@@ -183,6 +195,11 @@ class Engine:
                 self.postprocessor.ack(cmd.class_id)
             elif isinstance(cmd, SettingsCommand):
                 self.postprocessor.set_enabled(cmd.class_id, cmd.enabled)
+            elif isinstance(cmd, ModeCommand):
+                try:
+                    self.postprocessor.set_mode(cmd.mode, self._rb.total_written / self._sr, "command")
+                except ValueError as e:
+                    log.warning("ignoring %r: %s", cmd, e)
             else:
                 log.warning("ignoring unknown command %r", cmd)
 
@@ -199,7 +216,7 @@ class Engine:
         else:
             gated = False
             t0 = time.perf_counter()
-            logmel = features.compute_logmel(window, self.cfg.audio)
+            logmel = features.compute_features(window, self.cfg.audio, self.meta)
             feats = features.normalize(logmel, self.feature_stats)
             t1 = time.perf_counter()
             if self._has_set_time:
@@ -210,7 +227,7 @@ class Engine:
             self._feature_ms.append((t1 - t0) * 1000.0)
             self._infer_ms.append(infer_ms)
         self._hops += 1
-        events = self.postprocessor.update(probs, t_audio)
+        events = self.postprocessor.update(probs, t_audio, rms_dbfs=level)
 
         status = StatusUpdate(t_audio=t_audio, rms_dbfs=level, probs=probs, gated=gated,
                               infer_ms=infer_ms, logmel=logmel if self.emit_logmel else None)
@@ -259,6 +276,8 @@ class Engine:
             "wall_s": self._wall_s,
             "realtime_factor": audio_s / self._wall_s if self._wall_s > 0 else 0.0,
             "stop_reason": self.stop_reason,
+            "mode": self.postprocessor.mode,
+            "mode_changes": [list(m) for m in self.postprocessor.mode_log],
         }
 
 
@@ -325,7 +344,7 @@ def run_offline(cfg: Config, source: AudioSource, classifier: Classifier, stats:
     eng = Engine(cfg, source, classifier, stats, out_queue=sink,  # type: ignore[arg-type]
                  event_log_path=event_log_path, emit_logmel=keep_logmel)
     if postprocessor_classes is not None:
-        eng.postprocessor = PostProcessor(tuple(postprocessor_classes), cfg.postprocess)
+        eng.postprocessor = PostProcessor(tuple(postprocessor_classes), cfg.postprocess, cfg.modes)
     eng.run()
     n = cfg.num_classes
     summary = StatusSummary(
@@ -341,9 +360,10 @@ def run_offline(cfg: Config, source: AudioSource, classifier: Classifier, stats:
 
 
 def replay_postprocess(cfg: Config, summary: StatusSummary, classes=None) -> list[AlertEvent]:
-    """Re-run only the PostProcessor over recorded per-hop probs (t_wall is set to 0)."""
-    pp = PostProcessor(tuple(classes) if classes is not None else cfg.classes, cfg.postprocess)
+    """Re-run only the PostProcessor over recorded per-hop probs (t_wall is set to 0). Context modes
+    come from `cfg.modes` (start-up mode = cfg.modes.default); 'auto' uses the recorded RMS."""
+    pp = PostProcessor(tuple(classes) if classes is not None else cfg.classes, cfg.postprocess, cfg.modes)
     out: list[AlertEvent] = []
-    for t, p in zip(summary.t_audio, summary.probs, strict=True):
-        out.extend(pp.update(p, float(t), t_wall=0.0))
+    for t, p, r in zip(summary.t_audio, summary.probs, summary.rms_dbfs, strict=True):
+        out.extend(pp.update(p, float(t), t_wall=0.0, rms_dbfs=float(r)))
     return out

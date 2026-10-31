@@ -152,21 +152,23 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--out-dir", default=None, help="report dir (default artifacts/reports)")
     parser.add_argument("--model", default=None, help="int8 .tflite to evaluate (default: config model)")
     parser.add_argument("--stats", default=None, help="feature_stats.json for --model (default: config)")
+    parser.add_argument("--mode", default=None, help="context mode at start-up (config `modes:`)")
 
 
 def main(args: argparse.Namespace) -> int:
-    from soundwatch.audio.features import load_stats
-    from soundwatch.engine.classifier import load_classifier
+    from soundwatch.config import with_mode
+    from soundwatch.engine.classifier import load_model
 
-    cfg = load_config(args.config)
+    cfg = with_mode(load_config(args.config), getattr(args, "mode", None))
     base = with_fast(cfg, None)
     values = [float(v) for v in args.values.split(",") if v.strip()]
     model = Path(args.model) if args.model else cfg.model.resolved_tflite()
-    clf = load_classifier(model)
-    stats = load_stats(Path(args.stats) if args.stats else cfg.model.resolved_stats())
+    clf, stats, _meta = load_model(model, Path(args.stats) if args.stats else cfg.model.resolved_stats())
     out_dir = Path(args.out_dir) if args.out_dir else paths.REPORTS
     out_dir.mkdir(parents=True, exist_ok=True)
     result: dict = {"model": str(model), "values": values, "sets": {}}
+    if cfg.modes is not None:
+        result["mode"] = cfg.modes.default
     for name in args.sets.split(","):
         scen_dir = SETS[name]
         scen = list_scenarios(scen_dir)

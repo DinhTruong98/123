@@ -83,12 +83,58 @@ class UIConfig:
 
 
 @dataclass(frozen=True)
+class ModeSpec:
+    """One context mode: classes switched off and per-class level overrides (key -> Level)."""
+    disable: tuple[str, ...] = ()
+    level: tuple[tuple[str, int], ...] = ()
+
+    @property
+    def level_map(self) -> dict[str, int]:
+        return dict(self.level)
+
+
+@dataclass(frozen=True)
+class AutoModeConfig:
+    """`auto`: street while the running median of the per-hop RMS (dBFS) over the last `window_s`
+    seconds is above `street_above_dbfs` (+ hysteresis_db / 2), indoor once it is below
+    (- hysteresis_db / 2). No decision before `min_s` seconds of history (stays indoor)."""
+    street_above_dbfs: float = -35.0
+    window_s: float = 30.0
+    hysteresis_db: float = 0.0
+    min_s: float = 5.0
+
+
+AUTO_MODE = "auto"
+AUTO_LOW_MODE, AUTO_HIGH_MODE = "indoor", "street"
+
+
+@dataclass(frozen=True)
+class ModesConfig:
+    """Context modes (optional `modes:` section). `default` = mode at start-up (a named mode or
+    'auto'). Absent section = no modes = historical behaviour."""
+    default: str
+    modes: tuple[tuple[str, ModeSpec], ...]
+    auto: AutoModeConfig | None = None
+
+    @property
+    def names(self) -> list[str]:
+        return [n for n, _ in self.modes] + ([AUTO_MODE] if self.auto is not None else [])
+
+    def spec(self, name: str) -> ModeSpec:
+        for n, m in self.modes:
+            if n == name:
+                return m
+        raise KeyError(name)
+
+
+@dataclass(frozen=True)
 class Config:
     audio: AudioConfig
     postprocess: PostprocessConfig
     model: ModelConfig
     ui: UIConfig
     classes: tuple[SoundClass, ...]
+    modes: ModesConfig | None = None  # optional context modes (vn-v2); None = off
 
     @property
     def num_classes(self) -> int:
@@ -136,6 +182,63 @@ def _parse_class(i: int, d: dict, check_icons: bool) -> SoundClass:
     if check_icons and not (paths.ICONS / sc.icon).exists():
         raise ConfigError(f"class {sc.key}: icon {paths.ICONS / sc.icon} not found")
     return sc
+
+
+def _parse_modes(raw: dict | None, keys: list[str]) -> ModesConfig | None:
+    if raw is None:
+        return None
+    if not isinstance(raw, dict):
+        raise ConfigError("modes must be a mapping")
+    named: list[tuple[str, ModeSpec]] = []
+    auto = None
+    for name, body in raw.items():
+        if name == "default":
+            continue
+        body = body or {}
+        if name == AUTO_MODE:
+            try:
+                auto = AutoModeConfig(**{k: float(v) for k, v in body.items()})
+            except TypeError as e:
+                raise ConfigError(f"modes.auto: {e}") from e
+            if auto.window_s <= 0:
+                raise ConfigError("modes.auto.window_s must be > 0")
+            continue
+        unknown = set(body) - {"disable", "level"}
+        if unknown:
+            raise ConfigError(f"modes.{name}: unknown keys {sorted(unknown)}")
+        disable = tuple(str(k) for k in body.get("disable", []) or [])
+        level = tuple((str(k), int(v)) for k, v in (body.get("level") or {}).items())
+        for k in list(disable) + [k for k, _ in level]:
+            if k not in keys[:-1]:
+                raise ConfigError(f"modes.{name}: unknown alert class {k!r}")
+        for k, v in level:
+            if v not in (0, 1, 2):
+                raise ConfigError(f"modes.{name}.level.{k}: must be 0, 1 or 2")
+        named.append((str(name), ModeSpec(disable, level)))
+    names = [n for n, _ in named]
+    if auto is not None:
+        for need in (AUTO_LOW_MODE, AUTO_HIGH_MODE):
+            if need not in names:
+                named.append((need, ModeSpec()))
+    default = str(raw.get("default", named[0][0] if named else AUTO_MODE))
+    m = ModesConfig(default=default, modes=tuple(named), auto=auto)
+    if default not in m.names:
+        raise ConfigError(f"modes.default {default!r} not among {m.names}")
+    return m
+
+
+def with_mode(cfg: Config, mode: str | None) -> Config:
+    """Config whose start-up mode is `mode` (None: unchanged). Raises ConfigError if the config has
+    no modes or does not define that mode."""
+    import dataclasses
+
+    if mode is None:
+        return cfg
+    if cfg.modes is None:
+        raise ConfigError(f"mode {mode!r} requested but the config has no `modes:` section")
+    if mode not in cfg.modes.names:
+        raise ConfigError(f"unknown mode {mode!r} (config defines {cfg.modes.names})")
+    return dataclasses.replace(cfg, modes=dataclasses.replace(cfg.modes, default=mode))
 
 
 def load_config(path: str | Path | None = None, check_icons: bool = False) -> Config:
@@ -198,4 +301,5 @@ def load_config(path: str | Path | None = None, check_icons: bool = False) -> Co
         raise ConfigError("last class must be 'background'")
     if audio.window_samples < audio.n_fft:
         raise ConfigError("window shorter than n_fft")
-    return Config(audio=audio, postprocess=post, model=model, ui=ui, classes=classes)
+    modes = _parse_modes(raw.get("modes"), keys)
+    return Config(audio=audio, postprocess=post, model=model, ui=ui, classes=classes, modes=modes)

@@ -95,13 +95,35 @@ def export_config(cfg, stats: dict) -> dict:
         "feature_stats": {"mean": stats["mean"], "std": stats["std"]},
         "hann": f32(F.hann_window(a.n_fft)),
         "mel_bands": bands,
+        **export_extras(cfg, stats),
     }
 
 
+def export_extras(cfg, stats: dict) -> dict:
+    """vn-v2 additions, present only when used (so the historical model/config export is unchanged):
+    `model_frontend` (PCEN constants, sigmoid output, window length) and `modes` (context modes)."""
+    out: dict = {}
+    meta = F.model_meta(stats)
+    if not meta.is_default:
+        out["model_frontend"] = meta.to_params(cfg.audio.sample_rate, cfg.audio.frame_step)
+    if cfg.modes is not None:
+        m = cfg.modes
+        out["modes"] = {
+            "default": m.default,
+            "modes": {n: {"disable": list(sp.disable), "level": sp.level_map} for n, sp in m.modes},
+            "auto": None if m.auto is None else {
+                "street_above_dbfs": m.auto.street_above_dbfs, "window_s": m.auto.window_s,
+                "hysteresis_db": m.auto.hysteresis_db, "min_s": m.auto.min_s},
+        }
+    return out
+
+
 def export_golden_json(cfg, stats: dict, clf: TFLiteClassifier) -> dict:
+    meta = F.model_meta(stats)
     with tempfile.TemporaryDirectory() as tmp:
         out = Path(tmp)
-        manifest = export_golden.export(out, cfg.audio)  # == python -m soundwatch export-golden
+        # == python -m soundwatch export-golden (+ PCEN references for a PCEN model)
+        manifest = export_golden.export(out, cfg.audio, meta=meta if meta.frontend == "pcen" else None)
         cases = []
         for m in manifest:
             d = out / m["dir"]
@@ -109,10 +131,13 @@ def export_golden_json(cfg, stats: dict, clf: TFLiteClassifier) -> dict:
             lm = np.load(d / "logmel.npy")
             pcm = np.round(x.astype(np.float64) * 32768.0).astype(np.int16)
             assert np.array_equal(pcm.astype(np.float32) / np.float32(32768.0), x)
-            cases.append({"name": m["name"], "description": m["description"],
-                          "input_int16": pcm.tolist(), "logmel": f32(lm)})
+            case = {"name": m["name"], "description": m["description"],
+                    "input_int16": pcm.tolist(), "logmel": f32(lm)}
+            if (d / "pcen.npy").exists():
+                case["pcen"] = f32(np.load(d / "pcen.npy"))
+            cases.append(case)
     c = cases[GOLDEN_CLASSIFIER_CASE]
-    lm = np.asarray(c["logmel"], np.float32).reshape(cfg.audio.n_frames, cfg.audio.n_mels)
+    lm = np.asarray(c.get("pcen", c["logmel"]), np.float32).reshape(cfg.audio.n_frames, cfg.audio.n_mels)
     feats = F.normalize(lm, stats)
     probs = clf.predict(feats)
     return {
@@ -122,7 +147,7 @@ def export_golden_json(cfg, stats: dict, clf: TFLiteClassifier) -> dict:
 
 
 def export_demo(cfg, stats: dict) -> dict:
-    clf = TFLiteClassifier(MODEL)
+    clf = TFLiteClassifier(MODEL, output="sigmoid" if F.model_meta(stats).output == "sigmoid" else None)
     events, summary, st = run_offline(cfg, FileSource(DEMO_WAV, realtime=False), clf, stats)
     keys = cfg.class_keys
     return {
@@ -134,14 +159,28 @@ def export_demo(cfg, stats: dict) -> dict:
     }
 
 
-def main() -> int:
-    cfg = load_config()
+def main(argv: list[str] | None = None) -> int:
+    """Defaults = the deployed app model; `--config/--model/--stats` export another model (e.g. vn-v2,
+    whose config adds `modes` and whose stats add `model_frontend`) - the Swift app must support PCEN /
+    sigmoid / modes before such an export is used (docs/vn_v2_results.md)."""
+    import argparse
+
+    global MODEL, STATS
+    ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    ap.add_argument("--config", default=None)
+    ap.add_argument("--model", default=None)
+    ap.add_argument("--stats", default=None)
+    args = ap.parse_args(argv)
+    MODEL = Path(args.model) if args.model else MODEL
+    STATS = Path(args.stats) if args.stats else STATS
+    cfg = load_config(args.config)
     stats = F.load_stats(STATS)
     OUT.mkdir(parents=True, exist_ok=True)
     shutil.copyfile(MODEL, OUT / MODEL.name)
     shutil.copyfile(DEMO_WAV, OUT / DEMO_WAV.name)
     write_json(OUT / "soundwatch_config.json", export_config(cfg, stats))
-    write_json(OUT / "golden_features.json", export_golden_json(cfg, stats, TFLiteClassifier(MODEL)))
+    clf = TFLiteClassifier(MODEL, output="sigmoid" if F.model_meta(stats).output == "sigmoid" else None)
+    write_json(OUT / "golden_features.json", export_golden_json(cfg, stats, clf))
     demo = export_demo(cfg, stats)
     write_json(OUT / "demo_expected_events.json", demo)
     for e in demo["events"]:

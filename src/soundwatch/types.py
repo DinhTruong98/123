@@ -59,5 +59,10 @@ class SettingsCommand:
 
 
 @dataclass(frozen=True)
+class ModeCommand:      # UI/app -> engine: switch context mode ('indoor', 'street', 'auto', ...)
+    mode: str
+
+
+@dataclass(frozen=True)
 class EngineStopped:
     reason: str = "eof"

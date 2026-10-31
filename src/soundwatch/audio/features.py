@@ -26,11 +26,26 @@ Exact feature definition (the firmware must reproduce this bit-for-bit up to flo
 
 All arithmetic is float32 (as on the MCU with an FPU); the filterbank is built in float64 and
 then cast to float32.
+
+Optional PCEN front-end (vn-v2, per model: ``feature_stats.json`` ``params.frontend = "pcen"``).
+Steps 1-5 are identical (mel power ``E[t, m]``, t = 0..48); step 6 is replaced by fixed,
+non-learned per-channel energy normalization, stateless per window:
+
+    s       = (sqrt(1 + 4 T^2) - 1) / (2 T^2),  T = time_constant_s * sample_rate / frame_step
+    M[0, m] = E[0, m]                                   (smoother initialised per window)
+    M[t, m] = (1 - s) * M[t-1, m] + s * E[t, m]         t = 1..n_frames-1
+    pcen    = (E / (eps + M)^gain + bias)^power - bias^power
+
+with the defaults :data:`PCEN_DEFAULTS` (time_constant_s 0.4 -> T = 20 frames, s = 0.04877;
+gain 0.98, bias 2, power 0.5, eps 1e-6). This is ``librosa.pcen(E.T, sr, hop_length=frame_step,
+time_constant=..., gain, bias, power, eps, max_size=1, zi=lfilter_zi * E[0])``. Normalization
+(step 7) uses the scalar mean/std of the PCEN features of the train split.
 """
 
 from __future__ import annotations
 
 import json
+from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
 
@@ -56,12 +71,23 @@ WINDOW_TYPE = "hann_periodic"
 MEL_NORM = None
 MEL_SCALE = "htk"
 
+#: Feature front-ends; "logmel" is the plan 4.2 default.
+FRONTENDS = ("logmel", "pcen")
+#: Model output activations; "softmax" is the default (probabilities sum to 1).
+OUTPUTS = ("softmax", "sigmoid")
+#: Fixed PCEN constants (librosa defaults, time constant 0.4 s at the 20 ms hop).
+PCEN_DEFAULTS = {"time_constant_s": 0.4, "gain": 0.98, "bias": 2.0, "power": 0.5, "eps": 1e-6}
+
 SILENCE_DBFS = -120.0
 _BATCH_CHUNK = 32  # windows per chunk in compute_logmel_batch (~7 MB temporaries, cache friendly)
 
 
-def feature_params(cfg: AudioConfig | None = None) -> dict:
-    """All parameters that define the feature (stored in feature_stats.json and C headers)."""
+def feature_params(cfg: AudioConfig | None = None, meta: ModelMeta | None = None) -> dict:
+    """All parameters that define the feature (stored in feature_stats.json and C headers).
+
+    Without ``meta`` the dict is exactly the historical one (log-mel, softmax, 1 s implied). With
+    ``meta`` the model front-end metadata is added: ``frontend``, ``output``, ``window_s`` and, for
+    PCEN, ``pcen`` (constants + smoothing coefficient ``s``)."""
     if cfg is None:
         p = dict(sample_rate=SAMPLE_RATE, window_samples=WINDOW_SAMPLES, n_fft=N_FFT,
                  frame_step=FRAME_STEP, n_frames=N_FRAMES, n_mels=N_MELS, fmin=FMIN, fmax=FMAX,
@@ -71,7 +97,83 @@ def feature_params(cfg: AudioConfig | None = None) -> dict:
                  frame_step=cfg.frame_step, n_frames=cfg.n_frames, n_mels=cfg.n_mels,
                  fmin=cfg.fmin, fmax=cfg.fmax, log_eps=cfg.log_eps)
     p.update(window=WINDOW_TYPE, mel_scale=MEL_SCALE, mel_norm=MEL_NORM, log="natural")
+    if meta is not None:
+        p.update(meta.to_params(p["sample_rate"], p["frame_step"]))
     return p
+
+
+# ---- per-model front-end metadata ------------------------------------------------------------
+@dataclass(frozen=True)
+class ModelMeta:
+    """How a model wants its input computed and its output read (from ``feature_stats.json``).
+
+    Defaults = the historical models: log-mel, softmax, 1 s window."""
+
+    frontend: str = "logmel"
+    output: str = "softmax"
+    window_s: float | None = None  # None = whatever the config says (historically 1.0)
+    pcen: tuple[tuple[str, float], ...] = ()  # sorted (key, value) pairs, only for frontend="pcen"
+
+    def __post_init__(self):
+        if self.frontend not in FRONTENDS:
+            raise ValueError(f"unknown frontend {self.frontend!r} (expected one of {FRONTENDS})")
+        if self.output not in OUTPUTS:
+            raise ValueError(f"unknown output {self.output!r} (expected one of {OUTPUTS})")
+        if self.frontend == "pcen" and not self.pcen:
+            object.__setattr__(self, "pcen", tuple(sorted(PCEN_DEFAULTS.items())))
+
+    @property
+    def is_default(self) -> bool:
+        return self.frontend == "logmel" and self.output == "softmax" and self.window_s in (None, 1.0)
+
+    @property
+    def pcen_params(self) -> dict:
+        return dict(self.pcen)
+
+    @classmethod
+    def make(cls, frontend: str = "logmel", output: str = "softmax", window_s: float | None = None,
+             pcen: dict | None = None) -> ModelMeta:
+        pc = ()
+        if frontend == "pcen":
+            pc = tuple(sorted({**PCEN_DEFAULTS, **(pcen or {})}.items()))
+        return cls(frontend, output, None if window_s is None else float(window_s), pc)
+
+    def to_params(self, sample_rate: int = SAMPLE_RATE, frame_step: int = FRAME_STEP) -> dict:
+        d: dict = {"frontend": self.frontend, "output": self.output}
+        if self.window_s is not None:
+            d["window_s"] = self.window_s
+        if self.frontend == "pcen":
+            pc = {k: float(v) for k, v in self.pcen}
+            pc["s"] = pcen_smoothing_coef(pc["time_constant_s"], sample_rate, frame_step)
+            d["pcen"] = pc
+        return d
+
+
+def model_meta(stats: dict | None) -> ModelMeta:
+    """ModelMeta from a loaded ``feature_stats.json`` dict (missing keys -> historical defaults)."""
+    p = (stats or {}).get("params") or {}
+    pc = p.get("pcen") or {}
+    pc = {k: float(v) for k, v in pc.items() if k in PCEN_DEFAULTS}
+    ws = p.get("window_s")
+    return ModelMeta.make(p.get("frontend", "logmel"), p.get("output", "softmax"),
+                          None if ws is None else float(ws), pc)
+
+
+def apply_meta_to_config(cfg, meta: ModelMeta | None):
+    """Config (soundwatch.config.Config) whose audio window matches the model (``meta.window_s``);
+    returned unchanged when the model does not set one or it already matches."""
+    import dataclasses
+
+    if meta is None or meta.window_s is None or abs(meta.window_s - cfg.audio.window_s) < 1e-9:
+        return cfg
+    return dataclasses.replace(cfg, audio=dataclasses.replace(cfg.audio, window_s=float(meta.window_s)))
+
+
+def pcen_smoothing_coef(time_constant_s: float, sample_rate: int = SAMPLE_RATE,
+                        frame_step: int = FRAME_STEP) -> float:
+    """librosa's smoothing coefficient s for a time constant in seconds (T in frames)."""
+    t = float(time_constant_s) * sample_rate / frame_step
+    return float((np.sqrt(1.0 + 4.0 * t * t) - 1.0) / (2.0 * t * t))
 
 
 # ---- constants: window + filterbank (cached) -------------------------------------------------
@@ -216,8 +318,93 @@ def compute_logmel_batch(waves: np.ndarray, cfg: AudioConfig | None = None,
     return out
 
 
+# ---- PCEN front-end --------------------------------------------------------------------------
+def pcen(mel: np.ndarray, s: float, gain: float = 0.98, bias: float = 2.0, power: float = 0.5,
+         eps: float = 1e-6) -> np.ndarray:
+    """PCEN over the frame axis of mel power ``(..., n_frames, n_mels)`` (see module doc).
+
+    The smoother starts at ``M[0] = E[0]`` for every window (stateless per window). float32."""
+    e = np.asarray(mel, dtype=np.float32)
+    s32, one_m_s = np.float32(s), np.float32(1.0 - s)
+    m = np.empty_like(e)
+    m[..., 0, :] = e[..., 0, :]
+    for t in range(1, e.shape[-2]):
+        m[..., t, :] = one_m_s * m[..., t - 1, :] + s32 * e[..., t, :]
+    b = np.float32(bias)
+    p = np.float32(power)
+    out = np.power(e / np.power(np.float32(eps) + m, np.float32(gain)) + b, p) - np.power(b, p)
+    return out.astype(np.float32, copy=False)
+
+
+def _pcen_meta(meta: ModelMeta, cfg: AudioConfig | None) -> dict:
+    pc = meta.pcen_params
+    sr = cfg.sample_rate if cfg is not None else SAMPLE_RATE
+    step = cfg.frame_step if cfg is not None else FRAME_STEP
+    return {"s": pcen_smoothing_coef(pc["time_constant_s"], sr, step), "gain": pc["gain"],
+            "bias": pc["bias"], "power": pc["power"], "eps": pc["eps"]}
+
+
+def logmel_to_features(logmel: np.ndarray, meta: ModelMeta | None = None,
+                       cfg: AudioConfig | None = None) -> np.ndarray:
+    """Front-end output from log-mel: identity for log-mel, PCEN of ``exp(logmel) - log_eps`` else.
+
+    Used in training, where features are cached (and mixed) as log-mel; at inference
+    :func:`compute_features` goes from the mel power directly (equal up to float rounding)."""
+    if meta is None or meta.frontend == "logmel":
+        return np.asarray(logmel, dtype=np.float32)
+    eps = cfg.log_eps if cfg is not None else LOG_EPS
+    mel = np.maximum(np.exp(np.asarray(logmel, dtype=np.float32)) - np.float32(eps), np.float32(0.0))
+    return pcen(mel, **_pcen_meta(meta, cfg))
+
+
+def _mel_core(x: np.ndarray, n_fft: int, step: int, fb: np.ndarray) -> np.ndarray:
+    frames = sliding_window_view(x, n_fft, axis=-1)[..., ::step, :]
+    spec = np.fft.rfft(frames * hann_window(n_fft), axis=-1)
+    power = spec.real * spec.real + spec.imag * spec.imag
+    return (power @ fb).astype(np.float32, copy=False)
+
+
+def compute_mel(window: np.ndarray, cfg: AudioConfig | None = None) -> np.ndarray:
+    """(window_samples,) -> (n_frames, n_mels) float32 mel power (steps 1-5)."""
+    sr, n_win, n_fft, step, n_mels, fmin, fmax, _eps = _params(cfg)
+    x = _fit_length(to_float32(window), n_win)
+    return _mel_core(x, n_fft, step, mel_filterbank(sr, n_fft, n_mels, fmin, fmax))
+
+
+def compute_features(window: np.ndarray, cfg: AudioConfig | None = None,
+                     meta: ModelMeta | None = None) -> np.ndarray:
+    """Un-normalized model input of one window for the model's front-end (log-mel by default;
+    for log-mel this is exactly :func:`compute_logmel`)."""
+    if meta is None or meta.frontend == "logmel":
+        return compute_logmel(window, cfg)
+    x = to_float32(window)
+    if x.ndim != 1:
+        raise ValueError(f"expected a 1-D window, got shape {x.shape}; use compute_features_batch")
+    return pcen(compute_mel(x, cfg), **_pcen_meta(meta, cfg))
+
+
+def compute_features_batch(waves: np.ndarray, cfg: AudioConfig | None = None,
+                           meta: ModelMeta | None = None, chunk: int = _BATCH_CHUNK) -> np.ndarray:
+    """Batched :func:`compute_features`: (N, window_samples) -> (N, n_frames, n_mels) float32."""
+    if meta is None or meta.frontend == "logmel":
+        return compute_logmel_batch(waves, cfg, chunk)
+    sr, n_win, n_fft, step, n_mels, fmin, fmax, _eps = _params(cfg)
+    waves = np.asarray(waves)
+    if waves.ndim != 2:
+        raise ValueError(f"expected (N, samples), got shape {waves.shape}")
+    fb = mel_filterbank(sr, n_fft, n_mels, fmin, fmax)
+    n_frames = 1 + (n_win - n_fft) // step
+    out = np.empty((waves.shape[0], n_frames, n_mels), np.float32)
+    pm = _pcen_meta(meta, cfg)
+    for i in range(0, waves.shape[0], max(1, chunk)):
+        x = _fit_length(to_float32(waves[i:i + chunk]), n_win)
+        out[i:i + chunk] = pcen(_mel_core(x, n_fft, step, fb), **pm)
+    return out
+
+
 # ---- normalization stats ----------------------------------------------------------------------
-def compute_feature_stats(logmels: np.ndarray, cfg: AudioConfig | None = None) -> dict:
+def compute_feature_stats(logmels: np.ndarray, cfg: AudioConfig | None = None,
+                          meta: ModelMeta | None = None) -> dict:
     """Scalar mean/std over a (N, n_frames, n_mels) array -> {"mean": float, "std": float}.
 
     Also returns ``n_windows`` and ``params`` (feature parameters, see :func:`feature_params`).
@@ -237,7 +424,7 @@ def compute_feature_stats(logmels: np.ndarray, cfg: AudioConfig | None = None) -
     mean = s / n
     var = max(ss / n - mean * mean, 0.0)
     return {"mean": float(mean), "std": float(np.sqrt(var)), "n_windows": int(logmels.shape[0]),
-            "params": feature_params(cfg)}
+            "params": feature_params(cfg, meta)}
 
 
 def save_stats(stats: dict, path) -> None:

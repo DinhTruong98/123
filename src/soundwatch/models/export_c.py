@@ -110,6 +110,7 @@ def feature_params_header(cfg: Config, stats: dict, q: dict) -> str:
         f"#define SW_OUTPUT_SCALE     {q['out_scale']:.9g}f",
         f"#define SW_OUTPUT_ZERO_POINT {q['out_zp']}",
         "",
+        *_frontend_lines(stats),
         "// Post-processing (plan section 4.3)",
         f"#define SW_SMOOTH_N         {cfg.postprocess.smooth_n}",
         f"#define SW_K_OF_N_K         {cfg.postprocess.k_of_n[0]}",
@@ -120,6 +121,77 @@ def feature_params_header(cfg: Config, stats: dict, q: dict) -> str:
         "#endif  // SOUNDWATCH_FEATURE_PARAMS_H_",
     ]
     return "\n".join(lines) + "\n"
+
+
+def _frontend_lines(stats: dict) -> list[str]:
+    """Extra defines for a non-default model front-end (PCEN, sigmoid output, other window length);
+    empty for the historical log-mel / softmax / 1 s models, so their header does not change."""
+    from soundwatch.audio.features import model_meta, pcen_smoothing_coef
+
+    meta = model_meta(stats)
+    if meta.is_default:
+        return []
+    p = stats.get("params", {})
+    sr, step = int(p.get("sample_rate", 16000)), int(p.get("frame_step", 320))
+    out = ["// Model front-end (feature_stats.json params, vn-v2)",
+           f"#define SW_FRONTEND_PCEN    {1 if meta.frontend == 'pcen' else 0}",
+           f"#define SW_OUTPUT_SIGMOID   {1 if meta.output == 'sigmoid' else 0}"]
+    if meta.window_s is not None:
+        out.append(f"#define SW_MODEL_WINDOW_SAMPLES {int(round(meta.window_s * sr))}")
+    if meta.output == "sigmoid":
+        out.append("// Sigmoid output: independent per-class probabilities (no softmax; need not sum to 1)")
+    if meta.frontend == "pcen":
+        pc = meta.pcen_params
+        out += [
+            "// PCEN replaces logmel (stateless per window, smoother initialised with the first frame):",
+            "//   M[0] = E[0]; M[t] = (1 - S) * M[t-1] + S * E[t]   (E = mel power, per mel band)",
+            "//   pcen = powf(E / powf(EPS + M, GAIN) + BIAS, POWER) - powf(BIAS, POWER)",
+            "// then x = (pcen - SW_FEATURE_MEAN) / SW_FEATURE_STD.",
+            f"#define SW_PCEN_S           {pcen_smoothing_coef(pc['time_constant_s'], sr, step):.9g}f",
+            f"#define SW_PCEN_GAIN        {pc['gain']:.9g}f",
+            f"#define SW_PCEN_BIAS        {pc['bias']:.9g}f",
+            f"#define SW_PCEN_POWER       {pc['power']:.9g}f",
+            f"#define SW_PCEN_EPS         {pc['eps']:.9g}f",
+            f"// time constant {pc['time_constant_s']:g} s",
+        ]
+    return out + [""]
+
+
+def _modes_lines(cfg: Config) -> list[str]:
+    """Context modes (config `modes:`) as per-mode tables; empty when the config has none."""
+    m = cfg.modes
+    if m is None:
+        return []
+    cls = cfg.classes
+    names = [n for n, _ in m.modes]
+    out = ["// Context modes (config `modes:`). Mode i: class c off if kModeDisabled[i][c],",
+           "// level = kModeLevel[i][c] (overrides kClassLevel).",
+           f"#define SW_NUM_MODES {len(names)}"]
+    for i, n in enumerate(names):
+        out.append(f"#define SW_MODE_{c_ident(n)} {i}")
+    default = m.default
+    out.append(f"#define SW_MODE_DEFAULT_AUTO {1 if default == 'auto' else 0}")
+    if default != "auto":
+        out.append(f"#define SW_MODE_DEFAULT SW_MODE_{c_ident(default)}")
+    out.append("static const char* const kModeNames[SW_NUM_MODES] = {"
+               + ", ".join(c_string(n) for n in names) + "};")
+    dis, lev = [], []
+    for _, spec in m.modes:
+        lm = spec.level_map
+        dis.append("{" + ", ".join("1" if c.key in spec.disable else "0" for c in cls) + "}")
+        lev.append("{" + ", ".join(str(int(lm.get(c.key, int(c.level)))) for c in cls) + "}")
+    out.append("static const uint8_t kModeDisabled[SW_NUM_MODES][SW_NUM_CLASSES] = {\n  "
+               + ",\n  ".join(dis) + "};")
+    out.append("static const uint8_t kModeLevel[SW_NUM_MODES][SW_NUM_CLASSES] = {\n  "
+               + ",\n  ".join(lev) + "};")
+    if m.auto is not None:
+        a = m.auto
+        out += ["// auto: street while the running median of the per-hop RMS over the window is above",
+                f"#define SW_AUTO_STREET_ABOVE_DBFS {a.street_above_dbfs:.1f}f",
+                f"#define SW_AUTO_WINDOW_MS   {int(round(a.window_s * 1000))}",
+                f"#define SW_AUTO_HYSTERESIS_DB {a.hysteresis_db:.1f}f",
+                f"#define SW_AUTO_MIN_MS      {int(round(a.min_s * 1000))}"]
+    return out + [""]
 
 
 def labels_header(cfg: Config) -> str:
@@ -169,6 +241,9 @@ def labels_header(cfg: Config) -> str:
         if c.vibration:
             out.append(f"static const uint16_t kVib_{c.key}[{len(c.vibration)}] = "
                        f"{{{', '.join(str(v) for v in c.vibration)}}};")
+    modes = _modes_lines(cfg)
+    if modes:
+        out += [""] + modes
     out += ["", "#endif  // SOUNDWATCH_LABELS_H_"]
     return "\n".join(out) + "\n"
 

@@ -23,6 +23,23 @@ def softmax(x: np.ndarray) -> np.ndarray:
     return (e / e.sum()).astype(np.float32)
 
 
+def to_probs(y: np.ndarray, output: str | None = None) -> np.ndarray:
+    """Model output -> probabilities. ``output="sigmoid"``: independent per-class probabilities,
+    only clipped to [0, 1] (they need not sum to 1 and must NOT be softmaxed). Anything else
+    (``"softmax"``, ``None`` / ``"auto"``): :func:`as_probs` (historical behaviour)."""
+    if output == "sigmoid":
+        return np.clip(np.asarray(y, dtype=np.float32).reshape(-1), 0.0, 1.0)
+    return as_probs(y)
+
+
+def _resolve_output(output: str | None, detected: str | None) -> str | None:
+    if output in (None, "auto"):
+        return detected
+    if output not in ("softmax", "sigmoid"):
+        raise ValueError(f"unknown output {output!r} (softmax | sigmoid | auto)")
+    return output
+
+
 def as_probs(y: np.ndarray, tol: float = 0.05) -> np.ndarray:
     """Return `y` as a probability vector: unchanged if it already looks like one
     (non-negative, sums to 1 +- tol), else softmax(y)."""
@@ -46,15 +63,40 @@ def _make_interpreter(model_path: str, num_threads: int):
     return Interpreter(model_path=model_path, num_threads=num_threads)
 
 
+def detect_tflite_output(model_path) -> str | None:
+    """'sigmoid' if the last op of the .tflite graph is LOGISTIC, else None (best effort: an
+    interpreter without default delegates is built only to list the ops)."""
+    try:
+        try:
+            from ai_edge_litert.interpreter import Interpreter, OpResolverType
+        except ImportError:
+            import tensorflow as tf
+
+            Interpreter, OpResolverType = tf.lite.Interpreter, tf.lite.experimental.OpResolverType
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            it = Interpreter(model_path=str(model_path),
+                             experimental_op_resolver_type=OpResolverType.BUILTIN_WITHOUT_DEFAULT_DELEGATES)
+        it.allocate_tensors()
+        ops = it._get_ops_details()
+    except Exception:  # noqa: BLE001 - private API / runtime differences: fall back to auto
+        return None
+    return "sigmoid" if ops and ops[-1].get("op_name") == "LOGISTIC" else None
+
+
 class TFLiteClassifier:
     """Runs a .tflite model; quantizes int8 input / dequantizes int8 output using the model's params.
     Output is a probability vector (apply softmax only if the model outputs logits).
 
     The (n_frames, n_mels) feature array is reshaped to the model's input shape (e.g. (1, 49, 40, 1)).
     `last_infer_ms` holds the duration of the last `predict` (quantize + invoke + dequantize).
+
+    ``output``: ``"sigmoid"`` (multi-label head: outputs are clipped, never softmaxed), ``"softmax"``
+    or ``None`` / ``"auto"``: sigmoid if the graph ends with a LOGISTIC op, else the historical
+    :func:`as_probs`. Pass the value from the model's ``feature_stats.json`` (``ModelMeta.output``).
     """
 
-    def __init__(self, model_path, num_threads: int = 1):
+    def __init__(self, model_path, num_threads: int = 1, output: str | None = None):
         self.model_path = Path(model_path)
         if not self.model_path.exists():
             raise FileNotFoundError(self.model_path)
@@ -71,7 +113,11 @@ class TFLiteClassifier:
         self._out_scale, self._out_zp = (float(v) for v in out["quantization"])
         self.num_classes = int(out["shape"][-1])
         self._in_buf = np.zeros(self.input_shape, dtype=self.input_dtype)
+        self.output = _resolve_output(output, self._detect_output())
         self.last_infer_ms = 0.0
+
+    def _detect_output(self) -> str | None:
+        return detect_tflite_output(self.model_path)
 
     @property
     def is_quantized(self) -> bool:
@@ -100,7 +146,7 @@ class TFLiteClassifier:
         if np.issubdtype(self.output_dtype, np.integer):
             scale = self._out_scale if self._out_scale else 1.0
             y = (y.astype(np.float32) - self._out_zp) * scale
-        probs = as_probs(y)
+        probs = to_probs(y, self.output)
         self.last_infer_ms = (time.perf_counter() - t0) * 1000.0
         return probs
 
@@ -108,7 +154,7 @@ class TFLiteClassifier:
 class KerasClassifier:
     """Float Keras model (.keras / .h5), for comparison with the int8 TFLite model."""
 
-    def __init__(self, model_path):
+    def __init__(self, model_path, output: str | None = None):
         import keras
 
         self.model_path = Path(model_path)
@@ -118,13 +164,18 @@ class KerasClassifier:
             shape = shape[0]
         self.input_shape = (1, *[int(v) for v in shape[1:]])
         self.num_classes = int(self._model.output_shape[-1])
+        detected = None
+        last = self._model.layers[-1] if self._model.layers else None
+        if getattr(getattr(last, "activation", None), "__name__", "") == "sigmoid":
+            detected = "sigmoid"
+        self.output = _resolve_output(output, detected)
         self.last_infer_ms = 0.0
 
     def predict(self, features: np.ndarray) -> np.ndarray:
         t0 = time.perf_counter()
         x = np.asarray(features, dtype=np.float32).reshape(self.input_shape)
         y = np.asarray(self._model(x, training=False)).reshape(-1)
-        probs = as_probs(y)
+        probs = to_probs(y, self.output)
         self.last_infer_ms = (time.perf_counter() - t0) * 1000.0
         return probs
 
@@ -172,9 +223,22 @@ class DummyClassifier:
         return p
 
 
-def load_classifier(model_path, num_threads: int = 1) -> TFLiteClassifier | KerasClassifier:
-    """.tflite -> TFLiteClassifier, anything else (.keras / .h5) -> KerasClassifier."""
+def load_classifier(model_path, num_threads: int = 1,
+                    output: str | None = None) -> TFLiteClassifier | KerasClassifier:
+    """.tflite -> TFLiteClassifier, anything else (.keras / .h5) -> KerasClassifier.
+    ``output``: see :class:`TFLiteClassifier` (None = auto)."""
     p = Path(model_path)
     if p.suffix == ".tflite":
-        return TFLiteClassifier(p, num_threads=num_threads)
-    return KerasClassifier(p)
+        return TFLiteClassifier(p, num_threads=num_threads, output=output)
+    return KerasClassifier(p, output=output)
+
+
+def load_model(model_path, stats_path, num_threads: int = 1):
+    """(classifier, feature stats, ModelMeta) for a model + its ``feature_stats.json``: the output
+    activation of the classifier comes from the stats' front-end metadata (``params.output``)."""
+    from soundwatch.audio.features import load_stats, model_meta
+
+    stats = load_stats(stats_path)
+    meta = model_meta(stats)
+    out = "sigmoid" if meta.output == "sigmoid" else None
+    return load_classifier(model_path, num_threads=num_threads, output=out), stats, meta

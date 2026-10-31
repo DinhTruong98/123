@@ -24,9 +24,22 @@ from soundwatch.config import Config, load_config
 
 
 def _features(waves: np.ndarray, cfg: Config, stats_path: Path) -> np.ndarray:
-    from soundwatch.audio.features import compute_logmel_batch, load_stats, normalize
+    """Normalized inputs with the model's own front-end (feature_stats.json params)."""
+    from soundwatch.audio.features import compute_features_batch, load_stats, model_meta, normalize
 
-    return normalize(compute_logmel_batch(waves, cfg.audio), load_stats(stats_path))[..., None]
+    stats = load_stats(stats_path)
+    meta = model_meta(stats)
+    if meta.window_s not in (None, cfg.audio.window_s):
+        raise ValueError(f"{stats_path}: model window {meta.window_s} s differs from the "
+                         f"{cfg.audio.window_s} s windows of the dataset")
+    return normalize(compute_features_batch(waves, cfg.audio, meta), stats)[..., None]
+
+
+def _predict(model: Path, stats_path: Path, x: np.ndarray) -> np.ndarray:
+    from soundwatch.engine.classifier import load_model
+
+    clf, _, _ = load_model(model, stats_path)
+    return np.stack([clf.predict(xi) for xi in x]).astype(np.float32)
 
 
 def _recall(y: np.ndarray, p: np.ndarray, cls: int) -> tuple[float, int]:
@@ -35,7 +48,8 @@ def _recall(y: np.ndarray, p: np.ndarray, cls: int) -> tuple[float, int]:
 
 
 def evaluate(cfg: Config, models: list[tuple[str, Path, Path]], split: str, manifest: Path | None) -> dict:
-    from soundwatch.eval.offline import metrics_from_predictions, predict_tflite
+    from soundwatch.eval.calibration import calibration_report
+    from soundwatch.eval.offline import metrics_from_predictions
     from soundwatch.models import common
 
     d = common.load_split(split)
@@ -49,13 +63,17 @@ def evaluate(cfg: Config, models: list[tuple[str, Path, Path]], split: str, mani
     out: dict = {"split": split, "n_vn": int(is_vn.sum()), "n_orig": int((~is_vn).sum()), "models": {}}
     for name, model, stats in models:
         x = _features(d["wave"], cfg, stats)
-        pred = predict_tflite(model, x).argmax(axis=1)
+        probs = _predict(model, stats, x)
+        pred = probs.argmax(axis=1)
         res: dict = {}
         for part, mask in (("orig", ~is_vn), ("vn", is_vn)):
             if not mask.any():
                 continue
             m = metrics_from_predictions(d["label"][mask], pred[mask], cfg)
+            cr = calibration_report(probs[mask], d["label"][mask])
             res[part] = {
+                "calibration": {k: cr[k] for k in ("ece_top_label", "ece_classwise_mean",
+                                                   "saturated_fraction", "saturated_true_class_fraction")},
                 "macro_f1": m["macro_f1"],
                 "per_class_recall": {k: v["recall"] for k, v in m["per_class"].items() if v["support"]},
                 "support": {k: v["support"] for k, v in m["per_class"].items() if v["support"]},
@@ -113,6 +131,11 @@ def to_markdown(r: dict) -> str:
                 lines.append(
                     f"| {lab} | " + " | ".join(f"{r['models'][n][part][k]:.3f}" for n in names) + " |"
                 )
+        if all("calibration" in r["models"][n][part] for n in names):
+            for k, lab in (("ece_top_label", "ECE (top-label)"), ("ece_classwise_mean", "ECE (từng lớp, TB)"),
+                           ("saturated_fraction", "tỷ lệ cửa sổ bão hoà ≥255/256")):
+                lines.append(f"| {lab} | " + " | ".join(
+                    f"{r['models'][n][part]['calibration'][k]:.3f}" for n in names) + " |")
         lines.append("")
     if all("vn_siren_breakdown" in r["models"][n] for n in names):
         lines += [

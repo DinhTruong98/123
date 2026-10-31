@@ -60,6 +60,20 @@ def with_softmax(model):
     return keras.Model(model.input, probs, name=model.name + "_probs")
 
 
+def with_sigmoid(model):
+    """Same layers/weights, output = sigmoid(logits) (multi-label head; TFLite op LOGISTIC)."""
+    import keras
+    from keras import layers
+
+    probs = layers.Activation("sigmoid", name="probs")(model.output)
+    return keras.Model(model.input, probs, name=model.name + "_sigmoid")
+
+
+def with_output(model, output: str = "softmax"):
+    """`with_softmax` or `with_sigmoid` by name."""
+    return with_sigmoid(model) if output == "sigmoid" else with_softmax(model)
+
+
 def _shape(t) -> tuple[int, ...]:
     return tuple(int(v) for v in t.shape[1:])
 

@@ -518,10 +518,14 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--scenarios", default=None, help="scenario dir (default artifacts/data/scenarios)")
     parser.add_argument("--limit", type=int, default=None, help="only the first N event + N background files")
     parser.add_argument("--out-dir", default=None, help="report dir (default artifacts/reports)")
+    parser.add_argument("--mode", default=None,
+                        help="context mode at start-up (needs a `modes:` config section), e.g. street")
 
 
 def main(args: argparse.Namespace) -> int:
-    cfg = load_config(args.config)
+    from soundwatch.config import with_mode
+
+    cfg = with_mode(load_config(args.config), getattr(args, "mode", None))
     scen_dir = Path(args.scenarios) if args.scenarios else paths.SCENARIOS
     scen = list_scenarios(scen_dir)
     if not scen:
@@ -541,8 +545,7 @@ def main(args: argparse.Namespace) -> int:
             "_dummy",
         )
     else:
-        from soundwatch.audio.features import load_stats
-        from soundwatch.engine.classifier import load_classifier
+        from soundwatch.engine.classifier import load_model
 
         mpath = Path(args.model) if args.model else cfg.model.resolved_tflite()
         spath = Path(args.stats) if args.stats else cfg.model.resolved_stats()
@@ -551,8 +554,7 @@ def main(args: argparse.Namespace) -> int:
                 f"[streaming] model {mpath} or stats {spath} missing (train/quantize first, or use --dummy)"
             )
             return 1
-        stats = load_stats(spath)
-        clf = load_classifier(mpath, num_threads=1)
+        clf, stats, _meta = load_model(mpath, spath, num_threads=1)
         make = lambda gt: clf  # noqa: E731 - engine resets nothing in the classifier
         model_name = str(mpath.relative_to(paths.ROOT)) if mpath.is_relative_to(paths.ROOT) else str(mpath)
     t0 = time.perf_counter()
@@ -571,6 +573,7 @@ def main(args: argparse.Namespace) -> int:
         "thresholds": {c.key: c.threshold for c in cfg.classes[:-1]},
         "postprocess": dataclasses.asdict(cfg.postprocess),
         "gate_dbfs": cfg.audio.gate_dbfs,
+        **({"mode": cfg.modes.default} if cfg.modes is not None else {}),
         "engine": {
             "gated_fraction_background": mean_of(bg_stats, "gated_fraction"),
             "gated_fraction_events": mean_of(ev_stats, "gated_fraction"),

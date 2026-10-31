@@ -219,11 +219,12 @@ def pick_best(points: list[dict], budget: float, max_latency: float) -> dict | N
 # ---------------------------------------------------------------- driver
 _RUNS: list[ScenarioRun] = []
 _CFG: Config | None = None
+_GRID = THR_GRID
 
 
 def _tables_worker(setting: PPSetting) -> tuple[PPSetting, dict]:
     assert _CFG is not None
-    return setting, class_tables(_CFG, _RUNS, setting)
+    return setting, class_tables(_CFG, _RUNS, setting, _GRID)
 
 
 def tune(
@@ -234,8 +235,9 @@ def tune(
     max_latency: float = MAX_LATENCY_S,
     jobs: int = 1,
     verbose: bool = True,
+    grid=THR_GRID,
 ) -> dict:
-    global _RUNS, _CFG
+    global _RUNS, _CFG, _GRID
     settings = settings or all_settings()
     weights = {c.key: (DANGER_WEIGHT if c.level == Level.DANGER else 1.0) for c in cfg.classes[:-1]}
     bg_h = sum(r.duration_s for r in runs if r.is_background) / 3600.0
@@ -250,19 +252,19 @@ def tune(
     if jobs > 1:
         import multiprocessing as mp
 
-        _RUNS, _CFG = runs, cfg
+        _RUNS, _CFG, _GRID = runs, cfg, tuple(grid)
         try:
             with ProcessPoolExecutor(jobs, mp_context=mp.get_context("fork")) as ex:
                 for s, tab in ex.map(_tables_worker, settings):
                     tables[s] = tab
         finally:
-            _RUNS, _CFG = [], None
+            _RUNS, _CFG, _GRID = [], None, THR_GRID
     else:
         for s in settings:
-            tables[s] = class_tables(cfg, runs, s)
+            tables[s] = class_tables(cfg, runs, s, tuple(grid))
     if verbose:
         print(
-            f"[tune] {len(settings)} settings x {len(THR_GRID)} thresholds replayed in "
+            f"[tune] {len(settings)} settings x {len(grid)} thresholds replayed in "
             f"{time.perf_counter() - t0:.0f}s",
             flush=True,
         )
@@ -293,7 +295,7 @@ def tune(
         "n_background_scenarios": sum(1 for r in runs if r.is_background),
         "background_hours": bg_h,
         "n_gt": n_gt,
-        "threshold_grid": list(THR_GRID),
+        "threshold_grid": list(grid),
         "budgets_per_h": list(budgets),
         "max_latency_s": max_latency,
         "danger_weight": DANGER_WEIGHT,
@@ -385,10 +387,19 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--no-margin", action="store_true", help="do not search the bg_margin rule")
     parser.add_argument("--jobs", type=int, default=min(4, os.cpu_count() or 1))
     parser.add_argument("--out-dir", default=None, help="report dir (default artifacts/reports)")
+    parser.add_argument("--mode", default=None, help="context mode at start-up (config `modes:`)")
+    parser.add_argument("--thr-grid", default=None,
+                        help="comma list of thresholds replacing the default grid 0.30..0.95,0.97,0.99 "
+                        "(calibrated models rarely need the 0.99 end)")
 
 
 def main(args: argparse.Namespace) -> int:
-    cfg = load_config(args.config)
+    from soundwatch.config import with_mode
+
+    cfg = with_mode(load_config(args.config), getattr(args, "mode", None))
+    grid = THR_GRID
+    if getattr(args, "thr_grid", None):
+        grid = tuple(sorted(float(v) for v in args.thr_grid.split(",") if v.strip()))
     scen_dir = Path(args.scenarios) if args.scenarios else DEFAULT_VAL_DIR
     scen = list_scenarios(scen_dir)
     if not scen:
@@ -397,19 +408,18 @@ def main(args: argparse.Namespace) -> int:
             f"--out {scen_dir} --no-demo` first"
         )
         return 1
-    from soundwatch.audio.features import load_stats
-    from soundwatch.engine.classifier import load_classifier
+    from soundwatch.engine.classifier import load_model
 
     mpath = Path(args.model) if args.model else cfg.model.resolved_tflite()
     spath = Path(args.stats) if args.stats else cfg.model.resolved_stats()
     if not mpath.exists() or not spath.exists():
         print(f"[tune] model {mpath} or stats {spath} missing")
         return 1
-    clf = load_classifier(mpath, num_threads=1)
-    runs = run_scenarios(cfg, scen, lambda gt: clf, load_stats(spath), verbose=False)
+    clf, stats, _meta = load_model(mpath, spath, num_threads=1)
+    runs = run_scenarios(cfg, scen, lambda gt: clf, stats, verbose=False)
     budgets = tuple(float(b) for b in str(args.budgets).split(",") if b.strip())
     settings = all_settings(margins=(None,) if args.no_margin else MARGIN_GRID)
-    res = tune(cfg, runs, settings, budgets, args.max_latency, jobs=max(1, args.jobs))
+    res = tune(cfg, runs, settings, budgets, args.max_latency, jobs=max(1, args.jobs), grid=grid)
     model = str(mpath.relative_to(paths.ROOT)) if mpath.is_relative_to(paths.ROOT) else str(mpath)
     sdir = str(scen_dir.relative_to(paths.ROOT)) if scen_dir.is_relative_to(paths.ROOT) else str(scen_dir)
     res["model"], res["scenarios"] = model, sdir
