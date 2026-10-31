@@ -53,6 +53,12 @@ class PostprocessConfig:
     # optional: a DANGER class whose smoothed prob reaches this in a single hop alerts at once,
     # without waiting for k-of-n (see postprocess.py rule 4b); None = rule off (default)
     danger_fast_threshold: float | None = None
+    # optional (vn-v3, postprocess.py rule 10): while an occurrence of one class of `flip_guard_pair` is
+    # active, the other class only alerts after its smoothed prob exceeded the active one's by more than
+    # `flip_guard_margin` for `flip_guard_hops` consecutive hops; None = rule off (default)
+    flip_guard_hops: int | None = None
+    flip_guard_margin: float = 0.0
+    flip_guard_pair: tuple[str, str] = ("siren", "smoke_alarm")
 
 
 @dataclass(frozen=True)
@@ -84,24 +90,64 @@ class UIConfig:
 
 @dataclass(frozen=True)
 class ModeSpec:
-    """One context mode: classes switched off and per-class level overrides (key -> Level)."""
+    """One context mode: classes switched off, per-class level overrides (key -> Level) and (vn-v3)
+    per-class display overrides: `label` (key -> text shown instead of label_vi) and `icon`
+    (key -> icon file in assets/icons). Absent overrides = the class's own label_vi / icon."""
     disable: tuple[str, ...] = ()
     level: tuple[tuple[str, int], ...] = ()
+    label: tuple[tuple[str, str], ...] = ()
+    icon: tuple[tuple[str, str], ...] = ()
 
     @property
     def level_map(self) -> dict[str, int]:
         return dict(self.level)
 
+    @property
+    def label_map(self) -> dict[str, str]:
+        return dict(self.label)
+
+    @property
+    def icon_map(self) -> dict[str, str]:
+        return dict(self.icon)
+
 
 @dataclass(frozen=True)
 class AutoModeConfig:
-    """`auto`: street while the running median of the per-hop RMS (dBFS) over the last `window_s`
-    seconds is above `street_above_dbfs` (+ hysteresis_db / 2), indoor once it is below
-    (- hysteresis_db / 2). No decision before `min_s` seconds of history (stays indoor)."""
-    street_above_dbfs: float = -35.0
+    """`auto`: picks `indoor` / `street` from the background sound (postprocess.py rule 9).
+
+    Level evidence (vn-v2): running median of the per-hop RMS (dBFS) over the last `window_s` seconds,
+    "loud" above `street_above_dbfs` + hysteresis_db / 2, "quiet" below it - hysteresis_db / 2
+    (`street_above_dbfs: null` = no level evidence).
+    Street-sound evidence (vn-v3, optional, off while `street_horn_rate` is null): `horn_rate` = an
+    exponential moving average (time constant `evidence_window_s`) of "the model's `horn_class`
+    probability >= `horn_prob` at this hop" - the model itself hears the street (horn beeps are
+    everywhere in VN traffic). "Street" evidence when horn_rate >= street_horn_rate, "indoor" evidence
+    when it is < street_horn_rate * `horn_release` (hysteresis).
+    Decision: with one kind of evidence, switch to street / indoor on loud / quiet (or street /
+    indoor evidence). With both: street needs street-sound evidence and a level that is not "quiet";
+    indoor needs indoor evidence and a level that is not "loud" (so a loud TV without horns does not
+    turn baby_cry off, and a quiet room hearing a far road does not either).
+    No decision before `min_s` seconds of history (stays in the start-up mode), and no automatic
+    switch less than `min_dwell_s` after the previous switch. MCU cost: the 60-value RMS ring of
+    vn-v2 plus one float (horn_rate) and one timestamp."""
+    street_above_dbfs: float | None = -35.0
     window_s: float = 30.0
     hysteresis_db: float = 0.0
     min_s: float = 5.0
+    street_horn_rate: float | None = None
+    horn_prob: float = 0.5
+    horn_release: float = 0.5
+    evidence_window_s: float = 60.0
+    min_dwell_s: float = 0.0
+    horn_class: str = "car_horn"
+
+    @property
+    def uses_rms(self) -> bool:
+        return self.street_above_dbfs is not None
+
+    @property
+    def uses_horn(self) -> bool:
+        return self.street_horn_rate is not None
 
 
 AUTO_MODE = "auto"
@@ -184,7 +230,7 @@ def _parse_class(i: int, d: dict, check_icons: bool) -> SoundClass:
     return sc
 
 
-def _parse_modes(raw: dict | None, keys: list[str]) -> ModesConfig | None:
+def _parse_modes(raw: dict | None, keys: list[str], check_icons: bool = False) -> ModesConfig | None:
     if raw is None:
         return None
     if not isinstance(raw, dict):
@@ -197,24 +243,37 @@ def _parse_modes(raw: dict | None, keys: list[str]) -> ModesConfig | None:
         body = body or {}
         if name == AUTO_MODE:
             try:
-                auto = AutoModeConfig(**{k: float(v) for k, v in body.items()})
-            except TypeError as e:
+                auto = AutoModeConfig(**{k: (v if k == "horn_class" or v is None else float(v))
+                                         for k, v in body.items()})
+            except (TypeError, ValueError) as e:
                 raise ConfigError(f"modes.auto: {e}") from e
-            if auto.window_s <= 0:
-                raise ConfigError("modes.auto.window_s must be > 0")
+            if auto.window_s <= 0 or auto.evidence_window_s <= 0:
+                raise ConfigError("modes.auto.window_s / evidence_window_s must be > 0")
+            if not (auto.uses_rms or auto.uses_horn):
+                raise ConfigError("modes.auto: needs street_above_dbfs and/or street_horn_rate")
+            if auto.uses_horn and auto.horn_class not in keys[:-1]:
+                raise ConfigError(f"modes.auto.horn_class: unknown alert class {auto.horn_class!r}")
             continue
-        unknown = set(body) - {"disable", "level"}
+        unknown = set(body) - {"disable", "level", "label", "icon"}
         if unknown:
             raise ConfigError(f"modes.{name}: unknown keys {sorted(unknown)}")
         disable = tuple(str(k) for k in body.get("disable", []) or [])
         level = tuple((str(k), int(v)) for k, v in (body.get("level") or {}).items())
-        for k in list(disable) + [k for k, _ in level]:
+        label = tuple((str(k), str(v)) for k, v in (body.get("label") or {}).items())
+        icon = tuple((str(k), str(v)) for k, v in (body.get("icon") or {}).items())
+        for k in list(disable) + [k for k, _ in level + label + icon]:
             if k not in keys[:-1]:
                 raise ConfigError(f"modes.{name}: unknown alert class {k!r}")
         for k, v in level:
             if v not in (0, 1, 2):
                 raise ConfigError(f"modes.{name}.level.{k}: must be 0, 1 or 2")
-        named.append((str(name), ModeSpec(disable, level)))
+        for k, v in label:
+            if not v.strip():
+                raise ConfigError(f"modes.{name}.label.{k}: empty label")
+        for k, v in icon:
+            if check_icons and not (paths.ICONS / v).exists():
+                raise ConfigError(f"modes.{name}.icon.{k}: icon {paths.ICONS / v} not found")
+        named.append((str(name), ModeSpec(disable, level, label, icon)))
     names = [n for n, _ in named]
     if auto is not None:
         for need in (AUTO_LOW_MODE, AUTO_HIGH_MODE):
@@ -272,7 +331,12 @@ def load_config(path: str | Path | None = None, check_icons: bool = False) -> Co
         danger_fast_threshold=None
         if p.get("danger_fast_threshold") is None
         else float(p["danger_fast_threshold"]),
+        flip_guard_hops=None if p.get("flip_guard_hops") is None else int(p["flip_guard_hops"]),
+        flip_guard_margin=float(p.get("flip_guard_margin", 0.0)),
+        flip_guard_pair=tuple(str(k) for k in p.get("flip_guard_pair", ("siren", "smoke_alarm"))),
     )
+    if post.flip_guard_hops is not None and (post.flip_guard_hops < 1 or len(post.flip_guard_pair) != 2):
+        raise ConfigError("postprocess.flip_guard_hops must be >= 1 and flip_guard_pair two class keys")
     if post.danger_fast_threshold is not None and not (0.0 < post.danger_fast_threshold <= 1.0):
         raise ConfigError("postprocess.danger_fast_threshold must be in (0, 1]")
     m = raw["model"]
@@ -301,5 +365,7 @@ def load_config(path: str | Path | None = None, check_icons: bool = False) -> Co
         raise ConfigError("last class must be 'background'")
     if audio.window_samples < audio.n_fft:
         raise ConfigError("window shorter than n_fft")
-    modes = _parse_modes(raw.get("modes"), keys)
+    if post.flip_guard_hops is not None and not set(post.flip_guard_pair) <= set(keys[:-1]):
+        raise ConfigError(f"postprocess.flip_guard_pair: unknown alert class in {post.flip_guard_pair}")
+    modes = _parse_modes(raw.get("modes"), keys, check_icons)
     return Config(audio=audio, postprocess=post, model=model, ui=ui, classes=classes, modes=modes)

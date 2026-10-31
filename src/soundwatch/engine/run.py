@@ -14,7 +14,7 @@ import sys
 from pathlib import Path
 
 from soundwatch.config import Config, load_config
-from soundwatch.types import AlertEvent, EngineStopped, Level
+from soundwatch.types import AlertEvent, EngineStopped, Level, event_label
 
 DUMMY_ON_S = 3.0      # each scheduled class lasts this long ...
 DUMMY_PERIOD_S = 8.0  # ... and a new one starts every DUMMY_PERIOD_S seconds
@@ -75,7 +75,7 @@ def load_feature_stats(path: Path | None) -> dict:
 def format_alert(ev: AlertEvent, cfg: Config) -> str:
     sc = cfg.classes[ev.class_id]
     lvl = sc.level if getattr(ev, "level", None) is None else ev.level
-    s = f"[t={ev.t_audio:.1f}s] {Level(lvl).name} {sc.label_vi} ({ev.confidence:.2f})"
+    s = f"[t={ev.t_audio:.1f}s] {Level(lvl).name} {event_label(ev, sc)} ({ev.confidence:.2f})"
     return s + " [repeat]" if ev.repeat else s
 
 

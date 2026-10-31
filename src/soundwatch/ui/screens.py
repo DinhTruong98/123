@@ -26,9 +26,12 @@ from soundwatch.types import (
     AlertEvent,
     EngineStopped,
     Level,
+    ModeCommand,
     SettingsCommand,
     SoundClass,
     StatusUpdate,
+    event_icon,
+    event_label,
 )
 from soundwatch.ui import widgets as W
 from soundwatch.ui.theme import (
@@ -54,6 +57,9 @@ DEBUG_PANEL_W = 400
 JITTER_PX = 3
 
 
+MODE_NAMES_VI = {"indoor": "Trong nhà", "street": "Ngoài đường"}
+
+
 @dataclass
 class ActiveAlert:
     event: AlertEvent
@@ -65,6 +71,8 @@ class HistoryEntry:
     class_id: int
     confidence: float
     t_wall: float
+    label: str | None = None  # context-mode display override at alert time (vn-v3)
+    icon: str | None = None
 
 
 def hms(t_wall: float) -> str:
@@ -149,7 +157,7 @@ class WatchUI:
         sc = self._sc(ev.class_id)
         self.event_log.appendleft(ev)
         if not ev.repeat:
-            self.history.appendleft(HistoryEntry(ev.class_id, ev.confidence, ev.t_wall))
+            self.history.appendleft(HistoryEntry(ev.class_id, ev.confidence, ev.t_wall, ev.label, ev.icon))
             self.history_scroll = 0.0
         if sc.level == Level.DANGER:
             self.pending_danger[ev.class_id] = ev
@@ -204,6 +212,18 @@ class WatchUI:
         if not self.enabled[class_id]:
             self.pending_danger.pop(class_id, None)
 
+    def cycle_mode(self) -> None:
+        """M: next context mode (config `modes:`; no-op without modes), sent as a ModeCommand."""
+        m = self.cfg.modes
+        if m is None:
+            return
+        names = m.names
+        cur = self.status.mode_selector if self.status is not None and self.status.mode_selector else None
+        cur = cur or getattr(self, "_mode_sent", None) or m.default
+        nxt = names[(names.index(cur) + 1) % len(names)] if cur in names else names[0]
+        self._mode_sent = nxt
+        self._send(ModeCommand(nxt))
+
     # ---------------------------------------------------------------- events
     def face_coords(self, pos: tuple[int, int]) -> tuple[float, float]:
         return ((pos[0] - self.face_pos[0]) / self.scale, (pos[1] - self.face_pos[1]) / self.scale)
@@ -245,6 +265,8 @@ class WatchUI:
             self.go("idle" if self.screen == "history" else "history")
         elif key == pygame.K_s:
             self.go("idle" if self.screen == "settings" else "settings")
+        elif key == pygame.K_m:
+            self.cycle_mode()
         elif key in (pygame.K_SPACE, pygame.K_RETURN, pygame.K_KP_ENTER):
             if self.screen == "settings":
                 self.toggle_class(self.alert_classes[self.settings_sel].id)
@@ -302,8 +324,10 @@ class WatchUI:
             self.debug.draw(surf, self.panel_rect, self)
 
     def _draw_hints(self, surf: pygame.Surface, rect: pygame.Rect) -> None:
-        img = self.theme.text("Space: xác nhận · H: lịch sử · S: cài đặt · Esc: về · Q: thoát", 12,
-                              TEXT_FAINT, bold=False)
+        txt = "Space: xác nhận · H: lịch sử · S: cài đặt · Esc: về · Q: thoát"
+        if self.cfg.modes is not None:
+            txt = txt.replace(" · Esc", " · M: chế độ · Esc")
+        img = self.theme.text(txt, 12, TEXT_FAINT, bold=False)
         surf.blit(img, img.get_rect(center=rect.center))
 
     def render_face(self) -> pygame.Surface:
@@ -337,6 +361,9 @@ class WatchUI:
         # listening line
         stopped = self.engine_stopped is not None
         txt = "Đã dừng nghe" if stopped else "Đang nghe…"
+        if not stopped and self.status is not None and self.status.mode:
+            txt = MODE_NAMES_VI.get(self.status.mode, self.status.mode) + (
+                " (tự động)" if self.status.mode_selector == "auto" else "")
         col = TEXT_FAINT if stopped else (ACCENT if not gated else TEXT_DIM)
         img = th.text(txt, 16, col)
         ic = th.icon(self._sc(self.cfg.background_id).icon, 18, col)
@@ -352,12 +379,18 @@ class WatchUI:
             pill.center = (S // 2, 199)
             flash = int((self.now * 2) % 2) == 0
             pygame.draw.rect(s, sc.color if flash else darken(sc.color, 0.4), pill, border_radius=12)
-            W.blit_center(s, th.text(f"Chưa xác nhận: {sc.label_vi}", 11, WHITE), *pill.center)
+            txt = f"Chưa xác nhận: {event_label(ev, sc)}"
+            if ev.label:  # mode label overrides can be long (the configured labels keep their old look)
+                txt = _ellipsize(th, txt, 11, 144)
+            W.blit_center(s, th.text(txt, 11, WHITE), *pill.center)
         elif self.history:
             h = self.history[0]
             sc = self._sc(h.class_id)
-            ic = th.icon(sc.icon, 16, sc.color)
-            t = th.text(f"{sc.label_vi} · {hms(h.t_wall)[:5]}", 12, TEXT_DIM, bold=False)
+            ic = th.icon(h.icon or sc.icon, 16, sc.color)
+            txt = f"{h.label or sc.label_vi} · {hms(h.t_wall)[:5]}"
+            if h.label:
+                txt = _ellipsize(th, txt, 12, 150, bold=False)
+            t = th.text(txt, 12, TEXT_DIM, bold=False)
             total = ic.get_width() + 5 + t.get_width()
             x0 = S / 2 - total / 2
             s.blit(ic, (round(x0), 199 - 8))
@@ -380,9 +413,11 @@ class WatchUI:
         s.fill(bg)
         c = (S / 2, S / 2)
         W.draw_gauge(s, c, S / 2 - 5, 7, ev.confidence, WHITE, track=darken(base, 0.45))
-        icon = th.class_icon(sc, 96)
+        icon = th.icon(event_icon(ev, sc), 96)
         s.blit(icon, icon.get_rect(midtop=(S // 2, 22)))
-        size, lines = W.fit_lines(th, sc.label_vi, 196, (30, 28, 26, 24, 22, 20), two_line_max=24)
+        size, lines = W.fit_lines(th, event_label(ev, sc), 196, (30, 28, 26, 24, 22, 20), two_line_max=24)
+        if ev.label and th.text_width(lines[-1], size) > 196:  # long mode label (vn-v3): up to 3 lines
+            size, lines = 18, _wrap(th, ev.label, 18, 190)[:3]
         top = 122 if len(lines) == 1 else 119
         bottom = W.draw_lines_centered(s, th, lines, size, S / 2, top)
         meta = th.text(f"{hms(ev.t_wall)}  ·  {ev.confidence * 100:.0f}%", 14, lighten(base, 0.75))
@@ -424,8 +459,8 @@ class WatchUI:
                 continue
             sc = self._sc(h.class_id)
             W.aa_circle(s, darken(sc.color, 0.55), (x0 + 13, round(y + HIST_ROW / 2)), 15)
-            s.blit(th.icon(sc.icon, 20, WHITE), (x0 + 3, round(y + HIST_ROW / 2) - 10))
-            fs, label = _fit_one_line(th, sc.label_vi, (14, 13, 12), 136)
+            s.blit(th.icon(h.icon or sc.icon, 20, WHITE), (x0 + 3, round(y + HIST_ROW / 2) - 10))
+            fs, label = _fit_one_line(th, h.label or sc.label_vi, (14, 13, 12), 136)
             s.blit(th.text(label, fs, WHITE), (x0 + 34, round(y + 3 + (14 - fs) / 2)))
             meta = f"{hms(h.t_wall)} · {h.confidence * 100:.0f}%"
             s.blit(th.text(meta, 12, TEXT_DIM, bold=False), (x0 + 34, round(y + 20)))
@@ -504,6 +539,17 @@ def _fit_one_line(theme: Theme, text: str, sizes: tuple[int, ...], max_w: int) -
         if theme.text_width(text, size) <= max_w:
             return size, text
     return sizes[-1], _ellipsize(theme, text, sizes[-1], max_w)
+
+
+def _wrap(theme: Theme, text: str, size: int, max_w: int) -> list[str]:
+    """Greedy word wrap at one font size."""
+    lines: list[str] = []
+    for w in text.split():
+        if lines and theme.text_width(lines[-1] + " " + w, size, True) <= max_w:
+            lines[-1] += " " + w
+        else:
+            lines.append(w)
+    return lines
 
 
 def _ellipsize(theme: Theme, text: str, size: int, max_w: int, bold: bool = True) -> str:

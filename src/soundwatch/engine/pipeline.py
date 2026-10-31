@@ -230,7 +230,8 @@ class Engine:
         events = self.postprocessor.update(probs, t_audio, rms_dbfs=level)
 
         status = StatusUpdate(t_audio=t_audio, rms_dbfs=level, probs=probs, gated=gated,
-                              infer_ms=infer_ms, logmel=logmel if self.emit_logmel else None)
+                              infer_ms=infer_ms, logmel=logmel if self.emit_logmel else None,
+                              mode=self.postprocessor.mode, mode_selector=self.postprocessor.mode_selector)
         try:
             self.out_queue.put_nowait(status)
         except queue.Full:

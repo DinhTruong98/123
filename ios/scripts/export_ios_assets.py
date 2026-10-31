@@ -110,12 +110,40 @@ def export_extras(cfg, stats: dict) -> dict:
         m = cfg.modes
         out["modes"] = {
             "default": m.default,
-            "modes": {n: {"disable": list(sp.disable), "level": sp.level_map} for n, sp in m.modes},
-            "auto": None if m.auto is None else {
-                "street_above_dbfs": m.auto.street_above_dbfs, "window_s": m.auto.window_s,
-                "hysteresis_db": m.auto.hysteresis_db, "min_s": m.auto.min_s},
+            "modes": {n: _mode_json(sp) for n, sp in m.modes},
+            "auto": None if m.auto is None else _auto_json(m.auto),
         }
     return out
+
+
+# SF Symbols for the PNG icons a mode may use instead of a class's own (vn-v3 display overrides)
+ICON_SF_SYMBOLS = {
+    "fire.png": "flame.fill", "car.png": "car.fill", "siren.png": "light.beacon.max.fill",
+    "baby.png": "figure.and.child.holdinghands", "door.png": "door.left.hand.closed", "dog.png": "pawprint.fill",
+    "water.png": "drop.fill", "ear.png": "ear",
+}
+
+
+def _mode_json(sp) -> dict:
+    """One mode; `label` / `icon` / `sf_symbol` (vn-v3) only when the mode overrides the display."""
+    d: dict = {"disable": list(sp.disable), "level": sp.level_map}
+    if sp.label:
+        d["label"] = sp.label_map
+    if sp.icon:
+        d["icon"] = sp.icon_map
+        d["sf_symbol"] = {k: ICON_SF_SYMBOLS.get(v, "exclamationmark.triangle.fill") for k, v in sp.icon}
+    return d
+
+
+def _auto_json(a) -> dict:
+    """auto settings; the vn-v3 street-sound evidence keys only when it is used."""
+    d = {"street_above_dbfs": a.street_above_dbfs, "window_s": a.window_s, "hysteresis_db": a.hysteresis_db,
+         "min_s": a.min_s}
+    if a.uses_horn or a.min_dwell_s:
+        d.update({"street_horn_rate": a.street_horn_rate, "horn_prob": a.horn_prob,
+                  "horn_release": a.horn_release, "evidence_window_s": a.evidence_window_s,
+                  "min_dwell_s": a.min_dwell_s, "horn_class": a.horn_class})
+    return d
 
 
 def export_golden_json(cfg, stats: dict, clf: TFLiteClassifier) -> dict:
