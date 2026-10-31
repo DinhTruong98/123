@@ -14,8 +14,10 @@ meeting these floors.
 """
 import dataclasses
 import json
+import os
 import pickle
 import sys
+from pathlib import Path
 
 import numpy as np
 
@@ -25,7 +27,7 @@ from soundwatch.eval import tune
 from soundwatch.eval.streaming import DANGER_WEIGHT, aggregate, replay_all, with_thresholds
 from soundwatch.types import Level
 
-RUNS = paths.REPORTS / "v2" / "runs"
+RUNS = Path(os.environ.get("SW_RUNS", paths.REPORTS / "v2" / "runs"))  # vn-v3: SW_RUNS=<dir>
 GRID = tuple(round(float(v), 2) for v in np.arange(0.30, 0.951, 0.05)) + (0.97, 0.99, 0.99609375)
 FAST = (None, 0.8, 0.85, 0.9, 0.95, 0.97, 0.99, 0.99609375)
 SETTINGS = [tune.PPSetting(1, 2, 2), tune.PPSetting(1, 1, 1), tune.PPSetting(2, 2, 3), tune.PPSetting(1, 2, 3)]

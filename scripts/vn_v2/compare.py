@@ -4,15 +4,17 @@
 usage: compare.py OUT.json NAME=CONFIG[@MODE] ...   (sets: all six)
 """
 import json
+import os
 import pickle
 import sys
+from pathlib import Path
 
 from soundwatch import paths
 from soundwatch.config import load_config, with_mode
 from soundwatch.eval.fast_path import SETS, short_metrics
 from soundwatch.eval.streaming import aggregate, replay_all
 
-RUNS = paths.REPORTS / "v2" / "runs"
+RUNS = Path(os.environ.get("SW_RUNS", paths.REPORTS / "v2" / "runs"))  # vn-v3: SW_RUNS=<dir>
 
 
 def load(name, s):

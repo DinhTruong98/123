@@ -2,9 +2,11 @@
 
 usage: runs_cache.py NAME CONFIG MODEL STATS [sets]
 """
+import os
 import pickle
 import sys
 import time
+from pathlib import Path
 
 from soundwatch import paths
 from soundwatch.config import load_config
@@ -16,7 +18,7 @@ name, cfgp, model, stats = sys.argv[1:5]
 sets = sys.argv[5].split(",") if len(sys.argv) > 5 else list(SETS)
 cfg = load_config(cfgp)
 clf, st, meta = load_model(model, stats)
-out = paths.REPORTS / "v2" / "runs"
+out = Path(os.environ.get("SW_RUNS", paths.REPORTS / "v2" / "runs"))  # vn-v3: SW_RUNS=<dir>
 out.mkdir(parents=True, exist_ok=True)
 for s in sets:
     p = out / f"{name}_{s}.pkl"
