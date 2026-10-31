@@ -19,6 +19,10 @@ Writes to ios/SoundWatch/Resources/:
     demo_scenario.wav          copy of assets/demo/demo_scenario.wav
     golden_features.json       5 golden cases (int16 input, logmel 49x40) + classifier reference
     demo_expected_events.json  events (and per-hop probs) of the Python pipeline on the demo file
+
+With `--suffix vn2` the files of a second model are written next to them, without touching the files
+above (dual-model comparison in the app): student_int8_vn2.tflite, soundwatch_config_vn2.json,
+golden_features_vn2.json, demo_expected_events_vn2.json (the demo WAV is shared).
 """
 
 from __future__ import annotations
@@ -159,6 +163,11 @@ def export_demo(cfg, stats: dict) -> dict:
     }
 
 
+def out_name(stem: str, ext: str, suffix: str | None) -> str:
+    """`soundwatch_config` + `.json` -> `soundwatch_config.json`, or `soundwatch_config_vn2.json`."""
+    return f"{stem}_{suffix}{ext}" if suffix else f"{stem}{ext}"
+
+
 def main(argv: list[str] | None = None) -> int:
     """Defaults = the deployed app model; `--config/--model/--stats` export another model (e.g. vn-v2,
     whose config adds `modes` and whose stats add `model_frontend`) - the Swift app must support PCEN /
@@ -170,19 +179,23 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--config", default=None)
     ap.add_argument("--model", default=None)
     ap.add_argument("--stats", default=None)
+    ap.add_argument("--suffix", default=None,
+                    help="write <name>_<suffix>.* next to the default files instead of replacing them")
     args = ap.parse_args(argv)
+    sfx = args.suffix
     MODEL = Path(args.model) if args.model else MODEL
     STATS = Path(args.stats) if args.stats else STATS
     stats = F.load_stats(STATS)
     cfg = F.apply_meta_to_config(load_config(args.config), F.model_meta(stats))  # e.g. a 2 s model
     OUT.mkdir(parents=True, exist_ok=True)
-    shutil.copyfile(MODEL, OUT / MODEL.name)
-    shutil.copyfile(DEMO_WAV, OUT / DEMO_WAV.name)
-    write_json(OUT / "soundwatch_config.json", export_config(cfg, stats))
+    shutil.copyfile(MODEL, OUT / (out_name(MODEL.stem, MODEL.suffix, sfx) if sfx else MODEL.name))
+    if not sfx:
+        shutil.copyfile(DEMO_WAV, OUT / DEMO_WAV.name)
+    write_json(OUT / out_name("soundwatch_config", ".json", sfx), export_config(cfg, stats))
     clf = TFLiteClassifier(MODEL, output="sigmoid" if F.model_meta(stats).output == "sigmoid" else None)
-    write_json(OUT / "golden_features.json", export_golden_json(cfg, stats, clf))
+    write_json(OUT / out_name("golden_features", ".json", sfx), export_golden_json(cfg, stats, clf))
     demo = export_demo(cfg, stats)
-    write_json(OUT / "demo_expected_events.json", demo)
+    write_json(OUT / out_name("demo_expected_events", ".json", sfx), demo)
     for e in demo["events"]:
         print(f"  {e['t_audio']:6.1f} s  {e['class_key']:<14} {'repeat' if e['repeat'] else ''}")
     print(f"wrote {sorted(p.name for p in OUT.iterdir())} to {OUT}")
