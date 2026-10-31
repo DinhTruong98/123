@@ -1,6 +1,6 @@
 # SoundWatch iOS (PoC trên iPhone)
 
-App iOS chạy đúng model `assets/models/student_int8.tflite` (DS-CNN int8, cùng file sẽ nạp cho ESP32-S3) trên âm thanh
+App iOS chạy model int8 trong `SoundWatch/Resources/student_int8.tflite` (**hiện là v3**: `assets/models/vn_v3/`, config `config/soundwatch_vn_v3.yaml`; trước đây là `assets/models/student_int8.tflite`) (DS-CNN int8, cùng file sẽ nạp cho ESP32-S3) trên âm thanh
 micro iPhone, theo pipeline của bản Python: 16 kHz, cửa sổ 1 s, hop 0.5 s, gate −55 dBFS, log-mel 49×40,
 PostProcessor (k-of-n, cooldown, DANGER lặp tới khi xác nhận; DANGER báo ngay ở một hop bão hoà 255/256, quy tắc 4b,
 `danger_fast_threshold`). Cảnh báo bằng icon, nhãn tiếng Việt, màu theo mức, rung
