@@ -1,0 +1,20 @@
+{
+  "mean": -2.1481127945859546,
+  "std": 4.096105718922331,
+  "n_windows": 39802,
+  "params": {
+    "sample_rate": 16000,
+    "window_samples": 16000,
+    "n_fft": 512,
+    "frame_step": 320,
+    "n_frames": 49,
+    "n_mels": 40,
+    "fmin": 20.0,
+    "fmax": 8000.0,
+    "log_eps": 1e-06,
+    "window": "hann_periodic",
+    "mel_scale": "htk",
+    "mel_norm": null,
+    "log": "natural"
+  }
+}

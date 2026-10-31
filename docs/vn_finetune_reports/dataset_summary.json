@@ -1,0 +1,179 @@
+{
+  "classes": [
+    "smoke_alarm",
+    "car_horn",
+    "siren",
+    "baby_cry",
+    "door_knock",
+    "dog_bark",
+    "water_running",
+    "background"
+  ],
+  "windows": {
+    "train": {
+      "smoke_alarm": 916,
+      "car_horn": 1821,
+      "siren": 7928,
+      "baby_cry": 604,
+      "door_knock": 108,
+      "dog_bark": 4108,
+      "water_running": 533,
+      "background": 23784
+    },
+    "val": {
+      "smoke_alarm": 181,
+      "car_horn": 148,
+      "siren": 1189,
+      "baby_cry": 101,
+      "door_knock": 35,
+      "dog_bark": 568,
+      "water_running": 194,
+      "background": 3567
+    },
+    "test": {
+      "smoke_alarm": 227,
+      "car_horn": 211,
+      "siren": 1139,
+      "baby_cry": 195,
+      "door_knock": 42,
+      "dog_bark": 571,
+      "water_running": 188,
+      "background": 3417
+    }
+  },
+  "windows_before_bg_cap": {
+    "train": {
+      "smoke_alarm": 916,
+      "car_horn": 1821,
+      "siren": 7928,
+      "baby_cry": 604,
+      "door_knock": 108,
+      "dog_bark": 4108,
+      "water_running": 533,
+      "background": 49189
+    },
+    "val": {
+      "smoke_alarm": 181,
+      "car_horn": 148,
+      "siren": 1189,
+      "baby_cry": 101,
+      "door_knock": 35,
+      "dog_bark": 568,
+      "water_running": 194,
+      "background": 8556
+    },
+    "test": {
+      "smoke_alarm": 227,
+      "car_horn": 211,
+      "siren": 1139,
+      "baby_cry": 195,
+      "door_knock": 42,
+      "dog_bark": 571,
+      "water_running": 188,
+      "background": 8635
+    }
+  },
+  "clips": {
+    "train": {
+      "smoke_alarm": 136,
+      "car_horn": 414,
+      "siren": 1204,
+      "baby_cry": 84,
+      "door_knock": 24,
+      "dog_bark": 824,
+      "water_running": 72,
+      "background": 7863
+    },
+    "val": {
+      "smoke_alarm": 27,
+      "car_horn": 45,
+      "siren": 184,
+      "baby_cry": 12,
+      "door_knock": 8,
+      "dog_bark": 108,
+      "water_running": 24,
+      "background": 1336
+    },
+    "test": {
+      "smoke_alarm": 33,
+      "car_horn": 46,
+      "siren": 178,
+      "baby_cry": 25,
+      "door_knock": 8,
+      "dog_bark": 108,
+      "water_running": 24,
+      "background": 1354
+    }
+  },
+  "silent_windows_dropped": {
+    "train": {
+      "smoke_alarm": 112,
+      "car_horn": 66,
+      "siren": 35,
+      "baby_cry": 268,
+      "door_knock": 108,
+      "dog_bark": 357,
+      "water_running": 115,
+      "background": 0
+    },
+    "val": {
+      "smoke_alarm": 22,
+      "car_horn": 19,
+      "siren": 5,
+      "baby_cry": 45,
+      "door_knock": 37,
+      "dog_bark": 49,
+      "water_running": 22,
+      "background": 0
+    },
+    "test": {
+      "smoke_alarm": 15,
+      "car_horn": 21,
+      "siren": 6,
+      "baby_cry": 90,
+      "door_knock": 30,
+      "dog_bark": 28,
+      "water_running": 28,
+      "background": 0
+    }
+  },
+  "windows_filtered": {
+    "train": {
+      "smoke_alarm": 1159,
+      "car_horn": 124,
+      "siren": 5283,
+      "baby_cry": 509,
+      "door_knock": 0,
+      "dog_bark": 0,
+      "water_running": 0,
+      "background": 30585
+    },
+    "val": {
+      "smoke_alarm": 194,
+      "car_horn": 25,
+      "siren": 1169,
+      "baby_cry": 43,
+      "door_knock": 0,
+      "dog_bark": 0,
+      "water_running": 0,
+      "background": 6555
+    },
+    "test": {
+      "smoke_alarm": 243,
+      "car_horn": 25,
+      "siren": 1135,
+      "baby_cry": 315,
+      "door_knock": 0,
+      "dog_bark": 0,
+      "water_running": 0,
+      "background": 6555
+    }
+  },
+  "errors": [],
+  "seed": 1234,
+  "quick": false,
+  "with_fsd50k": true,
+  "clock_alarm": "smoke_alarm",
+  "custom_manifest": "/home/user/vn-sound-data/manifest.csv",
+  "custom_clips": 3684
+}

@@ -1,0 +1,183 @@
+{
+  "split": "val",
+  "n_vn": 1453,
+  "n_orig": 4530,
+  "models": {
+    "cu": {
+      "orig": {
+        "macro_f1": 0.8053728642075586,
+        "per_class_recall": {
+          "smoke_alarm": 0.8656716417910447,
+          "car_horn": 0.7734375,
+          "siren": 0.9616,
+          "baby_cry": 0.8514851485148515,
+          "door_knock": 0.7714285714285715,
+          "dog_bark": 0.7535211267605634,
+          "water_running": 0.7268041237113402,
+          "background": 0.8961593172119487
+        },
+        "support": {
+          "smoke_alarm": 67,
+          "car_horn": 128,
+          "siren": 625,
+          "baby_cry": 101,
+          "door_knock": 35,
+          "dog_bark": 568,
+          "water_running": 194,
+          "background": 2812
+        },
+        "bg_false_alert_rate": 0.10384068278805121,
+        "bg_as_siren_rate": 0.017425320056899004
+      },
+      "vn": {
+        "macro_f1": 0.6613972555149235,
+        "per_class_recall": {
+          "smoke_alarm": 0.5614035087719298,
+          "car_horn": 0.1,
+          "siren": 0.8599290780141844,
+          "background": 0.904635761589404
+        },
+        "support": {
+          "smoke_alarm": 114,
+          "car_horn": 20,
+          "siren": 564,
+          "background": 755
+        },
+        "bg_false_alert_rate": 0.09536423841059603,
+        "bg_as_siren_rate": 0.010596026490066225
+      },
+      "vn_siren_breakdown": {
+        "vehicle_type": {
+          "ambulance": {
+            "recall": 0.8819444444444444,
+            "windows": 144
+          },
+          "fire": {
+            "recall": 0.8666666666666667,
+            "windows": 240
+          },
+          "other": {
+            "recall": 0.9166666666666666,
+            "windows": 36
+          },
+          "police": {
+            "recall": 0.8125,
+            "windows": 144
+          }
+        },
+        "passing": {
+          "False": {
+            "recall": 0.8725490196078431,
+            "windows": 510
+          },
+          "True": {
+            "recall": 0.7407407407407407,
+            "windows": 54
+          }
+        },
+        "distance": {
+          "far": {
+            "recall": 0.8245614035087719,
+            "windows": 228
+          },
+          "mid": {
+            "recall": 0.8793103448275862,
+            "windows": 174
+          },
+          "near": {
+            "recall": 0.8888888888888888,
+            "windows": 162
+          }
+        }
+      }
+    },
+    "moi": {
+      "orig": {
+        "macro_f1": 0.7870988783497994,
+        "per_class_recall": {
+          "smoke_alarm": 0.9402985074626866,
+          "car_horn": 0.7265625,
+          "siren": 0.9648,
+          "baby_cry": 0.8415841584158416,
+          "door_knock": 0.8285714285714286,
+          "dog_bark": 0.7623239436619719,
+          "water_running": 0.6649484536082474,
+          "background": 0.8872688477951636
+        },
+        "support": {
+          "smoke_alarm": 67,
+          "car_horn": 128,
+          "siren": 625,
+          "baby_cry": 101,
+          "door_knock": 35,
+          "dog_bark": 568,
+          "water_running": 194,
+          "background": 2812
+        },
+        "bg_false_alert_rate": 0.11273115220483641,
+        "bg_as_siren_rate": 0.013157894736842105
+      },
+      "vn": {
+        "macro_f1": 0.6861946758375891,
+        "per_class_recall": {
+          "smoke_alarm": 0.8421052631578947,
+          "car_horn": 0.1,
+          "siren": 0.8723404255319149,
+          "background": 0.9205298013245033
+        },
+        "support": {
+          "smoke_alarm": 114,
+          "car_horn": 20,
+          "siren": 564,
+          "background": 755
+        },
+        "bg_false_alert_rate": 0.07947019867549669,
+        "bg_as_siren_rate": 0.01456953642384106
+      },
+      "vn_siren_breakdown": {
+        "vehicle_type": {
+          "ambulance": {
+            "recall": 0.8333333333333334,
+            "windows": 144
+          },
+          "fire": {
+            "recall": 0.9083333333333333,
+            "windows": 240
+          },
+          "other": {
+            "recall": 0.9166666666666666,
+            "windows": 36
+          },
+          "police": {
+            "recall": 0.8402777777777778,
+            "windows": 144
+          }
+        },
+        "passing": {
+          "False": {
+            "recall": 0.8862745098039215,
+            "windows": 510
+          },
+          "True": {
+            "recall": 0.7407407407407407,
+            "windows": 54
+          }
+        },
+        "distance": {
+          "far": {
+            "recall": 0.8596491228070176,
+            "windows": 228
+          },
+          "mid": {
+            "recall": 0.9252873563218391,
+            "windows": 174
+          },
+          "near": {
+            "recall": 0.8333333333333334,
+            "windows": 162
+          }
+        }
+      }
+    }
+  }
+}

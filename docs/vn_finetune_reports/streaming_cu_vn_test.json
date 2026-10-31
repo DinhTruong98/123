@@ -1,0 +1,2646 @@
+{
+  "model": "assets/models/student_int8.tflite",
+  "tol_after_s": 2.0,
+  "thresholds": {
+    "smoke_alarm": 0.9,
+    "car_horn": 0.97,
+    "siren": 0.99,
+    "baby_cry": 0.99,
+    "door_knock": 0.99,
+    "dog_bark": 0.99,
+    "water_running": 0.99
+  },
+  "postprocess": {
+    "smooth_n": 1,
+    "k_of_n": [
+      2,
+      2
+    ],
+    "danger_repeat_s": 5.0,
+    "danger_clear_s": 10.0,
+    "bg_margin": null,
+    "danger_fast_threshold": 0.99609375
+  },
+  "gate_dbfs": -55.0,
+  "engine": {
+    "gated_fraction_background": 0.01808066759388039,
+    "gated_fraction_events": 0.009888579387186631,
+    "infer_ms_mean": 0.42222339820625776,
+    "feature_ms_mean": 0.22952330377089497,
+    "realtime_factor_mean": 661.7633286470904
+  },
+  "n_event_scenarios": 20,
+  "n_background_scenarios": 10,
+  "n_gt_events": 91,
+  "n_tp": 60,
+  "event_recall": 0.6593406593406593,
+  "danger_event_recall_mean": 0.6615942028985508,
+  "danger_event_recall_min": 0.45652173913043476,
+  "per_class": {
+    "smoke_alarm": {
+      "n_gt": 46,
+      "tp": 21,
+      "recall": 0.45652173913043476,
+      "latency_median_s": 1.700400000000002,
+      "latency_p90_s": 4.457899999999995,
+      "fa_background": 0,
+      "fa_event_scenarios": 0
+    },
+    "car_horn": {
+      "n_gt": 0,
+      "tp": 0,
+      "recall": null,
+      "latency_median_s": null,
+      "latency_p90_s": null,
+      "fa_background": 4,
+      "fa_event_scenarios": 1
+    },
+    "siren": {
+      "n_gt": 45,
+      "tp": 39,
+      "recall": 0.8666666666666667,
+      "latency_median_s": 1.4235000000000042,
+      "latency_p90_s": 4.568600000000002,
+      "fa_background": 1,
+      "fa_event_scenarios": 13
+    },
+    "baby_cry": {
+      "n_gt": 0,
+      "tp": 0,
+      "recall": null,
+      "latency_median_s": null,
+      "latency_p90_s": null,
+      "fa_background": 1,
+      "fa_event_scenarios": 0
+    },
+    "door_knock": {
+      "n_gt": 0,
+      "tp": 0,
+      "recall": null,
+      "latency_median_s": null,
+      "latency_p90_s": null,
+      "fa_background": 0,
+      "fa_event_scenarios": 0
+    },
+    "dog_bark": {
+      "n_gt": 0,
+      "tp": 0,
+      "recall": null,
+      "latency_median_s": null,
+      "latency_p90_s": null,
+      "fa_background": 10,
+      "fa_event_scenarios": 12
+    },
+    "water_running": {
+      "n_gt": 0,
+      "tp": 0,
+      "recall": null,
+      "latency_median_s": null,
+      "latency_p90_s": null,
+      "fa_background": 0,
+      "fa_event_scenarios": 0
+    }
+  },
+  "per_snr": {
+    "0": {
+      "n_gt": 23,
+      "tp": 12,
+      "recall": 0.5217391304347826
+    },
+    "5": {
+      "n_gt": 23,
+      "tp": 14,
+      "recall": 0.6086956521739131
+    },
+    "10": {
+      "n_gt": 23,
+      "tp": 17,
+      "recall": 0.7391304347826086
+    },
+    "20": {
+      "n_gt": 22,
+      "tp": 17,
+      "recall": 0.7727272727272727
+    }
+  },
+  "latency_median_s": 1.4341000000000008,
+  "latency_p90_s": 4.491290000000002,
+  "background_hours": 1.0,
+  "background_false_alarms": 16,
+  "fa_per_hour_background": 16.0,
+  "event_scenarios_non_gt_hours": 0.7683305,
+  "event_scenarios_false_alarms": {
+    "duplicate": 0,
+    "confusion": 12,
+    "outside": 14
+  },
+  "fa_per_hour_event_outside_gt": 18.221325328097738,
+  "repeat_alerts_ignored": 184,
+  "scenarios": [
+    {
+      "name": "scenario_00",
+      "duration_s": 180.0,
+      "n_gt": 5,
+      "tp": 3,
+      "fa": 2,
+      "repeats": 9,
+      "alerts": [
+        {
+          "class_key": "siren",
+          "t": 8.0,
+          "conf": 0.996,
+          "repeat": false
+        },
+        {
+          "class_key": "siren",
+          "t": 13.0,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "siren",
+          "t": 18.0,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "siren",
+          "t": 25.0,
+          "conf": 0.996,
+          "repeat": false
+        },
+        {
+          "class_key": "siren",
+          "t": 30.0,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "siren",
+          "t": 47.5,
+          "conf": 0.996,
+          "repeat": false
+        },
+        {
+          "class_key": "siren",
+          "t": 52.5,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "siren",
+          "t": 118.5,
+          "conf": 0.996,
+          "repeat": false
+        },
+        {
+          "class_key": "siren",
+          "t": 123.5,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "siren",
+          "t": 128.5,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "smoke_alarm",
+          "t": 139.0,
+          "conf": 0.996,
+          "repeat": false
+        },
+        {
+          "class_key": "smoke_alarm",
+          "t": 144.0,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "smoke_alarm",
+          "t": 149.0,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "smoke_alarm",
+          "t": 154.0,
+          "conf": 0.996,
+          "repeat": true
+        }
+      ],
+      "fa_alerts": [
+        {
+          "class_key": "siren",
+          "t": 8.0,
+          "kind": "confusion"
+        },
+        {
+          "class_key": "siren",
+          "t": 47.5,
+          "kind": "confusion"
+        }
+      ],
+      "missed": [
+        {
+          "class_key": "smoke_alarm",
+          "onset_s": 6.9231,
+          "snr_db": 20.0
+        },
+        {
+          "class_key": "smoke_alarm",
+          "onset_s": 44.4223,
+          "snr_db": 10.0
+        }
+      ],
+      "gated_fraction": 0.008356545961002786
+    },
+    {
+      "name": "scenario_01",
+      "duration_s": 180.0,
+      "n_gt": 4,
+      "tp": 2,
+      "fa": 2,
+      "repeats": 7,
+      "alerts": [
+        {
+          "class_key": "siren",
+          "t": 26.0,
+          "conf": 0.996,
+          "repeat": false
+        },
+        {
+          "class_key": "siren",
+          "t": 31.0,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "siren",
+          "t": 36.0,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "siren",
+          "t": 41.0,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "dog_bark",
+          "t": 56.5,
+          "conf": 0.996,
+          "repeat": false
+        },
+        {
+          "class_key": "siren",
+          "t": 66.0,
+          "conf": 0.996,
+          "repeat": false
+        },
+        {
+          "class_key": "siren",
+          "t": 71.0,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "siren",
+          "t": 76.0,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "siren",
+          "t": 162.0,
+          "conf": 0.996,
+          "repeat": false
+        },
+        {
+          "class_key": "siren",
+          "t": 167.0,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "siren",
+          "t": 172.0,
+          "conf": 0.996,
+          "repeat": true
+        }
+      ],
+      "fa_alerts": [
+        {
+          "class_key": "dog_bark",
+          "t": 56.5,
+          "kind": "outside"
+        },
+        {
+          "class_key": "siren",
+          "t": 162.0,
+          "kind": "confusion"
+        }
+      ],
+      "missed": [
+        {
+          "class_key": "smoke_alarm",
+          "onset_s": 112.6607,
+          "snr_db": 0.0
+        },
+        {
+          "class_key": "smoke_alarm",
+          "onset_s": 161.2099,
+          "snr_db": 0.0
+        }
+      ],
+      "gated_fraction": 0.002785515320334262
+    },
+    {
+      "name": "scenario_02",
+      "duration_s": 180.0,
+      "n_gt": 4,
+      "tp": 4,
+      "fa": 0,
+      "repeats": 12,
+      "alerts": [
+        {
+          "class_key": "siren",
+          "t": 9.0,
+          "conf": 0.996,
+          "repeat": false
+        },
+        {
+          "class_key": "siren",
+          "t": 14.0,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "siren",
+          "t": 19.0,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "siren",
+          "t": 24.0,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "smoke_alarm",
+          "t": 76.0,
+          "conf": 0.996,
+          "repeat": false
+        },
+        {
+          "class_key": "smoke_alarm",
+          "t": 81.0,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "smoke_alarm",
+          "t": 86.0,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "smoke_alarm",
+          "t": 91.0,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "siren",
+          "t": 131.0,
+          "conf": 0.992,
+          "repeat": false
+        },
+        {
+          "class_key": "siren",
+          "t": 136.0,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "siren",
+          "t": 141.0,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "siren",
+          "t": 146.0,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "siren",
+          "t": 158.5,
+          "conf": 0.996,
+          "repeat": false
+        },
+        {
+          "class_key": "siren",
+          "t": 163.5,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "siren",
+          "t": 168.5,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "siren",
+          "t": 173.5,
+          "conf": 0.996,
+          "repeat": true
+        }
+      ],
+      "fa_alerts": [],
+      "missed": [],
+      "gated_fraction": 0.008356545961002786
+    },
+    {
+      "name": "scenario_03",
+      "duration_s": 180.0,
+      "n_gt": 5,
+      "tp": 4,
+      "fa": 2,
+      "repeats": 11,
+      "alerts": [
+        {
+          "class_key": "dog_bark",
+          "t": 12.0,
+          "conf": 0.996,
+          "repeat": false
+        },
+        {
+          "class_key": "smoke_alarm",
+          "t": 30.0,
+          "conf": 0.996,
+          "repeat": false
+        },
+        {
+          "class_key": "siren",
+          "t": 34.5,
+          "conf": 0.996,
+          "repeat": false
+        },
+        {
+          "class_key": "smoke_alarm",
+          "t": 35.0,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "siren",
+          "t": 39.5,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "smoke_alarm",
+          "t": 40.0,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "siren",
+          "t": 44.5,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "siren",
+          "t": 105.5,
+          "conf": 0.996,
+          "repeat": false
+        },
+        {
+          "class_key": "siren",
+          "t": 110.5,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "siren",
+          "t": 115.5,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "smoke_alarm",
+          "t": 152.0,
+          "conf": 0.996,
+          "repeat": false
+        },
+        {
+          "class_key": "smoke_alarm",
+          "t": 157.0,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "smoke_alarm",
+          "t": 162.0,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "smoke_alarm",
+          "t": 167.0,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "siren",
+          "t": 169.0,
+          "conf": 0.996,
+          "repeat": false
+        },
+        {
+          "class_key": "siren",
+          "t": 174.0,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "siren",
+          "t": 179.0,
+          "conf": 0.996,
+          "repeat": true
+        }
+      ],
+      "fa_alerts": [
+        {
+          "class_key": "dog_bark",
+          "t": 12.0,
+          "kind": "outside"
+        },
+        {
+          "class_key": "siren",
+          "t": 34.5,
+          "kind": "confusion"
+        }
+      ],
+      "missed": [
+        {
+          "class_key": "smoke_alarm",
+          "onset_s": 45.323,
+          "snr_db": 10.0
+        }
+      ],
+      "gated_fraction": 0.008356545961002786
+    },
+    {
+      "name": "scenario_04",
+      "duration_s": 180.0,
+      "n_gt": 6,
+      "tp": 3,
+      "fa": 1,
+      "repeats": 8,
+      "alerts": [
+        {
+          "class_key": "dog_bark",
+          "t": 67.5,
+          "conf": 0.996,
+          "repeat": false
+        },
+        {
+          "class_key": "smoke_alarm",
+          "t": 103.5,
+          "conf": 0.973,
+          "repeat": false
+        },
+        {
+          "class_key": "smoke_alarm",
+          "t": 108.5,
+          "conf": 0.992,
+          "repeat": true
+        },
+        {
+          "class_key": "smoke_alarm",
+          "t": 113.5,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "siren",
+          "t": 117.0,
+          "conf": 0.996,
+          "repeat": false
+        },
+        {
+          "class_key": "smoke_alarm",
+          "t": 118.5,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "siren",
+          "t": 122.0,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "siren",
+          "t": 127.0,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "siren",
+          "t": 132.0,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "siren",
+          "t": 165.5,
+          "conf": 0.996,
+          "repeat": false
+        },
+        {
+          "class_key": "siren",
+          "t": 170.5,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "siren",
+          "t": 175.5,
+          "conf": 0.996,
+          "repeat": true
+        }
+      ],
+      "fa_alerts": [
+        {
+          "class_key": "dog_bark",
+          "t": 67.5,
+          "kind": "outside"
+        }
+      ],
+      "missed": [
+        {
+          "class_key": "siren",
+          "onset_s": 20.9406,
+          "snr_db": 5.0
+        },
+        {
+          "class_key": "smoke_alarm",
+          "onset_s": 38.6509,
+          "snr_db": 0.0
+        },
+        {
+          "class_key": "smoke_alarm",
+          "onset_s": 137.2192,
+          "snr_db": 0.0
+        }
+      ],
+      "gated_fraction": 0.005571030640668524
+    },
+    {
+      "name": "scenario_05",
+      "duration_s": 180.0,
+      "n_gt": 5,
+      "tp": 3,
+      "fa": 3,
+      "repeats": 8,
+      "alerts": [
+        {
+          "class_key": "siren",
+          "t": 26.0,
+          "conf": 0.996,
+          "repeat": false
+        },
+        {
+          "class_key": "siren",
+          "t": 31.0,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "siren",
+          "t": 36.0,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "siren",
+          "t": 60.5,
+          "conf": 0.996,
+          "repeat": false
+        },
+        {
+          "class_key": "siren",
+          "t": 65.5,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "siren",
+          "t": 70.5,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "dog_bark",
+          "t": 85.0,
+          "conf": 0.996,
+          "repeat": false
+        },
+        {
+          "class_key": "siren",
+          "t": 88.5,
+          "conf": 0.996,
+          "repeat": false
+        },
+        {
+          "class_key": "siren",
+          "t": 93.5,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "siren",
+          "t": 98.5,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "smoke_alarm",
+          "t": 110.5,
+          "conf": 0.988,
+          "repeat": false
+        },
+        {
+          "class_key": "smoke_alarm",
+          "t": 115.5,
+          "conf": 0.988,
+          "repeat": true
+        },
+        {
+          "class_key": "smoke_alarm",
+          "t": 120.5,
+          "conf": 0.988,
+          "repeat": true
+        },
+        {
+          "class_key": "dog_bark",
+          "t": 170.5,
+          "conf": 0.996,
+          "repeat": false
+        }
+      ],
+      "fa_alerts": [
+        {
+          "class_key": "siren",
+          "t": 26.0,
+          "kind": "confusion"
+        },
+        {
+          "class_key": "dog_bark",
+          "t": 85.0,
+          "kind": "outside"
+        },
+        {
+          "class_key": "dog_bark",
+          "t": 170.5,
+          "kind": "outside"
+        }
+      ],
+      "missed": [
+        {
+          "class_key": "smoke_alarm",
+          "onset_s": 24.0211,
+          "snr_db": 20.0
+        },
+        {
+          "class_key": "smoke_alarm",
+          "onset_s": 126.3777,
+          "snr_db": 5.0
+        }
+      ],
+      "gated_fraction": 0.019498607242339833
+    },
+    {
+      "name": "scenario_06",
+      "duration_s": 180.0,
+      "n_gt": 4,
+      "tp": 2,
+      "fa": 1,
+      "repeats": 6,
+      "alerts": [
+        {
+          "class_key": "siren",
+          "t": 34.5,
+          "conf": 0.996,
+          "repeat": false
+        },
+        {
+          "class_key": "siren",
+          "t": 39.5,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "siren",
+          "t": 44.5,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "siren",
+          "t": 49.5,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "dog_bark",
+          "t": 109.0,
+          "conf": 0.996,
+          "repeat": false
+        },
+        {
+          "class_key": "siren",
+          "t": 157.0,
+          "conf": 0.996,
+          "repeat": false
+        },
+        {
+          "class_key": "siren",
+          "t": 162.0,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "siren",
+          "t": 167.0,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "siren",
+          "t": 172.0,
+          "conf": 0.996,
+          "repeat": true
+        }
+      ],
+      "fa_alerts": [
+        {
+          "class_key": "dog_bark",
+          "t": 109.0,
+          "kind": "outside"
+        }
+      ],
+      "missed": [
+        {
+          "class_key": "smoke_alarm",
+          "onset_s": 45.9019,
+          "snr_db": 20.0
+        },
+        {
+          "class_key": "siren",
+          "onset_s": 83.15,
+          "snr_db": 10.0
+        }
+      ],
+      "gated_fraction": 0.008356545961002786
+    },
+    {
+      "name": "scenario_07",
+      "duration_s": 180.0,
+      "n_gt": 4,
+      "tp": 2,
+      "fa": 1,
+      "repeats": 7,
+      "alerts": [
+        {
+          "class_key": "siren",
+          "t": 24.0,
+          "conf": 0.996,
+          "repeat": false
+        },
+        {
+          "class_key": "siren",
+          "t": 29.0,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "siren",
+          "t": 34.0,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "siren",
+          "t": 39.0,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "siren",
+          "t": 106.0,
+          "conf": 0.996,
+          "repeat": false
+        },
+        {
+          "class_key": "siren",
+          "t": 111.0,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "siren",
+          "t": 116.0,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "siren",
+          "t": 121.0,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "siren",
+          "t": 170.5,
+          "conf": 0.996,
+          "repeat": false
+        },
+        {
+          "class_key": "siren",
+          "t": 175.5,
+          "conf": 0.996,
+          "repeat": true
+        }
+      ],
+      "fa_alerts": [
+        {
+          "class_key": "siren",
+          "t": 24.0,
+          "kind": "confusion"
+        }
+      ],
+      "missed": [
+        {
+          "class_key": "smoke_alarm",
+          "onset_s": 22.5846,
+          "snr_db": 10.0
+        },
+        {
+          "class_key": "smoke_alarm",
+          "onset_s": 145.5621,
+          "snr_db": 0.0
+        }
+      ],
+      "gated_fraction": 0.0
+    },
+    {
+      "name": "scenario_08",
+      "duration_s": 180.0,
+      "n_gt": 4,
+      "tp": 3,
+      "fa": 1,
+      "repeats": 7,
+      "alerts": [
+        {
+          "class_key": "dog_bark",
+          "t": 10.5,
+          "conf": 0.996,
+          "repeat": false
+        },
+        {
+          "class_key": "smoke_alarm",
+          "t": 24.5,
+          "conf": 0.996,
+          "repeat": false
+        },
+        {
+          "class_key": "smoke_alarm",
+          "t": 29.5,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "smoke_alarm",
+          "t": 34.5,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "siren",
+          "t": 63.0,
+          "conf": 0.996,
+          "repeat": false
+        },
+        {
+          "class_key": "siren",
+          "t": 68.0,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "siren",
+          "t": 73.0,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "siren",
+          "t": 78.0,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "smoke_alarm",
+          "t": 113.5,
+          "conf": 0.996,
+          "repeat": false
+        },
+        {
+          "class_key": "smoke_alarm",
+          "t": 118.5,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "smoke_alarm",
+          "t": 123.5,
+          "conf": 0.996,
+          "repeat": true
+        }
+      ],
+      "fa_alerts": [
+        {
+          "class_key": "dog_bark",
+          "t": 10.5,
+          "kind": "outside"
+        }
+      ],
+      "missed": [
+        {
+          "class_key": "smoke_alarm",
+          "onset_s": 76.4608,
+          "snr_db": 0.0
+        }
+      ],
+      "gated_fraction": 0.022284122562674095
+    },
+    {
+      "name": "scenario_09",
+      "duration_s": 180.0,
+      "n_gt": 5,
+      "tp": 4,
+      "fa": 0,
+      "repeats": 11,
+      "alerts": [
+        {
+          "class_key": "siren",
+          "t": 16.0,
+          "conf": 0.996,
+          "repeat": false
+        },
+        {
+          "class_key": "siren",
+          "t": 21.0,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "siren",
+          "t": 26.0,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "siren",
+          "t": 31.0,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "siren",
+          "t": 68.5,
+          "conf": 0.996,
+          "repeat": false
+        },
+        {
+          "class_key": "siren",
+          "t": 73.5,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "siren",
+          "t": 78.5,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "smoke_alarm",
+          "t": 127.0,
+          "conf": 0.996,
+          "repeat": false
+        },
+        {
+          "class_key": "smoke_alarm",
+          "t": 132.0,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "smoke_alarm",
+          "t": 137.0,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "smoke_alarm",
+          "t": 142.0,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "siren",
+          "t": 157.0,
+          "conf": 0.996,
+          "repeat": false
+        },
+        {
+          "class_key": "siren",
+          "t": 162.0,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "siren",
+          "t": 167.0,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "siren",
+          "t": 172.0,
+          "conf": 0.996,
+          "repeat": true
+        }
+      ],
+      "fa_alerts": [],
+      "missed": [
+        {
+          "class_key": "smoke_alarm",
+          "onset_s": 85.3587,
+          "snr_db": 0.0
+        }
+      ],
+      "gated_fraction": 0.008356545961002786
+    },
+    {
+      "name": "scenario_10",
+      "duration_s": 180.0,
+      "n_gt": 6,
+      "tp": 2,
+      "fa": 4,
+      "repeats": 11,
+      "alerts": [
+        {
+          "class_key": "siren",
+          "t": 9.5,
+          "conf": 0.996,
+          "repeat": false
+        },
+        {
+          "class_key": "siren",
+          "t": 14.5,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "siren",
+          "t": 31.5,
+          "conf": 0.996,
+          "repeat": false
+        },
+        {
+          "class_key": "siren",
+          "t": 36.5,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "siren",
+          "t": 41.5,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "dog_bark",
+          "t": 47.5,
+          "conf": 0.996,
+          "repeat": false
+        },
+        {
+          "class_key": "siren",
+          "t": 55.5,
+          "conf": 0.996,
+          "repeat": false
+        },
+        {
+          "class_key": "siren",
+          "t": 60.5,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "siren",
+          "t": 65.5,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "siren",
+          "t": 70.5,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "siren",
+          "t": 107.5,
+          "conf": 0.996,
+          "repeat": false
+        },
+        {
+          "class_key": "siren",
+          "t": 112.5,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "siren",
+          "t": 117.5,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "siren",
+          "t": 122.5,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "siren",
+          "t": 165.0,
+          "conf": 0.996,
+          "repeat": false
+        },
+        {
+          "class_key": "siren",
+          "t": 170.0,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "siren",
+          "t": 175.0,
+          "conf": 0.996,
+          "repeat": true
+        }
+      ],
+      "fa_alerts": [
+        {
+          "class_key": "siren",
+          "t": 9.5,
+          "kind": "outside"
+        },
+        {
+          "class_key": "dog_bark",
+          "t": 47.5,
+          "kind": "confusion"
+        },
+        {
+          "class_key": "siren",
+          "t": 55.5,
+          "kind": "confusion"
+        },
+        {
+          "class_key": "siren",
+          "t": 165.0,
+          "kind": "confusion"
+        }
+      ],
+      "missed": [
+        {
+          "class_key": "smoke_alarm",
+          "onset_s": 41.1978,
+          "snr_db": 5.0
+        },
+        {
+          "class_key": "smoke_alarm",
+          "onset_s": 53.1044,
+          "snr_db": 0.0
+        },
+        {
+          "class_key": "siren",
+          "onset_s": 146.2138,
+          "snr_db": 5.0
+        },
+        {
+          "class_key": "smoke_alarm",
+          "onset_s": 164.1229,
+          "snr_db": 20.0
+        }
+      ],
+      "gated_fraction": 0.016713091922005572
+    },
+    {
+      "name": "scenario_11",
+      "duration_s": 180.0,
+      "n_gt": 4,
+      "tp": 1,
+      "fa": 1,
+      "repeats": 5,
+      "alerts": [
+        {
+          "class_key": "siren",
+          "t": 25.0,
+          "conf": 0.996,
+          "repeat": false
+        },
+        {
+          "class_key": "siren",
+          "t": 30.0,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "siren",
+          "t": 35.0,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "siren",
+          "t": 155.5,
+          "conf": 0.996,
+          "repeat": false
+        },
+        {
+          "class_key": "siren",
+          "t": 160.5,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "siren",
+          "t": 165.5,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "siren",
+          "t": 170.5,
+          "conf": 0.996,
+          "repeat": true
+        }
+      ],
+      "fa_alerts": [
+        {
+          "class_key": "siren",
+          "t": 25.0,
+          "kind": "confusion"
+        }
+      ],
+      "missed": [
+        {
+          "class_key": "smoke_alarm",
+          "onset_s": 23.0226,
+          "snr_db": 20.0
+        },
+        {
+          "class_key": "siren",
+          "onset_s": 52.2838,
+          "snr_db": 10.0
+        },
+        {
+          "class_key": "smoke_alarm",
+          "onset_s": 115.8388,
+          "snr_db": 5.0
+        }
+      ],
+      "gated_fraction": 0.0
+    },
+    {
+      "name": "scenario_12",
+      "duration_s": 180.0,
+      "n_gt": 6,
+      "tp": 4,
+      "fa": 0,
+      "repeats": 10,
+      "alerts": [
+        {
+          "class_key": "smoke_alarm",
+          "t": 106.0,
+          "conf": 0.996,
+          "repeat": false
+        },
+        {
+          "class_key": "smoke_alarm",
+          "t": 111.0,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "smoke_alarm",
+          "t": 116.0,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "smoke_alarm",
+          "t": 121.0,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "siren",
+          "t": 135.5,
+          "conf": 0.996,
+          "repeat": false
+        },
+        {
+          "class_key": "siren",
+          "t": 140.5,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "siren",
+          "t": 145.5,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "siren",
+          "t": 150.5,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "smoke_alarm",
+          "t": 155.5,
+          "conf": 0.996,
+          "repeat": false
+        },
+        {
+          "class_key": "smoke_alarm",
+          "t": 160.5,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "smoke_alarm",
+          "t": 165.5,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "siren",
+          "t": 169.0,
+          "conf": 0.996,
+          "repeat": false
+        },
+        {
+          "class_key": "siren",
+          "t": 174.0,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "siren",
+          "t": 179.0,
+          "conf": 0.996,
+          "repeat": true
+        }
+      ],
+      "fa_alerts": [],
+      "missed": [
+        {
+          "class_key": "smoke_alarm",
+          "onset_s": 72.2253,
+          "snr_db": 0.0
+        },
+        {
+          "class_key": "siren",
+          "onset_s": 92.4753,
+          "snr_db": 5.0
+        }
+      ],
+      "gated_fraction": 0.008356545961002786
+    },
+    {
+      "name": "scenario_13",
+      "duration_s": 180.0,
+      "n_gt": 4,
+      "tp": 4,
+      "fa": 0,
+      "repeats": 11,
+      "alerts": [
+        {
+          "class_key": "siren",
+          "t": 42.0,
+          "conf": 0.996,
+          "repeat": false
+        },
+        {
+          "class_key": "siren",
+          "t": 47.0,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "siren",
+          "t": 52.0,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "siren",
+          "t": 57.0,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "smoke_alarm",
+          "t": 73.5,
+          "conf": 0.996,
+          "repeat": false
+        },
+        {
+          "class_key": "smoke_alarm",
+          "t": 78.5,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "smoke_alarm",
+          "t": 83.5,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "smoke_alarm",
+          "t": 88.5,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "siren",
+          "t": 98.0,
+          "conf": 0.996,
+          "repeat": false
+        },
+        {
+          "class_key": "siren",
+          "t": 103.0,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "siren",
+          "t": 108.0,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "siren",
+          "t": 113.0,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "smoke_alarm",
+          "t": 167.0,
+          "conf": 0.996,
+          "repeat": false
+        },
+        {
+          "class_key": "smoke_alarm",
+          "t": 172.0,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "smoke_alarm",
+          "t": 177.0,
+          "conf": 0.996,
+          "repeat": true
+        }
+      ],
+      "fa_alerts": [],
+      "missed": [],
+      "gated_fraction": 0.011142061281337047
+    },
+    {
+      "name": "scenario_14",
+      "duration_s": 180.0,
+      "n_gt": 5,
+      "tp": 5,
+      "fa": 0,
+      "repeats": 12,
+      "alerts": [
+        {
+          "class_key": "smoke_alarm",
+          "t": 48.0,
+          "conf": 0.996,
+          "repeat": false
+        },
+        {
+          "class_key": "smoke_alarm",
+          "t": 53.0,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "smoke_alarm",
+          "t": 58.0,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "siren",
+          "t": 70.0,
+          "conf": 0.996,
+          "repeat": false
+        },
+        {
+          "class_key": "siren",
+          "t": 75.0,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "siren",
+          "t": 80.0,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "siren",
+          "t": 85.0,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "siren",
+          "t": 111.5,
+          "conf": 0.996,
+          "repeat": false
+        },
+        {
+          "class_key": "siren",
+          "t": 116.5,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "siren",
+          "t": 121.5,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "siren",
+          "t": 126.5,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "smoke_alarm",
+          "t": 142.5,
+          "conf": 0.996,
+          "repeat": false
+        },
+        {
+          "class_key": "smoke_alarm",
+          "t": 147.5,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "smoke_alarm",
+          "t": 152.5,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "smoke_alarm",
+          "t": 157.5,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "siren",
+          "t": 171.0,
+          "conf": 0.996,
+          "repeat": false
+        },
+        {
+          "class_key": "siren",
+          "t": 176.0,
+          "conf": 0.996,
+          "repeat": true
+        }
+      ],
+      "fa_alerts": [],
+      "missed": [],
+      "gated_fraction": 0.0
+    },
+    {
+      "name": "scenario_15",
+      "duration_s": 180.0,
+      "n_gt": 3,
+      "tp": 1,
+      "fa": 2,
+      "repeats": 4,
+      "alerts": [
+        {
+          "class_key": "siren",
+          "t": 17.5,
+          "conf": 0.996,
+          "repeat": false
+        },
+        {
+          "class_key": "siren",
+          "t": 22.5,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "siren",
+          "t": 27.5,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "siren",
+          "t": 75.0,
+          "conf": 0.996,
+          "repeat": false
+        },
+        {
+          "class_key": "siren",
+          "t": 80.0,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "siren",
+          "t": 85.0,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "dog_bark",
+          "t": 126.0,
+          "conf": 0.996,
+          "repeat": false
+        }
+      ],
+      "fa_alerts": [
+        {
+          "class_key": "siren",
+          "t": 17.5,
+          "kind": "confusion"
+        },
+        {
+          "class_key": "dog_bark",
+          "t": 126.0,
+          "kind": "outside"
+        }
+      ],
+      "missed": [
+        {
+          "class_key": "smoke_alarm",
+          "onset_s": 16.7507,
+          "snr_db": 5.0
+        },
+        {
+          "class_key": "smoke_alarm",
+          "onset_s": 58.9404,
+          "snr_db": 5.0
+        }
+      ],
+      "gated_fraction": 0.03899721448467967
+    },
+    {
+      "name": "scenario_16",
+      "duration_s": 180.0,
+      "n_gt": 4,
+      "tp": 3,
+      "fa": 0,
+      "repeats": 7,
+      "alerts": [
+        {
+          "class_key": "siren",
+          "t": 125.0,
+          "conf": 0.996,
+          "repeat": false
+        },
+        {
+          "class_key": "siren",
+          "t": 130.0,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "siren",
+          "t": 135.0,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "siren",
+          "t": 144.0,
+          "conf": 0.996,
+          "repeat": false
+        },
+        {
+          "class_key": "siren",
+          "t": 149.0,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "siren",
+          "t": 154.0,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "smoke_alarm",
+          "t": 160.5,
+          "conf": 0.996,
+          "repeat": false
+        },
+        {
+          "class_key": "smoke_alarm",
+          "t": 165.5,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "smoke_alarm",
+          "t": 170.5,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "smoke_alarm",
+          "t": 175.5,
+          "conf": 0.996,
+          "repeat": true
+        }
+      ],
+      "fa_alerts": [],
+      "missed": [
+        {
+          "class_key": "smoke_alarm",
+          "onset_s": 61.1329,
+          "snr_db": 0.0
+        }
+      ],
+      "gated_fraction": 0.008356545961002786
+    },
+    {
+      "name": "scenario_17",
+      "duration_s": 180.0,
+      "n_gt": 5,
+      "tp": 5,
+      "fa": 2,
+      "repeats": 12,
+      "alerts": [
+        {
+          "class_key": "dog_bark",
+          "t": 3.5,
+          "conf": 0.992,
+          "repeat": false
+        },
+        {
+          "class_key": "siren",
+          "t": 25.0,
+          "conf": 0.996,
+          "repeat": false
+        },
+        {
+          "class_key": "siren",
+          "t": 30.0,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "siren",
+          "t": 35.0,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "siren",
+          "t": 40.0,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "smoke_alarm",
+          "t": 47.0,
+          "conf": 0.965,
+          "repeat": false
+        },
+        {
+          "class_key": "smoke_alarm",
+          "t": 52.0,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "smoke_alarm",
+          "t": 57.0,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "siren",
+          "t": 119.0,
+          "conf": 0.996,
+          "repeat": false
+        },
+        {
+          "class_key": "siren",
+          "t": 124.0,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "siren",
+          "t": 129.0,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "smoke_alarm",
+          "t": 137.5,
+          "conf": 0.996,
+          "repeat": false
+        },
+        {
+          "class_key": "smoke_alarm",
+          "t": 142.5,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "smoke_alarm",
+          "t": 147.5,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "dog_bark",
+          "t": 156.0,
+          "conf": 0.996,
+          "repeat": false
+        },
+        {
+          "class_key": "smoke_alarm",
+          "t": 162.5,
+          "conf": 0.996,
+          "repeat": false
+        },
+        {
+          "class_key": "smoke_alarm",
+          "t": 167.5,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "smoke_alarm",
+          "t": 172.5,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "smoke_alarm",
+          "t": 177.5,
+          "conf": 0.996,
+          "repeat": true
+        }
+      ],
+      "fa_alerts": [
+        {
+          "class_key": "dog_bark",
+          "t": 3.5,
+          "kind": "outside"
+        },
+        {
+          "class_key": "dog_bark",
+          "t": 156.0,
+          "kind": "outside"
+        }
+      ],
+      "missed": [],
+      "gated_fraction": 0.0
+    },
+    {
+      "name": "scenario_18",
+      "duration_s": 180.0,
+      "n_gt": 5,
+      "tp": 4,
+      "fa": 2,
+      "repeats": 12,
+      "alerts": [
+        {
+          "class_key": "dog_bark",
+          "t": 11.0,
+          "conf": 0.996,
+          "repeat": false
+        },
+        {
+          "class_key": "siren",
+          "t": 74.0,
+          "conf": 0.996,
+          "repeat": false
+        },
+        {
+          "class_key": "siren",
+          "t": 79.0,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "car_horn",
+          "t": 81.5,
+          "conf": 0.996,
+          "repeat": false
+        },
+        {
+          "class_key": "siren",
+          "t": 84.0,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "car_horn",
+          "t": 86.5,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "siren",
+          "t": 88.0,
+          "conf": 0.996,
+          "repeat": false
+        },
+        {
+          "class_key": "car_horn",
+          "t": 91.5,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "siren",
+          "t": 93.0,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "siren",
+          "t": 98.0,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "siren",
+          "t": 103.0,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "smoke_alarm",
+          "t": 117.0,
+          "conf": 0.996,
+          "repeat": false
+        },
+        {
+          "class_key": "smoke_alarm",
+          "t": 122.0,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "smoke_alarm",
+          "t": 127.0,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "smoke_alarm",
+          "t": 132.0,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "smoke_alarm",
+          "t": 167.0,
+          "conf": 0.98,
+          "repeat": false
+        },
+        {
+          "class_key": "smoke_alarm",
+          "t": 172.0,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "smoke_alarm",
+          "t": 177.0,
+          "conf": 0.996,
+          "repeat": true
+        }
+      ],
+      "fa_alerts": [
+        {
+          "class_key": "dog_bark",
+          "t": 11.0,
+          "kind": "outside"
+        },
+        {
+          "class_key": "car_horn",
+          "t": 81.5,
+          "kind": "outside"
+        }
+      ],
+      "missed": [
+        {
+          "class_key": "siren",
+          "onset_s": 149.4894,
+          "snr_db": 5.0
+        }
+      ],
+      "gated_fraction": 0.019498607242339833
+    },
+    {
+      "name": "scenario_19",
+      "duration_s": 180.0,
+      "n_gt": 3,
+      "tp": 1,
+      "fa": 2,
+      "repeats": 6,
+      "alerts": [
+        {
+          "class_key": "siren",
+          "t": 71.0,
+          "conf": 0.996,
+          "repeat": false
+        },
+        {
+          "class_key": "siren",
+          "t": 76.0,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "siren",
+          "t": 81.0,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "siren",
+          "t": 141.5,
+          "conf": 0.996,
+          "repeat": false
+        },
+        {
+          "class_key": "siren",
+          "t": 146.5,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "siren",
+          "t": 151.5,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "siren",
+          "t": 156.5,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "siren",
+          "t": 172.5,
+          "conf": 0.996,
+          "repeat": false
+        },
+        {
+          "class_key": "siren",
+          "t": 177.5,
+          "conf": 0.996,
+          "repeat": true
+        }
+      ],
+      "fa_alerts": [
+        {
+          "class_key": "siren",
+          "t": 141.5,
+          "kind": "confusion"
+        },
+        {
+          "class_key": "siren",
+          "t": 172.5,
+          "kind": "outside"
+        }
+      ],
+      "missed": [
+        {
+          "class_key": "smoke_alarm",
+          "onset_s": 39.4566,
+          "snr_db": 0.0
+        },
+        {
+          "class_key": "smoke_alarm",
+          "onset_s": 139.8718,
+          "snr_db": 10.0
+        }
+      ],
+      "gated_fraction": 0.002785515320334262
+    },
+    {
+      "name": "bg_00",
+      "duration_s": 360.0,
+      "n_gt": 0,
+      "tp": 0,
+      "fa": 2,
+      "repeats": 1,
+      "alerts": [
+        {
+          "class_key": "dog_bark",
+          "t": 266.5,
+          "conf": 0.996,
+          "repeat": false
+        },
+        {
+          "class_key": "car_horn",
+          "t": 285.0,
+          "conf": 0.996,
+          "repeat": false
+        },
+        {
+          "class_key": "car_horn",
+          "t": 290.0,
+          "conf": 0.996,
+          "repeat": true
+        }
+      ],
+      "fa_alerts": [
+        {
+          "class_key": "dog_bark",
+          "t": 266.5,
+          "kind": "outside"
+        },
+        {
+          "class_key": "car_horn",
+          "t": 285.0,
+          "kind": "outside"
+        }
+      ],
+      "missed": [],
+      "gated_fraction": 0.012517385257301807
+    },
+    {
+      "name": "bg_01",
+      "duration_s": 360.0,
+      "n_gt": 0,
+      "tp": 0,
+      "fa": 0,
+      "repeats": 0,
+      "alerts": [],
+      "fa_alerts": [],
+      "missed": [],
+      "gated_fraction": 0.004172461752433936
+    },
+    {
+      "name": "bg_02",
+      "duration_s": 360.0,
+      "n_gt": 0,
+      "tp": 0,
+      "fa": 4,
+      "repeats": 1,
+      "alerts": [
+        {
+          "class_key": "dog_bark",
+          "t": 24.5,
+          "conf": 0.996,
+          "repeat": false
+        },
+        {
+          "class_key": "dog_bark",
+          "t": 81.0,
+          "conf": 0.996,
+          "repeat": false
+        },
+        {
+          "class_key": "siren",
+          "t": 237.0,
+          "conf": 0.996,
+          "repeat": false
+        },
+        {
+          "class_key": "siren",
+          "t": 242.0,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "dog_bark",
+          "t": 294.0,
+          "conf": 0.996,
+          "repeat": false
+        }
+      ],
+      "fa_alerts": [
+        {
+          "class_key": "dog_bark",
+          "t": 24.5,
+          "kind": "outside"
+        },
+        {
+          "class_key": "dog_bark",
+          "t": 81.0,
+          "kind": "outside"
+        },
+        {
+          "class_key": "siren",
+          "t": 237.0,
+          "kind": "outside"
+        },
+        {
+          "class_key": "dog_bark",
+          "t": 294.0,
+          "kind": "outside"
+        }
+      ],
+      "missed": [],
+      "gated_fraction": 0.025034770514603615
+    },
+    {
+      "name": "bg_03",
+      "duration_s": 360.0,
+      "n_gt": 0,
+      "tp": 0,
+      "fa": 0,
+      "repeats": 0,
+      "alerts": [],
+      "fa_alerts": [],
+      "missed": [],
+      "gated_fraction": 0.012517385257301807
+    },
+    {
+      "name": "bg_04",
+      "duration_s": 360.0,
+      "n_gt": 0,
+      "tp": 0,
+      "fa": 4,
+      "repeats": 1,
+      "alerts": [
+        {
+          "class_key": "dog_bark",
+          "t": 219.5,
+          "conf": 0.996,
+          "repeat": false
+        },
+        {
+          "class_key": "car_horn",
+          "t": 276.0,
+          "conf": 0.984,
+          "repeat": false
+        },
+        {
+          "class_key": "car_horn",
+          "t": 281.0,
+          "conf": 0.984,
+          "repeat": true
+        },
+        {
+          "class_key": "dog_bark",
+          "t": 304.5,
+          "conf": 0.992,
+          "repeat": false
+        },
+        {
+          "class_key": "dog_bark",
+          "t": 334.5,
+          "conf": 0.996,
+          "repeat": false
+        }
+      ],
+      "fa_alerts": [
+        {
+          "class_key": "dog_bark",
+          "t": 219.5,
+          "kind": "outside"
+        },
+        {
+          "class_key": "car_horn",
+          "t": 276.0,
+          "kind": "outside"
+        },
+        {
+          "class_key": "dog_bark",
+          "t": 304.5,
+          "kind": "outside"
+        },
+        {
+          "class_key": "dog_bark",
+          "t": 334.5,
+          "kind": "outside"
+        }
+      ],
+      "missed": [],
+      "gated_fraction": 0.025034770514603615
+    },
+    {
+      "name": "bg_05",
+      "duration_s": 360.0,
+      "n_gt": 0,
+      "tp": 0,
+      "fa": 2,
+      "repeats": 3,
+      "alerts": [
+        {
+          "class_key": "car_horn",
+          "t": 122.0,
+          "conf": 0.996,
+          "repeat": false
+        },
+        {
+          "class_key": "car_horn",
+          "t": 127.0,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "car_horn",
+          "t": 132.0,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "car_horn",
+          "t": 137.0,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "dog_bark",
+          "t": 209.5,
+          "conf": 0.996,
+          "repeat": false
+        }
+      ],
+      "fa_alerts": [
+        {
+          "class_key": "car_horn",
+          "t": 122.0,
+          "kind": "outside"
+        },
+        {
+          "class_key": "dog_bark",
+          "t": 209.5,
+          "kind": "outside"
+        }
+      ],
+      "missed": [],
+      "gated_fraction": 0.02086230876216968
+    },
+    {
+      "name": "bg_06",
+      "duration_s": 360.0,
+      "n_gt": 0,
+      "tp": 0,
+      "fa": 1,
+      "repeats": 0,
+      "alerts": [
+        {
+          "class_key": "dog_bark",
+          "t": 283.5,
+          "conf": 0.996,
+          "repeat": false
+        }
+      ],
+      "fa_alerts": [
+        {
+          "class_key": "dog_bark",
+          "t": 283.5,
+          "kind": "outside"
+        }
+      ],
+      "missed": [],
+      "gated_fraction": 0.037552155771905425
+    },
+    {
+      "name": "bg_07",
+      "duration_s": 360.0,
+      "n_gt": 0,
+      "tp": 0,
+      "fa": 1,
+      "repeats": 2,
+      "alerts": [
+        {
+          "class_key": "car_horn",
+          "t": 246.5,
+          "conf": 0.996,
+          "repeat": false
+        },
+        {
+          "class_key": "car_horn",
+          "t": 251.5,
+          "conf": 0.996,
+          "repeat": true
+        },
+        {
+          "class_key": "car_horn",
+          "t": 256.5,
+          "conf": 0.996,
+          "repeat": true
+        }
+      ],
+      "fa_alerts": [
+        {
+          "class_key": "car_horn",
+          "t": 246.5,
+          "kind": "outside"
+        }
+      ],
+      "missed": [],
+      "gated_fraction": 0.013908205841446454
+    },
+    {
+      "name": "bg_08",
+      "duration_s": 360.0,
+      "n_gt": 0,
+      "tp": 0,
+      "fa": 2,
+      "repeats": 0,
+      "alerts": [
+        {
+          "class_key": "dog_bark",
+          "t": 208.0,
+          "conf": 0.996,
+          "repeat": false
+        },
+        {
+          "class_key": "baby_cry",
+          "t": 344.5,
+          "conf": 0.992,
+          "repeat": false
+        }
+      ],
+      "fa_alerts": [
+        {
+          "class_key": "dog_bark",
+          "t": 208.0,
+          "kind": "outside"
+        },
+        {
+          "class_key": "baby_cry",
+          "t": 344.5,
+          "kind": "outside"
+        }
+      ],
+      "missed": [],
+      "gated_fraction": 0.015299026425591099
+    },
+    {
+      "name": "bg_09",
+      "duration_s": 360.0,
+      "n_gt": 0,
+      "tp": 0,
+      "fa": 0,
+      "repeats": 0,
+      "alerts": [],
+      "fa_alerts": [],
+      "missed": [],
+      "gated_fraction": 0.013908205841446454
+    }
+  ]
+}
