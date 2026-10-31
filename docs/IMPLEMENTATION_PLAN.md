@@ -113,6 +113,14 @@ Engine chạy trong **worker thread**; UI chạy trong **main thread**; giao ti�
 
 Feature phải viết bằng **numpy thuần** (`rfft`, ma trận mel tự dựng) để dễ port sang C/CMSIS-DSP. Không dùng `tf.signal` hay librosa trong engine.
 
+**Mở rộng tuỳ chọn (nhánh `vn-v2`, tương thích ngược):** mỗi model có thể ghi front-end của nó trong
+`feature_stats.json` → `params`: `frontend: logmel|pcen`, `pcen: {time_constant_s, gain, bias, power, eps, s}`,
+`output: softmax|sigmoid`, `window_s`. Thiếu các khoá này = log-mel / softmax / cửa sổ của config (mọi model cũ).
+PCEN dùng cùng mel power ở bước 1–5, thay `log` bằng PCEN cố định, không học, không trạng thái giữa các cửa sổ
+(`M[0] = E[0]`, `M[t] = (1−s)·M[t−1] + s·E[t]`, `pcen = (E/(eps+M)^gain + bias)^power − bias^power`), công thức đầy đủ
+trong docstring `audio/features.py`. Output `sigmoid` là xác suất độc lập từng lớp (không tổng bằng 1, **không** được
+softmax lại). Engine, `run` và các lệnh eval tự đọc các khoá này từ file stats của model.
+
 ### 4.3 Kiểu dữ liệu & interface Python
 
 ```python
@@ -209,6 +217,10 @@ class PostProcessor:
    (và thoả `bg_margin` nếu bật), không cần đủ k-of-n. Lịch sử hit, cooldown, lặp, ack, clear giữ nguyên; WARN/INFO
    không đổi. `PostprocessConfig.danger_fast_threshold: float | None = None` (tắt). Config hiện dùng 255/256 =
    0.99609375 (output int8 bão hoà). Số liệu trước/sau: [danger_fast_path.md](danger_fast_path.md).
+8. (Chế độ ngữ cảnh, tuỳ chọn, nhánh `vn-v2`) mục `modes:` trong config: mỗi chế độ tắt một số lớp (`disable`) và
+   đổi mức của lớp (`level`, vd car_horn → INFO ở `street`: không luật hai tầng, không lặp). `auto` chọn `street` khi
+   trung vị RMS của các hop trong `window_s` giây > `street_above_dbfs`, ngược lại `indoor`. Đổi chế độ lúc chạy
+   (`PostProcessor.set_mode`, `ModeCommand`), mỗi lần đổi được ghi log. Không có `modes:` = hành vi như cũ.
 
 ### 4.4 Config (`config/soundwatch.yaml`)
 
@@ -229,6 +241,11 @@ postprocess:
   danger_repeat_s: 5
   # bg_margin: 0.2       # tuỳ chọn (WP8), mặc định tắt
   danger_fast_threshold: 0.99609375   # luật hai tầng cho DANGER (mục 4.3 quy tắc 7); null = tắt
+# modes:               # tuỳ chọn (vn-v2, mục 4.3 quy tắc 8); không có = như cũ
+#   default: indoor    # indoor | street | auto
+#   street: {disable: [dog_bark, baby_cry], level: {car_horn: 0}}
+#   indoor: {}
+#   auto: {street_above_dbfs: -35, window_s: 30}
 model:
   tflite_path: artifacts/models/student_int8.tflite
   stats_path: artifacts/models/feature_stats.json
@@ -553,7 +570,7 @@ Có cờ `--no-debug` chỉ hiện mặt đồng hồ (dùng khi demo cho ngư�
 | Thiếu dữ liệu báo cháy/khói thật (ESC-50 không có) | Bật FSD50K; bổ sung clip từ Freesound (CC0/CC-BY); thu âm chuông báo khói thật (nút Test); tạm dùng `clock_alarm` làm proxy và ghi rõ trong báo cáo. |
 | Lệch miền giữa dataset và micro laptop | Augment noise mạnh; lệnh `record` thu dữ liệu thật để fine-tune; đánh giá riêng trên dữ liệu thu thật. |
 | Nhầm `siren` vs `car_horn`, `baby_cry` vs `cat` | Xem confusion matrix; tăng dữ liệu; có thể gộp lớp nếu không cải thiện được. |
-| Nhiều âm cùng lúc (multi-label) | PoC dùng softmax single-label; ghi là hạn chế, hướng phát triển: sigmoid multi-label. |
+| Nhiều âm cùng lúc (multi-label) | PoC dùng softmax single-label. Nhánh `vn-v2` thử sigmoid multi-label + trộn hai cửa sổ khi train ([vn_v2_results.md](vn_v2_results.md)). |
 | Version TF / hub / TFLite không tương thích | WP0 kiểm tra và pin; fallback: dùng embedding YAMNet đã cache. |
 | Báo nhầm nhiều | Quét ngưỡng (WP7), k-of-n, cooldown, energy gate, tăng dữ liệu background. |
 

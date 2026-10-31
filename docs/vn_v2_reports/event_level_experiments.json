@@ -1,0 +1,5306 @@
+{
+ "cu": {
+  "test": {
+   "event_recall": 0.4186046511627907,
+   "danger_recall_mean": 0.5555555555555555,
+   "recall": {
+    "smoke_alarm": 0.4166666666666667,
+    "car_horn": 0.5833333333333334,
+    "siren": 0.6666666666666666,
+    "baby_cry": 0.23076923076923078,
+    "door_knock": 0.16666666666666666,
+    "dog_bark": 0.46153846153846156,
+    "water_running": 0.4166666666666667
+   },
+   "n_gt": {
+    "smoke_alarm": 12,
+    "car_horn": 12,
+    "siren": 12,
+    "baby_cry": 13,
+    "door_knock": 12,
+    "dog_bark": 13,
+    "water_running": 12
+   },
+   "latency_median_s": 1.4815500000000021,
+   "latency_p90_s": 3.706850000000001,
+   "latency_median_by_class": {
+    "smoke_alarm": 0.9886999999999944,
+    "car_horn": 1.6347000000000005,
+    "siren": 1.0348999999999995,
+    "baby_cry": 1.5031000000000034,
+    "door_knock": 1.4487000000000023,
+    "dog_bark": 2.359849999999998,
+    "water_running": 1.5837999999999965
+   },
+   "fa_per_hour_background": 37.0,
+   "background_hours": 1.0,
+   "fa_background_by_class": {
+    "smoke_alarm": 7,
+    "car_horn": 2,
+    "siren": 17,
+    "baby_cry": 3,
+    "door_knock": 0,
+    "dog_bark": 8,
+    "water_running": 0
+   },
+   "fa_per_hour_event_outside_gt": 21.359894846028777,
+   "n_gt_events": 86,
+   "short": {
+    "all": {
+     "n_gt": 13,
+     "tp": 1,
+     "recall": 0.07692307692307693,
+     "latency_median_s": 0.9206999999999965,
+     "latency_p90_s": 0.9206999999999965
+    },
+    "door_knock": {
+     "n_gt": 6,
+     "tp": 0,
+     "recall": 0.0,
+     "latency_median_s": null,
+     "latency_p90_s": null
+    },
+    "water_running": {
+     "n_gt": 1,
+     "tp": 0,
+     "recall": 0.0,
+     "latency_median_s": null,
+     "latency_p90_s": null
+    },
+    "danger": {
+     "n_gt": 2,
+     "tp": 0,
+     "recall": 0.0,
+     "latency_median_s": null,
+     "latency_p90_s": null
+    },
+    "car_horn": {
+     "n_gt": 2,
+     "tp": 0,
+     "recall": 0.0,
+     "latency_median_s": null,
+     "latency_p90_s": null
+    },
+    "dog_bark": {
+     "n_gt": 4,
+     "tp": 1,
+     "recall": 0.25,
+     "latency_median_s": 0.9206999999999965,
+     "latency_p90_s": 0.9206999999999965
+    }
+   }
+  },
+  "val": {
+   "event_recall": 0.4846153846153846,
+   "danger_recall_mean": 0.5614035087719298,
+   "recall": {
+    "smoke_alarm": 0.6842105263157895,
+    "car_horn": 0.2631578947368421,
+    "siren": 0.7368421052631579,
+    "baby_cry": 0.6111111111111112,
+    "door_knock": 0.2222222222222222,
+    "dog_bark": 0.5263157894736842,
+    "water_running": 0.3333333333333333
+   },
+   "n_gt": {
+    "smoke_alarm": 19,
+    "car_horn": 19,
+    "siren": 19,
+    "baby_cry": 18,
+    "door_knock": 18,
+    "dog_bark": 19,
+    "water_running": 18
+   },
+   "latency_median_s": 1.357599999999998,
+   "latency_p90_s": 4.462860000000001,
+   "latency_median_by_class": {
+    "smoke_alarm": 1.04910000000001,
+    "car_horn": 1.2470999999999997,
+    "siren": 1.3693999999999988,
+    "baby_cry": 2.9506000000000014,
+    "door_knock": 1.2638000000000034,
+    "dog_bark": 1.0634500000000031,
+    "water_running": 1.9900999999999982
+   },
+   "fa_per_hour_background": 22.0,
+   "background_hours": 2.0,
+   "fa_background_by_class": {
+    "smoke_alarm": 3,
+    "car_horn": 0,
+    "siren": 10,
+    "baby_cry": 12,
+    "door_knock": 0,
+    "dog_bark": 19,
+    "water_running": 0
+   },
+   "fa_per_hour_event_outside_gt": 35.430973836062996,
+   "n_gt_events": 130,
+   "short": {
+    "all": {
+     "n_gt": 20,
+     "tp": 4,
+     "recall": 0.2,
+     "latency_median_s": 1.211249999999998,
+     "latency_p90_s": 1.3206700000000073
+    },
+    "door_knock": {
+     "n_gt": 7,
+     "tp": 2,
+     "recall": 0.2857142857142857,
+     "latency_median_s": 1.2638000000000034,
+     "latency_p90_s": 1.334520000000009
+    },
+    "danger": {
+     "n_gt": 11,
+     "tp": 2,
+     "recall": 0.18181818181818182,
+     "latency_median_s": 1.082749999999999,
+     "latency_p90_s": 1.2142299999999995
+    },
+    "car_horn": {
+     "n_gt": 11,
+     "tp": 2,
+     "recall": 0.18181818181818182,
+     "latency_median_s": 1.082749999999999,
+     "latency_p90_s": 1.2142299999999995
+    },
+    "water_running": {
+     "n_gt": 1,
+     "tp": 0,
+     "recall": 0.0,
+     "latency_median_s": null,
+     "latency_p90_s": null
+    },
+    "dog_bark": {
+     "n_gt": 1,
+     "tp": 0,
+     "recall": 0.0,
+     "latency_median_s": null,
+     "latency_p90_s": null
+    }
+   }
+  },
+  "short_test": {
+   "event_recall": 0.3409090909090909,
+   "danger_recall_mean": 0.3398467432950192,
+   "recall": {
+    "smoke_alarm": 0.43333333333333335,
+    "car_horn": 0.3448275862068966,
+    "siren": 0.2413793103448276,
+    "baby_cry": null,
+    "door_knock": null,
+    "dog_bark": null,
+    "water_running": null
+   },
+   "n_gt": {
+    "smoke_alarm": 30,
+    "car_horn": 29,
+    "siren": 29,
+    "baby_cry": 0,
+    "door_knock": 0,
+    "dog_bark": 0,
+    "water_running": 0
+   },
+   "latency_median_s": 0.7933499999999998,
+   "latency_p90_s": 1.2258399999999967,
+   "latency_median_by_class": {
+    "smoke_alarm": 0.7807999999999993,
+    "car_horn": 0.8496000000000024,
+    "siren": 0.7935999999999996,
+    "baby_cry": null,
+    "door_knock": null,
+    "dog_bark": null,
+    "water_running": null
+   },
+   "fa_per_hour_background": null,
+   "background_hours": 0.0,
+   "fa_background_by_class": {
+    "smoke_alarm": 0,
+    "car_horn": 0,
+    "siren": 0,
+    "baby_cry": 0,
+    "door_knock": 0,
+    "dog_bark": 0,
+    "water_running": 0
+   },
+   "fa_per_hour_event_outside_gt": 32.007487131492745,
+   "n_gt_events": 88,
+   "short": {
+    "all": {
+     "n_gt": 88,
+     "tp": 30,
+     "recall": 0.3409090909090909,
+     "latency_median_s": 0.7933499999999998,
+     "latency_p90_s": 1.2258399999999967
+    },
+    "danger": {
+     "n_gt": 88,
+     "tp": 30,
+     "recall": 0.3409090909090909,
+     "latency_median_s": 0.7933499999999998,
+     "latency_p90_s": 1.2258399999999967
+    },
+    "smoke_alarm": {
+     "n_gt": 30,
+     "tp": 13,
+     "recall": 0.43333333333333335,
+     "latency_median_s": 0.7807999999999993,
+     "latency_p90_s": 0.9369000000000028
+    },
+    "car_horn": {
+     "n_gt": 29,
+     "tp": 10,
+     "recall": 0.3448275862068966,
+     "latency_median_s": 0.8496000000000024,
+     "latency_p90_s": 1.229799999999996
+    },
+    "siren": {
+     "n_gt": 29,
+     "tp": 7,
+     "recall": 0.2413793103448276,
+     "latency_median_s": 0.7935999999999996,
+     "latency_p90_s": 1.4720400000000013
+    }
+   }
+  },
+  "short_val": {
+   "event_recall": 0.3434343434343434,
+   "danger_recall_mean": 0.3434343434343434,
+   "recall": {
+    "smoke_alarm": 0.30303030303030304,
+    "car_horn": 0.30303030303030304,
+    "siren": 0.42424242424242425,
+    "baby_cry": null,
+    "door_knock": null,
+    "dog_bark": null,
+    "water_running": null
+   },
+   "n_gt": {
+    "smoke_alarm": 33,
+    "car_horn": 33,
+    "siren": 33,
+    "baby_cry": 0,
+    "door_knock": 0,
+    "dog_bark": 0,
+    "water_running": 0
+   },
+   "latency_median_s": 0.9191500000000019,
+   "latency_p90_s": 1.2513199999999982,
+   "latency_median_by_class": {
+    "smoke_alarm": 0.7219499999999961,
+    "car_horn": 1.0773499999999991,
+    "siren": 0.8560000000000016,
+    "baby_cry": null,
+    "door_knock": null,
+    "dog_bark": null,
+    "water_running": null
+   },
+   "fa_per_hour_background": null,
+   "background_hours": 0.0,
+   "fa_background_by_class": {
+    "smoke_alarm": 0,
+    "car_horn": 0,
+    "siren": 0,
+    "baby_cry": 0,
+    "door_knock": 0,
+    "dog_bark": 0,
+    "water_running": 0
+   },
+   "fa_per_hour_event_outside_gt": 18.807884113037282,
+   "n_gt_events": 99,
+   "short": {
+    "all": {
+     "n_gt": 99,
+     "tp": 34,
+     "recall": 0.3434343434343434,
+     "latency_median_s": 0.9191500000000019,
+     "latency_p90_s": 1.2513199999999982
+    },
+    "danger": {
+     "n_gt": 99,
+     "tp": 34,
+     "recall": 0.3434343434343434,
+     "latency_median_s": 0.9191500000000019,
+     "latency_p90_s": 1.2513199999999982
+    },
+    "smoke_alarm": {
+     "n_gt": 33,
+     "tp": 10,
+     "recall": 0.30303030303030304,
+     "latency_median_s": 0.7219499999999961,
+     "latency_p90_s": 1.0840299999999972
+    },
+    "car_horn": {
+     "n_gt": 33,
+     "tp": 10,
+     "recall": 0.30303030303030304,
+     "latency_median_s": 1.0773499999999991,
+     "latency_p90_s": 1.2818999999999987
+    },
+    "siren": {
+     "n_gt": 33,
+     "tp": 14,
+     "recall": 0.42424242424242425,
+     "latency_median_s": 0.8560000000000016,
+     "latency_p90_s": 1.3805000000000025
+    }
+   }
+  },
+  "vn_test": {
+   "event_recall": 0.6593406593406593,
+   "danger_recall_mean": 0.6615942028985508,
+   "recall": {
+    "smoke_alarm": 0.45652173913043476,
+    "car_horn": null,
+    "siren": 0.8666666666666667,
+    "baby_cry": null,
+    "door_knock": null,
+    "dog_bark": null,
+    "water_running": null
+   },
+   "n_gt": {
+    "smoke_alarm": 46,
+    "car_horn": 0,
+    "siren": 45,
+    "baby_cry": 0,
+    "door_knock": 0,
+    "dog_bark": 0,
+    "water_running": 0
+   },
+   "latency_median_s": 1.4341000000000008,
+   "latency_p90_s": 4.491290000000002,
+   "latency_median_by_class": {
+    "smoke_alarm": 1.700400000000002,
+    "car_horn": null,
+    "siren": 1.4235000000000042,
+    "baby_cry": null,
+    "door_knock": null,
+    "dog_bark": null,
+    "water_running": null
+   },
+   "fa_per_hour_background": 16.0,
+   "background_hours": 1.0,
+   "fa_background_by_class": {
+    "smoke_alarm": 0,
+    "car_horn": 4,
+    "siren": 1,
+    "baby_cry": 1,
+    "door_knock": 0,
+    "dog_bark": 10,
+    "water_running": 0
+   },
+   "fa_per_hour_event_outside_gt": 18.221325328097738,
+   "n_gt_events": 91,
+   "short": {}
+  },
+  "vn_val": {
+   "event_recall": 0.7777777777777778,
+   "danger_recall_mean": 0.7777777777777777,
+   "recall": {
+    "smoke_alarm": 0.6666666666666666,
+    "car_horn": null,
+    "siren": 0.8888888888888888,
+    "baby_cry": null,
+    "door_knock": null,
+    "dog_bark": null,
+    "water_running": null
+   },
+   "n_gt": {
+    "smoke_alarm": 45,
+    "car_horn": 0,
+    "siren": 45,
+    "baby_cry": 0,
+    "door_knock": 0,
+    "dog_bark": 0,
+    "water_running": 0
+   },
+   "latency_median_s": 1.4917500000000032,
+   "latency_p90_s": 5.42965000000001,
+   "latency_median_by_class": {
+    "smoke_alarm": 1.4035999999999973,
+    "car_horn": null,
+    "siren": 1.673250000000003,
+    "baby_cry": null,
+    "door_knock": null,
+    "dog_bark": null,
+    "water_running": null
+   },
+   "fa_per_hour_background": 32.0,
+   "background_hours": 1.0,
+   "fa_background_by_class": {
+    "smoke_alarm": 1,
+    "car_horn": 1,
+    "siren": 3,
+    "baby_cry": 0,
+    "door_knock": 0,
+    "dog_bark": 27,
+    "water_running": 0
+   },
+   "fa_per_hour_event_outside_gt": 26.44667052763569,
+   "n_gt_events": 90,
+   "short": {}
+  }
+ },
+ "vn1": {
+  "test": {
+   "event_recall": 0.4418604651162791,
+   "danger_recall_mean": 0.5277777777777778,
+   "recall": {
+    "smoke_alarm": 0.4166666666666667,
+    "car_horn": 0.5833333333333334,
+    "siren": 0.5833333333333334,
+    "baby_cry": 0.23076923076923078,
+    "door_knock": 0.3333333333333333,
+    "dog_bark": 0.5384615384615384,
+    "water_running": 0.4166666666666667
+   },
+   "n_gt": {
+    "smoke_alarm": 12,
+    "car_horn": 12,
+    "siren": 12,
+    "baby_cry": 13,
+    "door_knock": 12,
+    "dog_bark": 13,
+    "water_running": 12
+   },
+   "latency_median_s": 1.4130499999999975,
+   "latency_p90_s": 3.080729999999998,
+   "latency_median_by_class": {
+    "smoke_alarm": 1.2310999999999979,
+    "car_horn": 1.6347000000000005,
+    "siren": 1.2241999999999997,
+    "baby_cry": 1.5031000000000034,
+    "door_knock": 1.3469499999999996,
+    "dog_bark": 2.1420999999999992,
+    "water_running": 1.480400000000003
+   },
+   "fa_per_hour_background": 35.0,
+   "background_hours": 1.0,
+   "fa_background_by_class": {
+    "smoke_alarm": 8,
+    "car_horn": 2,
+    "siren": 13,
+    "baby_cry": 1,
+    "door_knock": 0,
+    "dog_bark": 10,
+    "water_running": 1
+   },
+   "fa_per_hour_event_outside_gt": 17.79991237169065,
+   "n_gt_events": 86,
+   "short": {
+    "all": {
+     "n_gt": 13,
+     "tp": 1,
+     "recall": 0.07692307692307693,
+     "latency_median_s": 0.9206999999999965,
+     "latency_p90_s": 0.9206999999999965
+    },
+    "door_knock": {
+     "n_gt": 6,
+     "tp": 0,
+     "recall": 0.0,
+     "latency_median_s": null,
+     "latency_p90_s": null
+    },
+    "water_running": {
+     "n_gt": 1,
+     "tp": 0,
+     "recall": 0.0,
+     "latency_median_s": null,
+     "latency_p90_s": null
+    },
+    "danger": {
+     "n_gt": 2,
+     "tp": 0,
+     "recall": 0.0,
+     "latency_median_s": null,
+     "latency_p90_s": null
+    },
+    "car_horn": {
+     "n_gt": 2,
+     "tp": 0,
+     "recall": 0.0,
+     "latency_median_s": null,
+     "latency_p90_s": null
+    },
+    "dog_bark": {
+     "n_gt": 4,
+     "tp": 1,
+     "recall": 0.25,
+     "latency_median_s": 0.9206999999999965,
+     "latency_p90_s": 0.9206999999999965
+    }
+   }
+  },
+  "val": {
+   "event_recall": 0.5153846153846153,
+   "danger_recall_mean": 0.6140350877192983,
+   "recall": {
+    "smoke_alarm": 0.8421052631578947,
+    "car_horn": 0.3157894736842105,
+    "siren": 0.6842105263157895,
+    "baby_cry": 0.5,
+    "door_knock": 0.2777777777777778,
+    "dog_bark": 0.5789473684210527,
+    "water_running": 0.3888888888888889
+   },
+   "n_gt": {
+    "smoke_alarm": 19,
+    "car_horn": 19,
+    "siren": 19,
+    "baby_cry": 18,
+    "door_knock": 18,
+    "dog_bark": 19,
+    "water_running": 18
+   },
+   "latency_median_s": 1.2295999999999978,
+   "latency_p90_s": 3.4379399999999998,
+   "latency_median_by_class": {
+    "smoke_alarm": 0.803649999999994,
+    "car_horn": 1.1645999999999983,
+    "siren": 1.4806999999999988,
+    "baby_cry": 1.7686999999999955,
+    "door_knock": 1.1753999999999962,
+    "dog_bark": 0.9519999999999982,
+    "water_running": 1.9958000000000027
+   },
+   "fa_per_hour_background": 22.0,
+   "background_hours": 2.0,
+   "fa_background_by_class": {
+    "smoke_alarm": 6,
+    "car_horn": 2,
+    "siren": 10,
+    "baby_cry": 13,
+    "door_knock": 2,
+    "dog_bark": 11,
+    "water_running": 0
+   },
+   "fa_per_hour_event_outside_gt": 17.32180943096413,
+   "n_gt_events": 130,
+   "short": {
+    "all": {
+     "n_gt": 20,
+     "tp": 6,
+     "recall": 0.3,
+     "latency_median_s": 1.0468999999999973,
+     "latency_p90_s": 1.229000000000001
+    },
+    "door_knock": {
+     "n_gt": 7,
+     "tp": 3,
+     "recall": 0.42857142857142855,
+     "latency_median_s": 1.1753999999999962,
+     "latency_p90_s": 1.203800000000001
+    },
+    "danger": {
+     "n_gt": 11,
+     "tp": 2,
+     "recall": 0.18181818181818182,
+     "latency_median_s": 1.082749999999999,
+     "latency_p90_s": 1.2142299999999995
+    },
+    "car_horn": {
+     "n_gt": 11,
+     "tp": 2,
+     "recall": 0.18181818181818182,
+     "latency_median_s": 1.082749999999999,
+     "latency_p90_s": 1.2142299999999995
+    },
+    "water_running": {
+     "n_gt": 1,
+     "tp": 0,
+     "recall": 0.0,
+     "latency_median_s": null,
+     "latency_p90_s": null
+    },
+    "dog_bark": {
+     "n_gt": 1,
+     "tp": 1,
+     "recall": 1.0,
+     "latency_median_s": 0.7720000000000056,
+     "latency_p90_s": 0.7720000000000056
+    }
+   }
+  },
+  "short_test": {
+   "event_recall": 0.32954545454545453,
+   "danger_recall_mean": 0.32758620689655177,
+   "recall": {
+    "smoke_alarm": 0.5,
+    "car_horn": 0.2413793103448276,
+    "siren": 0.2413793103448276,
+    "baby_cry": null,
+    "door_knock": null,
+    "dog_bark": null,
+    "water_running": null
+   },
+   "n_gt": {
+    "smoke_alarm": 30,
+    "car_horn": 29,
+    "siren": 29,
+    "baby_cry": 0,
+    "door_knock": 0,
+    "dog_bark": 0,
+    "water_running": 0
+   },
+   "latency_median_s": 0.8111999999999995,
+   "latency_p90_s": 1.24182,
+   "latency_median_by_class": {
+    "smoke_alarm": 0.6726000000000028,
+    "car_horn": 0.9110999999999998,
+    "siren": 1.1398999999999972,
+    "baby_cry": null,
+    "door_knock": null,
+    "dog_bark": null,
+    "water_running": null
+   },
+   "fa_per_hour_background": null,
+   "background_hours": 0.0,
+   "fa_background_by_class": {
+    "smoke_alarm": 0,
+    "car_horn": 0,
+    "siren": 0,
+    "baby_cry": 0,
+    "door_knock": 0,
+    "dog_bark": 0,
+    "water_running": 0
+   },
+   "fa_per_hour_event_outside_gt": 33.69209171736079,
+   "n_gt_events": 88,
+   "short": {
+    "all": {
+     "n_gt": 88,
+     "tp": 29,
+     "recall": 0.32954545454545453,
+     "latency_median_s": 0.8111999999999995,
+     "latency_p90_s": 1.24182
+    },
+    "danger": {
+     "n_gt": 88,
+     "tp": 29,
+     "recall": 0.32954545454545453,
+     "latency_median_s": 0.8111999999999995,
+     "latency_p90_s": 1.24182
+    },
+    "smoke_alarm": {
+     "n_gt": 30,
+     "tp": 15,
+     "recall": 0.5,
+     "latency_median_s": 0.6726000000000028,
+     "latency_p90_s": 0.891859999999997
+    },
+    "car_horn": {
+     "n_gt": 29,
+     "tp": 7,
+     "recall": 0.2413793103448276,
+     "latency_median_s": 0.9110999999999998,
+     "latency_p90_s": 1.2600999999999956
+    },
+    "siren": {
+     "n_gt": 29,
+     "tp": 7,
+     "recall": 0.2413793103448276,
+     "latency_median_s": 1.1398999999999972,
+     "latency_p90_s": 1.3113200000000007
+    }
+   }
+  },
+  "short_val": {
+   "event_recall": 0.3333333333333333,
+   "danger_recall_mean": 0.3333333333333333,
+   "recall": {
+    "smoke_alarm": 0.48484848484848486,
+    "car_horn": 0.18181818181818182,
+    "siren": 0.3333333333333333,
+    "baby_cry": null,
+    "door_knock": null,
+    "dog_bark": null,
+    "water_running": null
+   },
+   "n_gt": {
+    "smoke_alarm": 33,
+    "car_horn": 33,
+    "siren": 33,
+    "baby_cry": 0,
+    "door_knock": 0,
+    "dog_bark": 0,
+    "water_running": 0
+   },
+   "latency_median_s": 0.9137000000000057,
+   "latency_p90_s": 1.4923999999999957,
+   "latency_median_by_class": {
+    "smoke_alarm": 0.5983000000000018,
+    "car_horn": 1.1560500000000005,
+    "siren": 0.9854000000000003,
+    "baby_cry": null,
+    "door_knock": null,
+    "dog_bark": null,
+    "water_running": null
+   },
+   "fa_per_hour_background": null,
+   "background_hours": 0.0,
+   "fa_background_by_class": {
+    "smoke_alarm": 0,
+    "car_horn": 0,
+    "siren": 0,
+    "baby_cry": 0,
+    "door_knock": 0,
+    "dog_bark": 0,
+    "water_running": 0
+   },
+   "fa_per_hour_event_outside_gt": 15.388268819757776,
+   "n_gt_events": 99,
+   "short": {
+    "all": {
+     "n_gt": 99,
+     "tp": 33,
+     "recall": 0.3333333333333333,
+     "latency_median_s": 0.9137000000000057,
+     "latency_p90_s": 1.4923999999999957
+    },
+    "danger": {
+     "n_gt": 99,
+     "tp": 33,
+     "recall": 0.3333333333333333,
+     "latency_median_s": 0.9137000000000057,
+     "latency_p90_s": 1.4923999999999957
+    },
+    "smoke_alarm": {
+     "n_gt": 33,
+     "tp": 16,
+     "recall": 0.48484848484848486,
+     "latency_median_s": 0.5983000000000018,
+     "latency_p90_s": 1.1965000000000003
+    },
+    "car_horn": {
+     "n_gt": 33,
+     "tp": 6,
+     "recall": 0.18181818181818182,
+     "latency_median_s": 1.1560500000000005,
+     "latency_p90_s": 1.3793999999999969
+    },
+    "siren": {
+     "n_gt": 33,
+     "tp": 11,
+     "recall": 0.3333333333333333,
+     "latency_median_s": 0.9854000000000003,
+     "latency_p90_s": 1.5167000000000002
+    }
+   }
+  },
+  "vn_test": {
+   "event_recall": 0.7472527472527473,
+   "danger_recall_mean": 0.7490338164251208,
+   "recall": {
+    "smoke_alarm": 0.5869565217391305,
+    "car_horn": null,
+    "siren": 0.9111111111111111,
+    "baby_cry": null,
+    "door_knock": null,
+    "dog_bark": null,
+    "water_running": null
+   },
+   "n_gt": {
+    "smoke_alarm": 46,
+    "car_horn": 0,
+    "siren": 45,
+    "baby_cry": 0,
+    "door_knock": 0,
+    "dog_bark": 0,
+    "water_running": 0
+   },
+   "latency_median_s": 1.2266499999999994,
+   "latency_p90_s": 3.471080000000005,
+   "latency_median_by_class": {
+    "smoke_alarm": 0.6955999999999989,
+    "car_horn": null,
+    "siren": 1.3388999999999953,
+    "baby_cry": null,
+    "door_knock": null,
+    "dog_bark": null,
+    "water_running": null
+   },
+   "fa_per_hour_background": 20.0,
+   "background_hours": 1.0,
+   "fa_background_by_class": {
+    "smoke_alarm": 2,
+    "car_horn": 2,
+    "siren": 2,
+    "baby_cry": 0,
+    "door_knock": 0,
+    "dog_bark": 13,
+    "water_running": 1
+   },
+   "fa_per_hour_event_outside_gt": 28.633511229867874,
+   "n_gt_events": 91,
+   "short": {}
+  },
+  "vn_val": {
+   "event_recall": 0.8777777777777778,
+   "danger_recall_mean": 0.8777777777777778,
+   "recall": {
+    "smoke_alarm": 0.8666666666666667,
+    "car_horn": null,
+    "siren": 0.8888888888888888,
+    "baby_cry": null,
+    "door_knock": null,
+    "dog_bark": null,
+    "water_running": null
+   },
+   "n_gt": {
+    "smoke_alarm": 45,
+    "car_horn": 0,
+    "siren": 45,
+    "baby_cry": 0,
+    "door_knock": 0,
+    "dog_bark": 0,
+    "water_running": 0
+   },
+   "latency_median_s": 1.5746000000000038,
+   "latency_p90_s": 6.58526000000001,
+   "latency_median_by_class": {
+    "smoke_alarm": 1.2636000000000003,
+    "car_horn": null,
+    "siren": 1.987600000000004,
+    "baby_cry": null,
+    "door_knock": null,
+    "dog_bark": null,
+    "water_running": null
+   },
+   "fa_per_hour_background": 5.0,
+   "background_hours": 1.0,
+   "fa_background_by_class": {
+    "smoke_alarm": 2,
+    "car_horn": 1,
+    "siren": 0,
+    "baby_cry": 0,
+    "door_knock": 0,
+    "dog_bark": 2,
+    "water_running": 0
+   },
+   "fa_per_hour_event_outside_gt": 10.578668211054275,
+   "n_gt_events": 90,
+   "short": {}
+  }
+ },
+ "cu+F": {
+  "test": {
+   "event_recall": 0.45348837209302323,
+   "danger_recall_mean": 0.638888888888889,
+   "recall": {
+    "smoke_alarm": 0.5,
+    "car_horn": 0.8333333333333334,
+    "siren": 0.5833333333333334,
+    "baby_cry": 0.23076923076923078,
+    "door_knock": 0.16666666666666666,
+    "dog_bark": 0.38461538461538464,
+    "water_running": 0.5
+   },
+   "n_gt": {
+    "smoke_alarm": 12,
+    "car_horn": 12,
+    "siren": 12,
+    "baby_cry": 13,
+    "door_knock": 12,
+    "dog_bark": 13,
+    "water_running": 12
+   },
+   "latency_median_s": 1.5837999999999965,
+   "latency_p90_s": 3.6825200000000002,
+   "latency_median_by_class": {
+    "smoke_alarm": 1.530350000000002,
+    "car_horn": 1.756800000000001,
+    "siren": 1.5673999999999992,
+    "baby_cry": 2.271500000000003,
+    "door_knock": 1.4487000000000023,
+    "dog_bark": 3.0566999999999993,
+    "water_running": 1.5320999999999998
+   },
+   "fa_per_hour_background": 40.0,
+   "background_hours": 1.0,
+   "fa_background_by_class": {
+    "smoke_alarm": 14,
+    "car_horn": 2,
+    "siren": 10,
+    "baby_cry": 1,
+    "door_knock": 0,
+    "dog_bark": 8,
+    "water_running": 5
+   },
+   "fa_per_hour_event_outside_gt": 26.106538145146285,
+   "n_gt_events": 86,
+   "short": {
+    "all": {
+     "n_gt": 13,
+     "tp": 1,
+     "recall": 0.07692307692307693,
+     "latency_median_s": 0.9206999999999965,
+     "latency_p90_s": 0.9206999999999965
+    },
+    "door_knock": {
+     "n_gt": 6,
+     "tp": 0,
+     "recall": 0.0,
+     "latency_median_s": null,
+     "latency_p90_s": null
+    },
+    "water_running": {
+     "n_gt": 1,
+     "tp": 0,
+     "recall": 0.0,
+     "latency_median_s": null,
+     "latency_p90_s": null
+    },
+    "danger": {
+     "n_gt": 2,
+     "tp": 0,
+     "recall": 0.0,
+     "latency_median_s": null,
+     "latency_p90_s": null
+    },
+    "car_horn": {
+     "n_gt": 2,
+     "tp": 0,
+     "recall": 0.0,
+     "latency_median_s": null,
+     "latency_p90_s": null
+    },
+    "dog_bark": {
+     "n_gt": 4,
+     "tp": 1,
+     "recall": 0.25,
+     "latency_median_s": 0.9206999999999965,
+     "latency_p90_s": 0.9206999999999965
+    }
+   }
+  },
+  "val": {
+   "event_recall": 0.5153846153846153,
+   "danger_recall_mean": 0.5964912280701754,
+   "recall": {
+    "smoke_alarm": 0.7368421052631579,
+    "car_horn": 0.3157894736842105,
+    "siren": 0.7368421052631579,
+    "baby_cry": 0.6111111111111112,
+    "door_knock": 0.2222222222222222,
+    "dog_bark": 0.5263157894736842,
+    "water_running": 0.4444444444444444
+   },
+   "n_gt": {
+    "smoke_alarm": 19,
+    "car_horn": 19,
+    "siren": 19,
+    "baby_cry": 18,
+    "door_knock": 18,
+    "dog_bark": 19,
+    "water_running": 18
+   },
+   "latency_median_s": 1.4810999999999979,
+   "latency_p90_s": 4.4188600000000005,
+   "latency_median_by_class": {
+    "smoke_alarm": 1.3656000000000041,
+    "car_horn": 1.449749999999998,
+    "siren": 1.6516999999999982,
+    "baby_cry": 3.1007999999999996,
+    "door_knock": 1.2638000000000034,
+    "dog_bark": 1.0634500000000031,
+    "water_running": 1.914749999999998
+   },
+   "fa_per_hour_background": 22.0,
+   "background_hours": 2.0,
+   "fa_background_by_class": {
+    "smoke_alarm": 3,
+    "car_horn": 2,
+    "siren": 10,
+    "baby_cry": 9,
+    "door_knock": 0,
+    "dog_bark": 13,
+    "water_running": 7
+   },
+   "fa_per_hour_event_outside_gt": 36.218328810197725,
+   "n_gt_events": 130,
+   "short": {
+    "all": {
+     "n_gt": 20,
+     "tp": 4,
+     "recall": 0.2,
+     "latency_median_s": 1.299650000000005,
+     "latency_p90_s": 1.398540000000002
+    },
+    "door_knock": {
+     "n_gt": 7,
+     "tp": 2,
+     "recall": 0.2857142857142857,
+     "latency_median_s": 1.2638000000000034,
+     "latency_p90_s": 1.334520000000009
+    },
+    "danger": {
+     "n_gt": 11,
+     "tp": 2,
+     "recall": 0.18181818181818182,
+     "latency_median_s": 1.332749999999999,
+     "latency_p90_s": 1.4012699999999985
+    },
+    "car_horn": {
+     "n_gt": 11,
+     "tp": 2,
+     "recall": 0.18181818181818182,
+     "latency_median_s": 1.332749999999999,
+     "latency_p90_s": 1.4012699999999985
+    },
+    "water_running": {
+     "n_gt": 1,
+     "tp": 0,
+     "recall": 0.0,
+     "latency_median_s": null,
+     "latency_p90_s": null
+    },
+    "dog_bark": {
+     "n_gt": 1,
+     "tp": 0,
+     "recall": 0.0,
+     "latency_median_s": null,
+     "latency_p90_s": null
+    }
+   }
+  },
+  "short_test": {
+   "event_recall": 0.3068181818181818,
+   "danger_recall_mean": 0.3061302681992337,
+   "recall": {
+    "smoke_alarm": 0.36666666666666664,
+    "car_horn": 0.3448275862068966,
+    "siren": 0.20689655172413793,
+    "baby_cry": null,
+    "door_knock": null,
+    "dog_bark": null,
+    "water_running": null
+   },
+   "n_gt": {
+    "smoke_alarm": 30,
+    "car_horn": 29,
+    "siren": 29,
+    "baby_cry": 0,
+    "door_knock": 0,
+    "dog_bark": 0,
+    "water_running": 0
+   },
+   "latency_median_s": 1.2801999999999936,
+   "latency_p90_s": 1.610139999999996,
+   "latency_median_by_class": {
+    "smoke_alarm": 1.1106999999999942,
+    "car_horn": 1.2862499999999955,
+    "siren": 1.2933499999999998,
+    "baby_cry": null,
+    "door_knock": null,
+    "dog_bark": null,
+    "water_running": null
+   },
+   "fa_per_hour_background": null,
+   "background_hours": 0.0,
+   "fa_background_by_class": {
+    "smoke_alarm": 0,
+    "car_horn": 0,
+    "siren": 0,
+    "baby_cry": 0,
+    "door_knock": 0,
+    "dog_bark": 0,
+    "water_running": 0
+   },
+   "fa_per_hour_event_outside_gt": 33.69209171736079,
+   "n_gt_events": 88,
+   "short": {
+    "all": {
+     "n_gt": 88,
+     "tp": 27,
+     "recall": 0.3068181818181818,
+     "latency_median_s": 1.2801999999999936,
+     "latency_p90_s": 1.610139999999996
+    },
+    "danger": {
+     "n_gt": 88,
+     "tp": 27,
+     "recall": 0.3068181818181818,
+     "latency_median_s": 1.2801999999999936,
+     "latency_p90_s": 1.610139999999996
+    },
+    "smoke_alarm": {
+     "n_gt": 30,
+     "tp": 11,
+     "recall": 0.36666666666666664,
+     "latency_median_s": 1.1106999999999942,
+     "latency_p90_s": 1.403099999999995
+    },
+    "car_horn": {
+     "n_gt": 29,
+     "tp": 10,
+     "recall": 0.3448275862068966,
+     "latency_median_s": 1.2862499999999955,
+     "latency_p90_s": 1.553109999999995
+    },
+    "siren": {
+     "n_gt": 29,
+     "tp": 6,
+     "recall": 0.20689655172413793,
+     "latency_median_s": 1.2933499999999998,
+     "latency_p90_s": 1.7799000000000014
+    }
+   }
+  },
+  "short_val": {
+   "event_recall": 0.3333333333333333,
+   "danger_recall_mean": 0.3333333333333333,
+   "recall": {
+    "smoke_alarm": 0.3939393939393939,
+    "car_horn": 0.30303030303030304,
+    "siren": 0.30303030303030304,
+    "baby_cry": null,
+    "door_knock": null,
+    "dog_bark": null,
+    "water_running": null
+   },
+   "n_gt": {
+    "smoke_alarm": 33,
+    "car_horn": 33,
+    "siren": 33,
+    "baby_cry": 0,
+    "door_knock": 0,
+    "dog_bark": 0,
+    "water_running": 0
+   },
+   "latency_median_s": 1.252600000000001,
+   "latency_p90_s": 1.7184,
+   "latency_median_by_class": {
+    "smoke_alarm": 1.0861000000000018,
+    "car_horn": 1.3270499999999998,
+    "siren": 1.2494000000000014,
+    "baby_cry": null,
+    "door_knock": null,
+    "dog_bark": null,
+    "water_running": null
+   },
+   "fa_per_hour_background": null,
+   "background_hours": 0.0,
+   "fa_background_by_class": {
+    "smoke_alarm": 0,
+    "car_horn": 0,
+    "siren": 0,
+    "baby_cry": 0,
+    "door_knock": 0,
+    "dog_bark": 0,
+    "water_running": 0
+   },
+   "fa_per_hour_event_outside_gt": 20.517691759677035,
+   "n_gt_events": 99,
+   "short": {
+    "all": {
+     "n_gt": 99,
+     "tp": 33,
+     "recall": 0.3333333333333333,
+     "latency_median_s": 1.252600000000001,
+     "latency_p90_s": 1.7184
+    },
+    "danger": {
+     "n_gt": 99,
+     "tp": 33,
+     "recall": 0.3333333333333333,
+     "latency_median_s": 1.252600000000001,
+     "latency_p90_s": 1.7184
+    },
+    "smoke_alarm": {
+     "n_gt": 33,
+     "tp": 13,
+     "recall": 0.3939393939393939,
+     "latency_median_s": 1.0861000000000018,
+     "latency_p90_s": 1.8434799999999998
+    },
+    "car_horn": {
+     "n_gt": 33,
+     "tp": 10,
+     "recall": 0.30303030303030304,
+     "latency_median_s": 1.3270499999999998,
+     "latency_p90_s": 1.604999999999999
+    },
+    "siren": {
+     "n_gt": 33,
+     "tp": 10,
+     "recall": 0.30303030303030304,
+     "latency_median_s": 1.2494000000000014,
+     "latency_p90_s": 1.5100000000000011
+    }
+   }
+  },
+  "vn_test": {
+   "event_recall": 0.6813186813186813,
+   "danger_recall_mean": 0.6828502415458937,
+   "recall": {
+    "smoke_alarm": 0.5434782608695652,
+    "car_horn": null,
+    "siren": 0.8222222222222222,
+    "baby_cry": null,
+    "door_knock": null,
+    "dog_bark": null,
+    "water_running": null
+   },
+   "n_gt": {
+    "smoke_alarm": 46,
+    "car_horn": 0,
+    "siren": 45,
+    "baby_cry": 0,
+    "door_knock": 0,
+    "dog_bark": 0,
+    "water_running": 0
+   },
+   "latency_median_s": 1.5915,
+   "latency_p90_s": 4.185150000000001,
+   "latency_median_by_class": {
+    "smoke_alarm": 1.1984999999999957,
+    "car_horn": null,
+    "siren": 1.6551000000000045,
+    "baby_cry": null,
+    "door_knock": null,
+    "dog_bark": null,
+    "water_running": null
+   },
+   "fa_per_hour_background": 24.0,
+   "background_hours": 1.0,
+   "fa_background_by_class": {
+    "smoke_alarm": 4,
+    "car_horn": 5,
+    "siren": 3,
+    "baby_cry": 0,
+    "door_knock": 0,
+    "dog_bark": 10,
+    "water_running": 2
+   },
+   "fa_per_hour_event_outside_gt": 22.12589504126154,
+   "n_gt_events": 91,
+   "short": {}
+  },
+  "vn_val": {
+   "event_recall": 0.8111111111111111,
+   "danger_recall_mean": 0.8111111111111111,
+   "recall": {
+    "smoke_alarm": 0.7333333333333333,
+    "car_horn": null,
+    "siren": 0.8888888888888888,
+    "baby_cry": null,
+    "door_knock": null,
+    "dog_bark": null,
+    "water_running": null
+   },
+   "n_gt": {
+    "smoke_alarm": 45,
+    "car_horn": 0,
+    "siren": 45,
+    "baby_cry": 0,
+    "door_knock": 0,
+    "dog_bark": 0,
+    "water_running": 0
+   },
+   "latency_median_s": 1.7745999999999995,
+   "latency_p90_s": 5.005399999999997,
+   "latency_median_by_class": {
+    "smoke_alarm": 1.7009000000000007,
+    "car_horn": null,
+    "siren": 1.8222999999999985,
+    "baby_cry": null,
+    "door_knock": null,
+    "dog_bark": null,
+    "water_running": null
+   },
+   "fa_per_hour_background": 29.0,
+   "background_hours": 1.0,
+   "fa_background_by_class": {
+    "smoke_alarm": 1,
+    "car_horn": 0,
+    "siren": 3,
+    "baby_cry": 0,
+    "door_knock": 0,
+    "dog_bark": 25,
+    "water_running": 0
+   },
+   "fa_per_hour_event_outside_gt": 25.124337001253906,
+   "n_gt_events": 90,
+   "short": {}
+  }
+ },
+ "vn1+F": {
+  "test": {
+   "event_recall": 0.45348837209302323,
+   "danger_recall_mean": 0.5555555555555555,
+   "recall": {
+    "smoke_alarm": 0.3333333333333333,
+    "car_horn": 0.75,
+    "siren": 0.5833333333333334,
+    "baby_cry": 0.23076923076923078,
+    "door_knock": 0.3333333333333333,
+    "dog_bark": 0.5384615384615384,
+    "water_running": 0.4166666666666667
+   },
+   "n_gt": {
+    "smoke_alarm": 12,
+    "car_horn": 12,
+    "siren": 12,
+    "baby_cry": 13,
+    "door_knock": 12,
+    "dog_bark": 13,
+    "water_running": 12
+   },
+   "latency_median_s": 1.5733000000000033,
+   "latency_p90_s": 3.1595799999999943,
+   "latency_median_by_class": {
+    "smoke_alarm": 1.7759500000000017,
+    "car_horn": 1.6347000000000005,
+    "siren": 1.7241999999999997,
+    "baby_cry": 1.5031000000000034,
+    "door_knock": 1.3469499999999996,
+    "dog_bark": 2.1420999999999992,
+    "water_running": 1.480400000000003
+   },
+   "fa_per_hour_background": 38.0,
+   "background_hours": 1.0,
+   "fa_background_by_class": {
+    "smoke_alarm": 8,
+    "car_horn": 2,
+    "siren": 12,
+    "baby_cry": 6,
+    "door_knock": 0,
+    "dog_bark": 9,
+    "water_running": 1
+   },
+   "fa_per_hour_event_outside_gt": 21.359894846028777,
+   "n_gt_events": 86,
+   "short": {
+    "all": {
+     "n_gt": 13,
+     "tp": 1,
+     "recall": 0.07692307692307693,
+     "latency_median_s": 0.9206999999999965,
+     "latency_p90_s": 0.9206999999999965
+    },
+    "door_knock": {
+     "n_gt": 6,
+     "tp": 0,
+     "recall": 0.0,
+     "latency_median_s": null,
+     "latency_p90_s": null
+    },
+    "water_running": {
+     "n_gt": 1,
+     "tp": 0,
+     "recall": 0.0,
+     "latency_median_s": null,
+     "latency_p90_s": null
+    },
+    "danger": {
+     "n_gt": 2,
+     "tp": 0,
+     "recall": 0.0,
+     "latency_median_s": null,
+     "latency_p90_s": null
+    },
+    "car_horn": {
+     "n_gt": 2,
+     "tp": 0,
+     "recall": 0.0,
+     "latency_median_s": null,
+     "latency_p90_s": null
+    },
+    "dog_bark": {
+     "n_gt": 4,
+     "tp": 1,
+     "recall": 0.25,
+     "latency_median_s": 0.9206999999999965,
+     "latency_p90_s": 0.9206999999999965
+    }
+   }
+  },
+  "val": {
+   "event_recall": 0.5769230769230769,
+   "danger_recall_mean": 0.6491228070175438,
+   "recall": {
+    "smoke_alarm": 0.8947368421052632,
+    "car_horn": 0.3157894736842105,
+    "siren": 0.7368421052631579,
+    "baby_cry": 0.7222222222222222,
+    "door_knock": 0.3888888888888889,
+    "dog_bark": 0.5789473684210527,
+    "water_running": 0.3888888888888889
+   },
+   "n_gt": {
+    "smoke_alarm": 19,
+    "car_horn": 19,
+    "siren": 19,
+    "baby_cry": 18,
+    "door_knock": 18,
+    "dog_bark": 19,
+    "water_running": 18
+   },
+   "latency_median_s": 1.4317999999999955,
+   "latency_p90_s": 3.3169399999999998,
+   "latency_median_by_class": {
+    "smoke_alarm": 1.24969999999999,
+    "car_horn": 1.5734999999999986,
+    "siren": 1.6595499999999994,
+    "baby_cry": 1.4506000000000014,
+    "door_knock": 1.1753999999999962,
+    "dog_bark": 0.9519999999999982,
+    "water_running": 1.9958000000000027
+   },
+   "fa_per_hour_background": 19.5,
+   "background_hours": 2.0,
+   "fa_background_by_class": {
+    "smoke_alarm": 5,
+    "car_horn": 1,
+    "siren": 9,
+    "baby_cry": 16,
+    "door_knock": 3,
+    "dog_bark": 5,
+    "water_running": 0
+   },
+   "fa_per_hour_event_outside_gt": 13.385034560290464,
+   "n_gt_events": 130,
+   "short": {
+    "all": {
+     "n_gt": 20,
+     "tp": 7,
+     "recall": 0.35,
+     "latency_median_s": 1.1753999999999962,
+     "latency_p90_s": 1.3156199999999991
+    },
+    "door_knock": {
+     "n_gt": 7,
+     "tp": 4,
+     "recall": 0.5714285714285714,
+     "latency_median_s": 1.0324999999999989,
+     "latency_p90_s": 1.2002500000000005
+    },
+    "danger": {
+     "n_gt": 11,
+     "tp": 2,
+     "recall": 0.18181818181818182,
+     "latency_median_s": 1.332749999999999,
+     "latency_p90_s": 1.4012699999999985
+    },
+    "car_horn": {
+     "n_gt": 11,
+     "tp": 2,
+     "recall": 0.18181818181818182,
+     "latency_median_s": 1.332749999999999,
+     "latency_p90_s": 1.4012699999999985
+    },
+    "water_running": {
+     "n_gt": 1,
+     "tp": 0,
+     "recall": 0.0,
+     "latency_median_s": null,
+     "latency_p90_s": null
+    },
+    "dog_bark": {
+     "n_gt": 1,
+     "tp": 1,
+     "recall": 1.0,
+     "latency_median_s": 0.7720000000000056,
+     "latency_p90_s": 0.7720000000000056
+    }
+   }
+  },
+  "short_test": {
+   "event_recall": 0.3409090909090909,
+   "danger_recall_mean": 0.33869731800766284,
+   "recall": {
+    "smoke_alarm": 0.5333333333333333,
+    "car_horn": 0.27586206896551724,
+    "siren": 0.20689655172413793,
+    "baby_cry": null,
+    "door_knock": null,
+    "dog_bark": null,
+    "water_running": null
+   },
+   "n_gt": {
+    "smoke_alarm": 30,
+    "car_horn": 29,
+    "siren": 29,
+    "baby_cry": 0,
+    "door_knock": 0,
+    "dog_bark": 0,
+    "water_running": 0
+   },
+   "latency_median_s": 1.2243500000000012,
+   "latency_p90_s": 1.41173,
+   "latency_median_by_class": {
+    "smoke_alarm": 1.0061500000000017,
+    "car_horn": 1.3081499999999977,
+    "siren": 1.2668500000000003,
+    "baby_cry": null,
+    "door_knock": null,
+    "dog_bark": null,
+    "water_running": null
+   },
+   "fa_per_hour_background": null,
+   "background_hours": 0.0,
+   "fa_background_by_class": {
+    "smoke_alarm": 0,
+    "car_horn": 0,
+    "siren": 0,
+    "baby_cry": 0,
+    "door_knock": 0,
+    "dog_bark": 0,
+    "water_running": 0
+   },
+   "fa_per_hour_event_outside_gt": 37.06130088909686,
+   "n_gt_events": 88,
+   "short": {
+    "all": {
+     "n_gt": 88,
+     "tp": 30,
+     "recall": 0.3409090909090909,
+     "latency_median_s": 1.2243500000000012,
+     "latency_p90_s": 1.41173
+    },
+    "danger": {
+     "n_gt": 88,
+     "tp": 30,
+     "recall": 0.3409090909090909,
+     "latency_median_s": 1.2243500000000012,
+     "latency_p90_s": 1.41173
+    },
+    "smoke_alarm": {
+     "n_gt": 30,
+     "tp": 16,
+     "recall": 0.5333333333333333,
+     "latency_median_s": 1.0061500000000017,
+     "latency_p90_s": 1.3278999999999996
+    },
+    "car_horn": {
+     "n_gt": 29,
+     "tp": 8,
+     "recall": 0.27586206896551724,
+     "latency_median_s": 1.3081499999999977,
+     "latency_p90_s": 1.5050299999999988
+    },
+    "siren": {
+     "n_gt": 29,
+     "tp": 6,
+     "recall": 0.20689655172413793,
+     "latency_median_s": 1.2668500000000003,
+     "latency_p90_s": 1.5009499999999996
+    }
+   }
+  },
+  "short_val": {
+   "event_recall": 0.31313131313131315,
+   "danger_recall_mean": 0.31313131313131315,
+   "recall": {
+    "smoke_alarm": 0.45454545454545453,
+    "car_horn": 0.18181818181818182,
+    "siren": 0.30303030303030304,
+    "baby_cry": null,
+    "door_knock": null,
+    "dog_bark": null,
+    "water_running": null
+   },
+   "n_gt": {
+    "smoke_alarm": 33,
+    "car_horn": 33,
+    "siren": 33,
+    "baby_cry": 0,
+    "door_knock": 0,
+    "dog_bark": 0,
+    "water_running": 0
+   },
+   "latency_median_s": 1.169700000000006,
+   "latency_p90_s": 1.5167000000000002,
+   "latency_median_by_class": {
+    "smoke_alarm": 1.0639000000000003,
+    "car_horn": 1.2993000000000023,
+    "siren": 1.4391499999999997,
+    "baby_cry": null,
+    "door_knock": null,
+    "dog_bark": null,
+    "water_running": null
+   },
+   "fa_per_hour_background": null,
+   "background_hours": 0.0,
+   "fa_background_by_class": {
+    "smoke_alarm": 0,
+    "car_horn": 0,
+    "siren": 0,
+    "baby_cry": 0,
+    "door_knock": 0,
+    "dog_bark": 0,
+    "water_running": 0
+   },
+   "fa_per_hour_event_outside_gt": 22.227499406316788,
+   "n_gt_events": 99,
+   "short": {
+    "all": {
+     "n_gt": 99,
+     "tp": 31,
+     "recall": 0.31313131313131315,
+     "latency_median_s": 1.169700000000006,
+     "latency_p90_s": 1.5167000000000002
+    },
+    "danger": {
+     "n_gt": 99,
+     "tp": 31,
+     "recall": 0.31313131313131315,
+     "latency_median_s": 1.169700000000006,
+     "latency_p90_s": 1.5167000000000002
+    },
+    "smoke_alarm": {
+     "n_gt": 33,
+     "tp": 15,
+     "recall": 0.45454545454545453,
+     "latency_median_s": 1.0639000000000003,
+     "latency_p90_s": 1.319999999999999
+    },
+    "car_horn": {
+     "n_gt": 33,
+     "tp": 6,
+     "recall": 0.18181818181818182,
+     "latency_median_s": 1.2993000000000023,
+     "latency_p90_s": 1.5474999999999994
+    },
+    "siren": {
+     "n_gt": 33,
+     "tp": 10,
+     "recall": 0.30303030303030304,
+     "latency_median_s": 1.4391499999999997,
+     "latency_p90_s": 1.5266999999999995
+    }
+   }
+  },
+  "vn_test": {
+   "event_recall": 0.7582417582417582,
+   "danger_recall_mean": 0.759903381642512,
+   "recall": {
+    "smoke_alarm": 0.6086956521739131,
+    "car_horn": null,
+    "siren": 0.9111111111111111,
+    "baby_cry": null,
+    "door_knock": null,
+    "dog_bark": null,
+    "water_running": null
+   },
+   "n_gt": {
+    "smoke_alarm": 46,
+    "car_horn": 0,
+    "siren": 45,
+    "baby_cry": 0,
+    "door_knock": 0,
+    "dog_bark": 0,
+    "water_running": 0
+   },
+   "latency_median_s": 1.4714000000000027,
+   "latency_p90_s": 4.544519999999996,
+   "latency_median_by_class": {
+    "smoke_alarm": 1.1862999999999992,
+    "car_horn": null,
+    "siren": 1.634600000000006,
+    "baby_cry": null,
+    "door_knock": null,
+    "dog_bark": null,
+    "water_running": null
+   },
+   "fa_per_hour_background": 29.0,
+   "background_hours": 1.0,
+   "fa_background_by_class": {
+    "smoke_alarm": 6,
+    "car_horn": 3,
+    "siren": 2,
+    "baby_cry": 5,
+    "door_knock": 0,
+    "dog_bark": 12,
+    "water_running": 1
+   },
+   "fa_per_hour_event_outside_gt": 27.33198799214661,
+   "n_gt_events": 91,
+   "short": {}
+  },
+  "vn_val": {
+   "event_recall": 0.8666666666666667,
+   "danger_recall_mean": 0.8666666666666667,
+   "recall": {
+    "smoke_alarm": 0.8444444444444444,
+    "car_horn": null,
+    "siren": 0.8888888888888888,
+    "baby_cry": null,
+    "door_knock": null,
+    "dog_bark": null,
+    "water_running": null
+   },
+   "n_gt": {
+    "smoke_alarm": 45,
+    "car_horn": 0,
+    "siren": 45,
+    "baby_cry": 0,
+    "door_knock": 0,
+    "dog_bark": 0,
+    "water_running": 0
+   },
+   "latency_median_s": 1.8322499999999997,
+   "latency_p90_s": 6.542980000000009,
+   "latency_median_by_class": {
+    "smoke_alarm": 1.6254499999999972,
+    "car_horn": null,
+    "siren": 2.2350500000000046,
+    "baby_cry": null,
+    "door_knock": null,
+    "dog_bark": null,
+    "water_running": null
+   },
+   "fa_per_hour_background": 5.0,
+   "background_hours": 1.0,
+   "fa_background_by_class": {
+    "smoke_alarm": 2,
+    "car_horn": 2,
+    "siren": 0,
+    "baby_cry": 0,
+    "door_knock": 0,
+    "dog_bark": 1,
+    "water_running": 0
+   },
+   "fa_per_hour_event_outside_gt": 5.2893341055271375,
+   "n_gt_events": 90,
+   "short": {}
+  }
+ },
+ "v2_sm_lm": {
+  "test": {
+   "event_recall": 0.4883720930232558,
+   "danger_recall_mean": 0.5555555555555555,
+   "recall": {
+    "smoke_alarm": 0.3333333333333333,
+    "car_horn": 0.6666666666666666,
+    "siren": 0.6666666666666666,
+    "baby_cry": 0.23076923076923078,
+    "door_knock": 0.5,
+    "dog_bark": 0.38461538461538464,
+    "water_running": 0.6666666666666666
+   },
+   "n_gt": {
+    "smoke_alarm": 12,
+    "car_horn": 12,
+    "siren": 12,
+    "baby_cry": 13,
+    "door_knock": 12,
+    "dog_bark": 13,
+    "water_running": 12
+   },
+   "latency_median_s": 1.367049999999999,
+   "latency_p90_s": 3.2639699999999996,
+   "latency_median_by_class": {
+    "smoke_alarm": 1.030350000000002,
+    "car_horn": 1.0714000000000024,
+    "siren": 0.9769000000000032,
+    "baby_cry": 1.5031000000000034,
+    "door_knock": 1.367049999999999,
+    "dog_bark": 2.6203000000000003,
+    "water_running": 1.632799999999996
+   },
+   "fa_per_hour_background": 32.0,
+   "background_hours": 1.0,
+   "fa_background_by_class": {
+    "smoke_alarm": 6,
+    "car_horn": 2,
+    "siren": 9,
+    "baby_cry": 6,
+    "door_knock": 1,
+    "dog_bark": 5,
+    "water_running": 3
+   },
+   "fa_per_hour_event_outside_gt": 21.359894846028777,
+   "n_gt_events": 86,
+   "short": {
+    "all": {
+     "n_gt": 13,
+     "tp": 2,
+     "recall": 0.15384615384615385,
+     "latency_median_s": 1.1507999999999967,
+     "latency_p90_s": 1.334879999999997
+    },
+    "door_knock": {
+     "n_gt": 6,
+     "tp": 1,
+     "recall": 0.16666666666666666,
+     "latency_median_s": 1.380899999999997,
+     "latency_p90_s": 1.380899999999997
+    },
+    "water_running": {
+     "n_gt": 1,
+     "tp": 0,
+     "recall": 0.0,
+     "latency_median_s": null,
+     "latency_p90_s": null
+    },
+    "danger": {
+     "n_gt": 2,
+     "tp": 0,
+     "recall": 0.0,
+     "latency_median_s": null,
+     "latency_p90_s": null
+    },
+    "car_horn": {
+     "n_gt": 2,
+     "tp": 0,
+     "recall": 0.0,
+     "latency_median_s": null,
+     "latency_p90_s": null
+    },
+    "dog_bark": {
+     "n_gt": 4,
+     "tp": 1,
+     "recall": 0.25,
+     "latency_median_s": 0.9206999999999965,
+     "latency_p90_s": 0.9206999999999965
+    }
+   }
+  },
+  "val": {
+   "event_recall": 0.5538461538461539,
+   "danger_recall_mean": 0.6315789473684211,
+   "recall": {
+    "smoke_alarm": 0.8421052631578947,
+    "car_horn": 0.3157894736842105,
+    "siren": 0.7368421052631579,
+    "baby_cry": 0.7777777777777778,
+    "door_knock": 0.3333333333333333,
+    "dog_bark": 0.5263157894736842,
+    "water_running": 0.3333333333333333
+   },
+   "n_gt": {
+    "smoke_alarm": 19,
+    "car_horn": 19,
+    "siren": 19,
+    "baby_cry": 18,
+    "door_knock": 18,
+    "dog_bark": 19,
+    "water_running": 18
+   },
+   "latency_median_s": 1.2669999999999995,
+   "latency_p90_s": 4.525849999999998,
+   "latency_median_by_class": {
+    "smoke_alarm": 1.4206499999999984,
+    "car_horn": 1.2562000000000015,
+    "siren": 1.119499999999995,
+    "baby_cry": 1.4215499999999999,
+    "door_knock": 1.0673499999999976,
+    "dog_bark": 0.9105500000000006,
+    "water_running": 1.914749999999998
+   },
+   "fa_per_hour_background": 22.0,
+   "background_hours": 2.0,
+   "fa_background_by_class": {
+    "smoke_alarm": 6,
+    "car_horn": 3,
+    "siren": 7,
+    "baby_cry": 14,
+    "door_knock": 6,
+    "dog_bark": 4,
+    "water_running": 4
+   },
+   "fa_per_hour_event_outside_gt": 17.32180943096413,
+   "n_gt_events": 130,
+   "short": {
+    "all": {
+     "n_gt": 20,
+     "tp": 7,
+     "recall": 0.35,
+     "latency_median_s": 0.9183999999999983,
+     "latency_p90_s": 1.2253800000000012
+    },
+    "door_knock": {
+     "n_gt": 7,
+     "tp": 4,
+     "recall": 0.5714285714285714,
+     "latency_median_s": 1.0324999999999989,
+     "latency_p90_s": 1.2002500000000005
+    },
+    "danger": {
+     "n_gt": 11,
+     "tp": 2,
+     "recall": 0.18181818181818182,
+     "latency_median_s": 1.082749999999999,
+     "latency_p90_s": 1.2142299999999995
+    },
+    "car_horn": {
+     "n_gt": 11,
+     "tp": 2,
+     "recall": 0.18181818181818182,
+     "latency_median_s": 1.082749999999999,
+     "latency_p90_s": 1.2142299999999995
+    },
+    "water_running": {
+     "n_gt": 1,
+     "tp": 0,
+     "recall": 0.0,
+     "latency_median_s": null,
+     "latency_p90_s": null
+    },
+    "dog_bark": {
+     "n_gt": 1,
+     "tp": 1,
+     "recall": 1.0,
+     "latency_median_s": 0.7720000000000056,
+     "latency_p90_s": 0.7720000000000056
+    }
+   }
+  },
+  "short_test": {
+   "event_recall": 0.3068181818181818,
+   "danger_recall_mean": 0.3053639846743295,
+   "recall": {
+    "smoke_alarm": 0.43333333333333335,
+    "car_horn": 0.2413793103448276,
+    "siren": 0.2413793103448276,
+    "baby_cry": null,
+    "door_knock": null,
+    "dog_bark": null,
+    "water_running": null
+   },
+   "n_gt": {
+    "smoke_alarm": 30,
+    "car_horn": 29,
+    "siren": 29,
+    "baby_cry": 0,
+    "door_knock": 0,
+    "dog_bark": 0,
+    "water_running": 0
+   },
+   "latency_median_s": 0.8239999999999981,
+   "latency_p90_s": 1.2475200000000002,
+   "latency_median_by_class": {
+    "smoke_alarm": 0.7839000000000027,
+    "car_horn": 0.8752000000000066,
+    "siren": 0.9174000000000007,
+    "baby_cry": null,
+    "door_knock": null,
+    "dog_bark": null,
+    "water_running": null
+   },
+   "fa_per_hour_background": null,
+   "background_hours": 0.0,
+   "fa_background_by_class": {
+    "smoke_alarm": 0,
+    "car_horn": 0,
+    "siren": 0,
+    "baby_cry": 0,
+    "door_knock": 0,
+    "dog_bark": 0,
+    "water_running": 0
+   },
+   "fa_per_hour_event_outside_gt": 16.846045858680395,
+   "n_gt_events": 88,
+   "short": {
+    "all": {
+     "n_gt": 88,
+     "tp": 27,
+     "recall": 0.3068181818181818,
+     "latency_median_s": 0.8239999999999981,
+     "latency_p90_s": 1.2475200000000002
+    },
+    "danger": {
+     "n_gt": 88,
+     "tp": 27,
+     "recall": 0.3068181818181818,
+     "latency_median_s": 0.8239999999999981,
+     "latency_p90_s": 1.2475200000000002
+    },
+    "smoke_alarm": {
+     "n_gt": 30,
+     "tp": 13,
+     "recall": 0.43333333333333335,
+     "latency_median_s": 0.7839000000000027,
+     "latency_p90_s": 0.9795199999999952
+    },
+    "car_horn": {
+     "n_gt": 29,
+     "tp": 7,
+     "recall": 0.2413793103448276,
+     "latency_median_s": 0.8752000000000066,
+     "latency_p90_s": 1.0692599999999997
+    },
+    "siren": {
+     "n_gt": 29,
+     "tp": 7,
+     "recall": 0.2413793103448276,
+     "latency_median_s": 0.9174000000000007,
+     "latency_p90_s": 1.2618000000000003
+    }
+   }
+  },
+  "short_val": {
+   "event_recall": 0.41414141414141414,
+   "danger_recall_mean": 0.41414141414141414,
+   "recall": {
+    "smoke_alarm": 0.48484848484848486,
+    "car_horn": 0.30303030303030304,
+    "siren": 0.45454545454545453,
+    "baby_cry": null,
+    "door_knock": null,
+    "dog_bark": null,
+    "water_running": null
+   },
+   "n_gt": {
+    "smoke_alarm": 33,
+    "car_horn": 33,
+    "siren": 33,
+    "baby_cry": 0,
+    "door_knock": 0,
+    "dog_bark": 0,
+    "water_running": 0
+   },
+   "latency_median_s": 0.9537000000000013,
+   "latency_p90_s": 1.4711999999999996,
+   "latency_median_by_class": {
+    "smoke_alarm": 0.6589499999999973,
+    "car_horn": 1.0773499999999991,
+    "siren": 0.9245999999999981,
+    "baby_cry": null,
+    "door_knock": null,
+    "dog_bark": null,
+    "water_running": null
+   },
+   "fa_per_hour_background": null,
+   "background_hours": 0.0,
+   "fa_background_by_class": {
+    "smoke_alarm": 0,
+    "car_horn": 0,
+    "siren": 0,
+    "baby_cry": 0,
+    "door_knock": 0,
+    "dog_bark": 0,
+    "water_running": 0
+   },
+   "fa_per_hour_event_outside_gt": 11.96865352647827,
+   "n_gt_events": 99,
+   "short": {
+    "all": {
+     "n_gt": 99,
+     "tp": 41,
+     "recall": 0.41414141414141414,
+     "latency_median_s": 0.9537000000000013,
+     "latency_p90_s": 1.4711999999999996
+    },
+    "danger": {
+     "n_gt": 99,
+     "tp": 41,
+     "recall": 0.41414141414141414,
+     "latency_median_s": 0.9537000000000013,
+     "latency_p90_s": 1.4711999999999996
+    },
+    "smoke_alarm": {
+     "n_gt": 33,
+     "tp": 16,
+     "recall": 0.48484848484848486,
+     "latency_median_s": 0.6589499999999973,
+     "latency_p90_s": 1.3613000000000026
+    },
+    "car_horn": {
+     "n_gt": 33,
+     "tp": 10,
+     "recall": 0.30303030303030304,
+     "latency_median_s": 1.0773499999999991,
+     "latency_p90_s": 1.334709999999994
+    },
+    "siren": {
+     "n_gt": 33,
+     "tp": 15,
+     "recall": 0.45454545454545453,
+     "latency_median_s": 0.9245999999999981,
+     "latency_p90_s": 1.3812000000000004
+    }
+   }
+  },
+  "vn_test": {
+   "event_recall": 0.7912087912087912,
+   "danger_recall_mean": 0.7929951690821256,
+   "recall": {
+    "smoke_alarm": 0.6304347826086957,
+    "car_horn": null,
+    "siren": 0.9555555555555556,
+    "baby_cry": null,
+    "door_knock": null,
+    "dog_bark": null,
+    "water_running": null
+   },
+   "n_gt": {
+    "smoke_alarm": 46,
+    "car_horn": 0,
+    "siren": 45,
+    "baby_cry": 0,
+    "door_knock": 0,
+    "dog_bark": 0,
+    "water_running": 0
+   },
+   "latency_median_s": 1.0469999999999944,
+   "latency_p90_s": 4.015180000000003,
+   "latency_median_by_class": {
+    "smoke_alarm": 0.8552999999999997,
+    "car_horn": null,
+    "siren": 1.0940999999999974,
+    "baby_cry": null,
+    "door_knock": null,
+    "dog_bark": null,
+    "water_running": null
+   },
+   "fa_per_hour_background": 13.0,
+   "background_hours": 1.0,
+   "fa_background_by_class": {
+    "smoke_alarm": 0,
+    "car_horn": 3,
+    "siren": 1,
+    "baby_cry": 2,
+    "door_knock": 0,
+    "dog_bark": 7,
+    "water_running": 0
+   },
+   "fa_per_hour_event_outside_gt": 20.824371803540274,
+   "n_gt_events": 91,
+   "short": {}
+  },
+  "vn_val": {
+   "event_recall": 0.8777777777777778,
+   "danger_recall_mean": 0.8777777777777778,
+   "recall": {
+    "smoke_alarm": 0.8666666666666667,
+    "car_horn": null,
+    "siren": 0.8888888888888888,
+    "baby_cry": null,
+    "door_knock": null,
+    "dog_bark": null,
+    "water_running": null
+   },
+   "n_gt": {
+    "smoke_alarm": 45,
+    "car_horn": 0,
+    "siren": 45,
+    "baby_cry": 0,
+    "door_knock": 0,
+    "dog_bark": 0,
+    "water_running": 0
+   },
+   "latency_median_s": 1.3623000000000003,
+   "latency_p90_s": 4.842020000000006,
+   "latency_median_by_class": {
+    "smoke_alarm": 1.3623000000000003,
+    "car_horn": null,
+    "siren": 1.3601000000000028,
+    "baby_cry": null,
+    "door_knock": null,
+    "dog_bark": null,
+    "water_running": null
+   },
+   "fa_per_hour_background": 16.0,
+   "background_hours": 1.0,
+   "fa_background_by_class": {
+    "smoke_alarm": 1,
+    "car_horn": 3,
+    "siren": 1,
+    "baby_cry": 0,
+    "door_knock": 0,
+    "dog_bark": 11,
+    "water_running": 0
+   },
+   "fa_per_hour_event_outside_gt": 13.223335263817845,
+   "n_gt_events": 90,
+   "short": {}
+  }
+ },
+ "v2_sm_lm@street": {
+  "test": {
+   "event_recall": 0.38372093023255816,
+   "danger_recall_mean": 0.5277777777777778,
+   "recall": {
+    "smoke_alarm": 0.3333333333333333,
+    "car_horn": 0.5833333333333334,
+    "siren": 0.6666666666666666,
+    "baby_cry": 0.0,
+    "door_knock": 0.5,
+    "dog_bark": 0.0,
+    "water_running": 0.6666666666666666
+   },
+   "n_gt": {
+    "smoke_alarm": 12,
+    "car_horn": 12,
+    "siren": 12,
+    "baby_cry": 13,
+    "door_knock": 12,
+    "dog_bark": 13,
+    "water_running": 12
+   },
+   "latency_median_s": 1.3406999999999982,
+   "latency_p90_s": 3.0721600000000016,
+   "latency_median_by_class": {
+    "smoke_alarm": 1.030350000000002,
+    "car_horn": 1.332899999999995,
+    "siren": 0.9769000000000032,
+    "baby_cry": null,
+    "door_knock": 1.367049999999999,
+    "dog_bark": null,
+    "water_running": 1.632799999999996
+   },
+   "fa_per_hour_background": 21.0,
+   "background_hours": 1.0,
+   "fa_background_by_class": {
+    "smoke_alarm": 6,
+    "car_horn": 2,
+    "siren": 9,
+    "baby_cry": 0,
+    "door_knock": 1,
+    "dog_bark": 0,
+    "water_running": 3
+   },
+   "fa_per_hour_event_outside_gt": 14.23992989735252,
+   "n_gt_events": 86,
+   "short": {
+    "all": {
+     "n_gt": 13,
+     "tp": 1,
+     "recall": 0.07692307692307693,
+     "latency_median_s": 1.380899999999997,
+     "latency_p90_s": 1.380899999999997
+    },
+    "door_knock": {
+     "n_gt": 6,
+     "tp": 1,
+     "recall": 0.16666666666666666,
+     "latency_median_s": 1.380899999999997,
+     "latency_p90_s": 1.380899999999997
+    },
+    "water_running": {
+     "n_gt": 1,
+     "tp": 0,
+     "recall": 0.0,
+     "latency_median_s": null,
+     "latency_p90_s": null
+    },
+    "danger": {
+     "n_gt": 2,
+     "tp": 0,
+     "recall": 0.0,
+     "latency_median_s": null,
+     "latency_p90_s": null
+    },
+    "car_horn": {
+     "n_gt": 2,
+     "tp": 0,
+     "recall": 0.0,
+     "latency_median_s": null,
+     "latency_p90_s": null
+    },
+    "dog_bark": {
+     "n_gt": 4,
+     "tp": 0,
+     "recall": 0.0,
+     "latency_median_s": null,
+     "latency_p90_s": null
+    }
+   }
+  },
+  "val": {
+   "event_recall": 0.36153846153846153,
+   "danger_recall_mean": 0.6140350877192983,
+   "recall": {
+    "smoke_alarm": 0.8421052631578947,
+    "car_horn": 0.2631578947368421,
+    "siren": 0.7368421052631579,
+    "baby_cry": 0.0,
+    "door_knock": 0.3333333333333333,
+    "dog_bark": 0.0,
+    "water_running": 0.3333333333333333
+   },
+   "n_gt": {
+    "smoke_alarm": 19,
+    "car_horn": 19,
+    "siren": 19,
+    "baby_cry": 18,
+    "door_knock": 18,
+    "dog_bark": 19,
+    "water_running": 18
+   },
+   "latency_median_s": 1.2653000000000034,
+   "latency_p90_s": 4.192299999999995,
+   "latency_median_by_class": {
+    "smoke_alarm": 1.4206499999999984,
+    "car_horn": 1.4183999999999983,
+    "siren": 1.119499999999995,
+    "baby_cry": null,
+    "door_knock": 1.0673499999999976,
+    "dog_bark": null,
+    "water_running": 1.914749999999998
+   },
+   "fa_per_hour_background": 12.0,
+   "background_hours": 2.0,
+   "fa_background_by_class": {
+    "smoke_alarm": 6,
+    "car_horn": 1,
+    "siren": 7,
+    "baby_cry": 0,
+    "door_knock": 6,
+    "dog_bark": 0,
+    "water_running": 4
+   },
+   "fa_per_hour_event_outside_gt": 9.448259689616798,
+   "n_gt_events": 130,
+   "short": {
+    "all": {
+     "n_gt": 20,
+     "tp": 6,
+     "recall": 0.3,
+     "latency_median_s": 1.1931499999999993,
+     "latency_p90_s": 1.332749999999999
+    },
+    "door_knock": {
+     "n_gt": 7,
+     "tp": 4,
+     "recall": 0.5714285714285714,
+     "latency_median_s": 1.0324999999999989,
+     "latency_p90_s": 1.2002500000000005
+    },
+    "danger": {
+     "n_gt": 11,
+     "tp": 2,
+     "recall": 0.18181818181818182,
+     "latency_median_s": 1.332749999999999,
+     "latency_p90_s": 1.4012699999999985
+    },
+    "car_horn": {
+     "n_gt": 11,
+     "tp": 2,
+     "recall": 0.18181818181818182,
+     "latency_median_s": 1.332749999999999,
+     "latency_p90_s": 1.4012699999999985
+    },
+    "water_running": {
+     "n_gt": 1,
+     "tp": 0,
+     "recall": 0.0,
+     "latency_median_s": null,
+     "latency_p90_s": null
+    },
+    "dog_bark": {
+     "n_gt": 1,
+     "tp": 0,
+     "recall": 0.0,
+     "latency_median_s": null,
+     "latency_p90_s": null
+    }
+   }
+  },
+  "short_test": {
+   "event_recall": 0.29545454545454547,
+   "danger_recall_mean": 0.2938697318007663,
+   "recall": {
+    "smoke_alarm": 0.43333333333333335,
+    "car_horn": 0.20689655172413793,
+    "siren": 0.2413793103448276,
+    "baby_cry": null,
+    "door_knock": null,
+    "dog_bark": null,
+    "water_running": null
+   },
+   "n_gt": {
+    "smoke_alarm": 30,
+    "car_horn": 29,
+    "siren": 29,
+    "baby_cry": 0,
+    "door_knock": 0,
+    "dog_bark": 0,
+    "water_running": 0
+   },
+   "latency_median_s": 0.9102499999999978,
+   "latency_p90_s": 1.2929499999999985,
+   "latency_median_by_class": {
+    "smoke_alarm": 0.7839000000000027,
+    "car_horn": 1.2750999999999983,
+    "siren": 0.9174000000000007,
+    "baby_cry": null,
+    "door_knock": null,
+    "dog_bark": null,
+    "water_running": null
+   },
+   "fa_per_hour_background": null,
+   "background_hours": 0.0,
+   "fa_background_by_class": {
+    "smoke_alarm": 0,
+    "car_horn": 0,
+    "siren": 0,
+    "baby_cry": 0,
+    "door_knock": 0,
+    "dog_bark": 0,
+    "water_running": 0
+   },
+   "fa_per_hour_event_outside_gt": 13.476836686944315,
+   "n_gt_events": 88,
+   "short": {
+    "all": {
+     "n_gt": 88,
+     "tp": 26,
+     "recall": 0.29545454545454547,
+     "latency_median_s": 0.9102499999999978,
+     "latency_p90_s": 1.2929499999999985
+    },
+    "danger": {
+     "n_gt": 88,
+     "tp": 26,
+     "recall": 0.29545454545454547,
+     "latency_median_s": 0.9102499999999978,
+     "latency_p90_s": 1.2929499999999985
+    },
+    "smoke_alarm": {
+     "n_gt": 30,
+     "tp": 13,
+     "recall": 0.43333333333333335,
+     "latency_median_s": 0.7839000000000027,
+     "latency_p90_s": 0.9795199999999952
+    },
+    "car_horn": {
+     "n_gt": 29,
+     "tp": 6,
+     "recall": 0.20689655172413793,
+     "latency_median_s": 1.2750999999999983,
+     "latency_p90_s": 1.3931500000000032
+    },
+    "siren": {
+     "n_gt": 29,
+     "tp": 7,
+     "recall": 0.2413793103448276,
+     "latency_median_s": 0.9174000000000007,
+     "latency_p90_s": 1.2618000000000003
+    }
+   }
+  },
+  "short_val": {
+   "event_recall": 0.40404040404040403,
+   "danger_recall_mean": 0.40404040404040403,
+   "recall": {
+    "smoke_alarm": 0.48484848484848486,
+    "car_horn": 0.2727272727272727,
+    "siren": 0.45454545454545453,
+    "baby_cry": null,
+    "door_knock": null,
+    "dog_bark": null,
+    "water_running": null
+   },
+   "n_gt": {
+    "smoke_alarm": 33,
+    "car_horn": 33,
+    "siren": 33,
+    "baby_cry": 0,
+    "door_knock": 0,
+    "dog_bark": 0,
+    "water_running": 0
+   },
+   "latency_median_s": 0.9566999999999997,
+   "latency_p90_s": 1.5072499999999998,
+   "latency_median_by_class": {
+    "smoke_alarm": 0.6589499999999973,
+    "car_horn": 1.316599999999994,
+    "siren": 0.9245999999999981,
+    "baby_cry": null,
+    "door_knock": null,
+    "dog_bark": null,
+    "water_running": null
+   },
+   "fa_per_hour_background": null,
+   "background_hours": 0.0,
+   "fa_background_by_class": {
+    "smoke_alarm": 0,
+    "car_horn": 0,
+    "siren": 0,
+    "baby_cry": 0,
+    "door_knock": 0,
+    "dog_bark": 0,
+    "water_running": 0
+   },
+   "fa_per_hour_event_outside_gt": 6.839230586559012,
+   "n_gt_events": 99,
+   "short": {
+    "all": {
+     "n_gt": 99,
+     "tp": 40,
+     "recall": 0.40404040404040403,
+     "latency_median_s": 0.9566999999999997,
+     "latency_p90_s": 1.5072499999999998
+    },
+    "danger": {
+     "n_gt": 99,
+     "tp": 40,
+     "recall": 0.40404040404040403,
+     "latency_median_s": 0.9566999999999997,
+     "latency_p90_s": 1.5072499999999998
+    },
+    "smoke_alarm": {
+     "n_gt": 33,
+     "tp": 16,
+     "recall": 0.48484848484848486,
+     "latency_median_s": 0.6589499999999973,
+     "latency_p90_s": 1.3613000000000026
+    },
+    "car_horn": {
+     "n_gt": 33,
+     "tp": 9,
+     "recall": 0.2727272727272727,
+     "latency_median_s": 1.316599999999994,
+     "latency_p90_s": 1.5227199999999996
+    },
+    "siren": {
+     "n_gt": 33,
+     "tp": 15,
+     "recall": 0.45454545454545453,
+     "latency_median_s": 0.9245999999999981,
+     "latency_p90_s": 1.3812000000000004
+    }
+   }
+  },
+  "vn_test": {
+   "event_recall": 0.7912087912087912,
+   "danger_recall_mean": 0.7929951690821256,
+   "recall": {
+    "smoke_alarm": 0.6304347826086957,
+    "car_horn": null,
+    "siren": 0.9555555555555556,
+    "baby_cry": null,
+    "door_knock": null,
+    "dog_bark": null,
+    "water_running": null
+   },
+   "n_gt": {
+    "smoke_alarm": 46,
+    "car_horn": 0,
+    "siren": 45,
+    "baby_cry": 0,
+    "door_knock": 0,
+    "dog_bark": 0,
+    "water_running": 0
+   },
+   "latency_median_s": 1.0469999999999944,
+   "latency_p90_s": 4.015180000000003,
+   "latency_median_by_class": {
+    "smoke_alarm": 0.8552999999999997,
+    "car_horn": null,
+    "siren": 1.0940999999999974,
+    "baby_cry": null,
+    "door_knock": null,
+    "dog_bark": null,
+    "water_running": null
+   },
+   "fa_per_hour_background": 5.0,
+   "background_hours": 1.0,
+   "fa_background_by_class": {
+    "smoke_alarm": 0,
+    "car_horn": 4,
+    "siren": 1,
+    "baby_cry": 0,
+    "door_knock": 0,
+    "dog_bark": 0,
+    "water_running": 0
+   },
+   "fa_per_hour_event_outside_gt": 5.206092950885068,
+   "n_gt_events": 91,
+   "short": {}
+  },
+  "vn_val": {
+   "event_recall": 0.8777777777777778,
+   "danger_recall_mean": 0.8777777777777778,
+   "recall": {
+    "smoke_alarm": 0.8666666666666667,
+    "car_horn": null,
+    "siren": 0.8888888888888888,
+    "baby_cry": null,
+    "door_knock": null,
+    "dog_bark": null,
+    "water_running": null
+   },
+   "n_gt": {
+    "smoke_alarm": 45,
+    "car_horn": 0,
+    "siren": 45,
+    "baby_cry": 0,
+    "door_knock": 0,
+    "dog_bark": 0,
+    "water_running": 0
+   },
+   "latency_median_s": 1.3623000000000003,
+   "latency_p90_s": 4.842020000000006,
+   "latency_median_by_class": {
+    "smoke_alarm": 1.3623000000000003,
+    "car_horn": null,
+    "siren": 1.3601000000000028,
+    "baby_cry": null,
+    "door_knock": null,
+    "dog_bark": null,
+    "water_running": null
+   },
+   "fa_per_hour_background": 4.0,
+   "background_hours": 1.0,
+   "fa_background_by_class": {
+    "smoke_alarm": 1,
+    "car_horn": 2,
+    "siren": 1,
+    "baby_cry": 0,
+    "door_knock": 0,
+    "dog_bark": 0,
+    "water_running": 0
+   },
+   "fa_per_hour_event_outside_gt": 5.2893341055271375,
+   "n_gt_events": 90,
+   "short": {}
+  }
+ },
+ "v2_sm_lm_2s": {
+  "test": {
+   "event_recall": 0.5697674418604651,
+   "danger_recall_mean": 0.7222222222222222,
+   "recall": {
+    "smoke_alarm": 0.5,
+    "car_horn": 0.9166666666666666,
+    "siren": 0.75,
+    "baby_cry": 0.23076923076923078,
+    "door_knock": 0.3333333333333333,
+    "dog_bark": 0.46153846153846156,
+    "water_running": 0.8333333333333334
+   },
+   "n_gt": {
+    "smoke_alarm": 12,
+    "car_horn": 12,
+    "siren": 12,
+    "baby_cry": 13,
+    "door_knock": 12,
+    "dog_bark": 13,
+    "water_running": 12
+   },
+   "latency_median_s": 1.7241999999999997,
+   "latency_p90_s": 3.5804199999999997,
+   "latency_median_by_class": {
+    "smoke_alarm": 1.2312999999999974,
+    "car_horn": 1.9619,
+    "siren": 1.8075000000000045,
+    "baby_cry": 1.5031000000000034,
+    "door_knock": 1.192450000000001,
+    "dog_bark": 2.196399999999997,
+    "water_running": 1.414749999999998
+   },
+   "fa_per_hour_background": 29.0,
+   "background_hours": 1.0,
+   "fa_background_by_class": {
+    "smoke_alarm": 15,
+    "car_horn": 3,
+    "siren": 6,
+    "baby_cry": 0,
+    "door_knock": 0,
+    "dog_bark": 4,
+    "water_running": 1
+   },
+   "fa_per_hour_event_outside_gt": 29.666520619484416,
+   "n_gt_events": 86,
+   "short": {
+    "all": {
+     "n_gt": 13,
+     "tp": 2,
+     "recall": 0.15384615384615385,
+     "latency_median_s": 1.4412999999999982,
+     "latency_p90_s": 1.8577799999999995
+    },
+    "door_knock": {
+     "n_gt": 6,
+     "tp": 0,
+     "recall": 0.0,
+     "latency_median_s": null,
+     "latency_p90_s": null
+    },
+    "water_running": {
+     "n_gt": 1,
+     "tp": 0,
+     "recall": 0.0,
+     "latency_median_s": null,
+     "latency_p90_s": null
+    },
+    "danger": {
+     "n_gt": 2,
+     "tp": 1,
+     "recall": 0.5,
+     "latency_median_s": 1.9619,
+     "latency_p90_s": 1.9619
+    },
+    "car_horn": {
+     "n_gt": 2,
+     "tp": 1,
+     "recall": 0.5,
+     "latency_median_s": 1.9619,
+     "latency_p90_s": 1.9619
+    },
+    "dog_bark": {
+     "n_gt": 4,
+     "tp": 1,
+     "recall": 0.25,
+     "latency_median_s": 0.9206999999999965,
+     "latency_p90_s": 0.9206999999999965
+    }
+   }
+  },
+  "val": {
+   "event_recall": 0.6076923076923076,
+   "danger_recall_mean": 0.6666666666666666,
+   "recall": {
+    "smoke_alarm": 0.8947368421052632,
+    "car_horn": 0.3684210526315789,
+    "siren": 0.7368421052631579,
+    "baby_cry": 0.6111111111111112,
+    "door_knock": 0.3888888888888889,
+    "dog_bark": 0.5263157894736842,
+    "water_running": 0.7222222222222222
+   },
+   "n_gt": {
+    "smoke_alarm": 19,
+    "car_horn": 19,
+    "siren": 19,
+    "baby_cry": 18,
+    "door_knock": 18,
+    "dog_bark": 19,
+    "water_running": 18
+   },
+   "latency_median_s": 1.4124999999999943,
+   "latency_p90_s": 3.2104000000000017,
+   "latency_median_by_class": {
+    "smoke_alarm": 1.2488000000000028,
+    "car_horn": 1.5649000000000002,
+    "siren": 1.7984500000000025,
+    "baby_cry": 1.6903999999999968,
+    "door_knock": 1.6234000000000037,
+    "dog_bark": 1.0533500000000018,
+    "water_running": 1.4573
+   },
+   "fa_per_hour_background": 20.0,
+   "background_hours": 2.0,
+   "fa_background_by_class": {
+    "smoke_alarm": 16,
+    "car_horn": 0,
+    "siren": 4,
+    "baby_cry": 8,
+    "door_knock": 3,
+    "dog_bark": 5,
+    "water_running": 4
+   },
+   "fa_per_hour_event_outside_gt": 11.810324612020997,
+   "n_gt_events": 130,
+   "short": {
+    "all": {
+     "n_gt": 20,
+     "tp": 7,
+     "recall": 0.35,
+     "latency_median_s": 1.3036999999999992,
+     "latency_p90_s": 1.5354
+    },
+    "door_knock": {
+     "n_gt": 7,
+     "tp": 3,
+     "recall": 0.42857142857142855,
+     "latency_median_s": 1.3896000000000015,
+     "latency_p90_s": 1.646640000000002
+    },
+    "danger": {
+     "n_gt": 11,
+     "tp": 2,
+     "recall": 0.18181818181818182,
+     "latency_median_s": 1.332749999999999,
+     "latency_p90_s": 1.4012699999999985
+    },
+    "car_horn": {
+     "n_gt": 11,
+     "tp": 2,
+     "recall": 0.18181818181818182,
+     "latency_median_s": 1.332749999999999,
+     "latency_p90_s": 1.4012699999999985
+    },
+    "water_running": {
+     "n_gt": 1,
+     "tp": 1,
+     "recall": 1.0,
+     "latency_median_s": 1.3036999999999992,
+     "latency_p90_s": 1.3036999999999992
+    },
+    "dog_bark": {
+     "n_gt": 1,
+     "tp": 1,
+     "recall": 1.0,
+     "latency_median_s": 0.7720000000000056,
+     "latency_p90_s": 0.7720000000000056
+    }
+   }
+  },
+  "short_test": {
+   "event_recall": 0.3068181818181818,
+   "danger_recall_mean": 0.3049808429118774,
+   "recall": {
+    "smoke_alarm": 0.4666666666666667,
+    "car_horn": 0.3448275862068966,
+    "siren": 0.10344827586206896,
+    "baby_cry": null,
+    "door_knock": null,
+    "dog_bark": null,
+    "water_running": null
+   },
+   "n_gt": {
+    "smoke_alarm": 30,
+    "car_horn": 29,
+    "siren": 29,
+    "baby_cry": 0,
+    "door_knock": 0,
+    "dog_bark": 0,
+    "water_running": 0
+   },
+   "latency_median_s": 0.9030999999999949,
+   "latency_p90_s": 1.7964,
+   "latency_median_by_class": {
+    "smoke_alarm": 0.7586000000000013,
+    "car_horn": 1.3250500000000003,
+    "siren": 1.2931,
+    "baby_cry": null,
+    "door_knock": null,
+    "dog_bark": null,
+    "water_running": null
+   },
+   "fa_per_hour_background": null,
+   "background_hours": 0.0,
+   "fa_background_by_class": {
+    "smoke_alarm": 0,
+    "car_horn": 0,
+    "siren": 0,
+    "baby_cry": 0,
+    "door_knock": 0,
+    "dog_bark": 0,
+    "water_running": 0
+   },
+   "fa_per_hour_event_outside_gt": 25.26906878802059,
+   "n_gt_events": 88,
+   "short": {
+    "all": {
+     "n_gt": 88,
+     "tp": 27,
+     "recall": 0.3068181818181818,
+     "latency_median_s": 0.9030999999999949,
+     "latency_p90_s": 1.7964
+    },
+    "danger": {
+     "n_gt": 88,
+     "tp": 27,
+     "recall": 0.3068181818181818,
+     "latency_median_s": 0.9030999999999949,
+     "latency_p90_s": 1.7964
+    },
+    "smoke_alarm": {
+     "n_gt": 30,
+     "tp": 14,
+     "recall": 0.4666666666666667,
+     "latency_median_s": 0.7586000000000013,
+     "latency_p90_s": 1.3467399999999998
+    },
+    "car_horn": {
+     "n_gt": 29,
+     "tp": 10,
+     "recall": 0.3448275862068966,
+     "latency_median_s": 1.3250500000000003,
+     "latency_p90_s": 1.8704999999999954
+    },
+    "siren": {
+     "n_gt": 29,
+     "tp": 3,
+     "recall": 0.10344827586206896,
+     "latency_median_s": 1.2931,
+     "latency_p90_s": 1.7139800000000016
+    }
+   }
+  },
+  "short_val": {
+   "event_recall": 0.36363636363636365,
+   "danger_recall_mean": 0.3636363636363636,
+   "recall": {
+    "smoke_alarm": 0.6363636363636364,
+    "car_horn": 0.2727272727272727,
+    "siren": 0.18181818181818182,
+    "baby_cry": null,
+    "door_knock": null,
+    "dog_bark": null,
+    "water_running": null
+   },
+   "n_gt": {
+    "smoke_alarm": 33,
+    "car_horn": 33,
+    "siren": 33,
+    "baby_cry": 0,
+    "door_knock": 0,
+    "dog_bark": 0,
+    "water_running": 0
+   },
+   "latency_median_s": 1.1534000000000013,
+   "latency_p90_s": 1.8225499999999997,
+   "latency_median_by_class": {
+    "smoke_alarm": 1.028099999999995,
+    "car_horn": 1.4690999999999974,
+    "siren": 1.4695500000000008,
+    "baby_cry": null,
+    "door_knock": null,
+    "dog_bark": null,
+    "water_running": null
+   },
+   "fa_per_hour_background": null,
+   "background_hours": 0.0,
+   "fa_background_by_class": {
+    "smoke_alarm": 0,
+    "car_horn": 0,
+    "siren": 0,
+    "baby_cry": 0,
+    "door_knock": 0,
+    "dog_bark": 0,
+    "water_running": 0
+   },
+   "fa_per_hour_event_outside_gt": 11.96865352647827,
+   "n_gt_events": 99,
+   "short": {
+    "all": {
+     "n_gt": 99,
+     "tp": 36,
+     "recall": 0.36363636363636365,
+     "latency_median_s": 1.1534000000000013,
+     "latency_p90_s": 1.8225499999999997
+    },
+    "danger": {
+     "n_gt": 99,
+     "tp": 36,
+     "recall": 0.36363636363636365,
+     "latency_median_s": 1.1534000000000013,
+     "latency_p90_s": 1.8225499999999997
+    },
+    "smoke_alarm": {
+     "n_gt": 33,
+     "tp": 21,
+     "recall": 0.6363636363636364,
+     "latency_median_s": 1.028099999999995,
+     "latency_p90_s": 1.555800000000005
+    },
+    "car_horn": {
+     "n_gt": 33,
+     "tp": 9,
+     "recall": 0.2727272727272727,
+     "latency_median_s": 1.4690999999999974,
+     "latency_p90_s": 2.0767600000000015
+    },
+    "siren": {
+     "n_gt": 33,
+     "tp": 6,
+     "recall": 0.18181818181818182,
+     "latency_median_s": 1.4695500000000008,
+     "latency_p90_s": 1.8925
+    }
+   }
+  },
+  "vn_test": {
+   "event_recall": 0.7472527472527473,
+   "danger_recall_mean": 0.7492753623188406,
+   "recall": {
+    "smoke_alarm": 0.5652173913043478,
+    "car_horn": null,
+    "siren": 0.9333333333333333,
+    "baby_cry": null,
+    "door_knock": null,
+    "dog_bark": null,
+    "water_running": null
+   },
+   "n_gt": {
+    "smoke_alarm": 46,
+    "car_horn": 0,
+    "siren": 45,
+    "baby_cry": 0,
+    "door_knock": 0,
+    "dog_bark": 0,
+    "water_running": 0
+   },
+   "latency_median_s": 1.6143500000000017,
+   "latency_p90_s": 4.227310000000005,
+   "latency_median_by_class": {
+    "smoke_alarm": 0.7772000000000006,
+    "car_horn": null,
+    "siren": 1.8384999999999962,
+    "baby_cry": null,
+    "door_knock": null,
+    "dog_bark": null,
+    "water_running": null
+   },
+   "fa_per_hour_background": 23.0,
+   "background_hours": 1.0,
+   "fa_background_by_class": {
+    "smoke_alarm": 11,
+    "car_horn": 6,
+    "siren": 1,
+    "baby_cry": 0,
+    "door_knock": 0,
+    "dog_bark": 3,
+    "water_running": 2
+   },
+   "fa_per_hour_event_outside_gt": 31.23655770531041,
+   "n_gt_events": 91,
+   "short": {}
+  },
+  "vn_val": {
+   "event_recall": 0.9,
+   "danger_recall_mean": 0.9,
+   "recall": {
+    "smoke_alarm": 0.8444444444444444,
+    "car_horn": null,
+    "siren": 0.9555555555555556,
+    "baby_cry": null,
+    "door_knock": null,
+    "dog_bark": null,
+    "water_running": null
+   },
+   "n_gt": {
+    "smoke_alarm": 45,
+    "car_horn": 0,
+    "siren": 45,
+    "baby_cry": 0,
+    "door_knock": 0,
+    "dog_bark": 0,
+    "water_running": 0
+   },
+   "latency_median_s": 1.5756999999999977,
+   "latency_p90_s": 3.783600000000007,
+   "latency_median_by_class": {
+    "smoke_alarm": 1.2371500000000015,
+    "car_horn": null,
+    "siren": 1.9787000000000035,
+    "baby_cry": null,
+    "door_knock": null,
+    "dog_bark": null,
+    "water_running": null
+   },
+   "fa_per_hour_background": 5.0,
+   "background_hours": 1.0,
+   "fa_background_by_class": {
+    "smoke_alarm": 2,
+    "car_horn": 0,
+    "siren": 0,
+    "baby_cry": 0,
+    "door_knock": 0,
+    "dog_bark": 3,
+    "water_running": 0
+   },
+   "fa_per_hour_event_outside_gt": 9.256334684672492,
+   "n_gt_events": 90,
+   "short": {}
+  }
+ },
+ "v2_sm_lm_2s@street": {
+  "test": {
+   "event_recall": 0.46511627906976744,
+   "danger_recall_mean": 0.7222222222222222,
+   "recall": {
+    "smoke_alarm": 0.5,
+    "car_horn": 0.9166666666666666,
+    "siren": 0.75,
+    "baby_cry": 0.0,
+    "door_knock": 0.3333333333333333,
+    "dog_bark": 0.0,
+    "water_running": 0.8333333333333334
+   },
+   "n_gt": {
+    "smoke_alarm": 12,
+    "car_horn": 12,
+    "siren": 12,
+    "baby_cry": 13,
+    "door_knock": 12,
+    "dog_bark": 13,
+    "water_running": 12
+   },
+   "latency_median_s": 1.6391999999999953,
+   "latency_p90_s": 3.6935100000000003,
+   "latency_median_by_class": {
+    "smoke_alarm": 1.2312999999999974,
+    "car_horn": 1.9619,
+    "siren": 1.8075000000000045,
+    "baby_cry": null,
+    "door_knock": 1.192450000000001,
+    "dog_bark": null,
+    "water_running": 1.414749999999998
+   },
+   "fa_per_hour_background": 25.0,
+   "background_hours": 1.0,
+   "fa_background_by_class": {
+    "smoke_alarm": 15,
+    "car_horn": 3,
+    "siren": 6,
+    "baby_cry": 0,
+    "door_knock": 0,
+    "dog_bark": 0,
+    "water_running": 1
+   },
+   "fa_per_hour_event_outside_gt": 23.73321649558753,
+   "n_gt_events": 86,
+   "short": {
+    "all": {
+     "n_gt": 13,
+     "tp": 1,
+     "recall": 0.07692307692307693,
+     "latency_median_s": 1.9619,
+     "latency_p90_s": 1.9619
+    },
+    "door_knock": {
+     "n_gt": 6,
+     "tp": 0,
+     "recall": 0.0,
+     "latency_median_s": null,
+     "latency_p90_s": null
+    },
+    "water_running": {
+     "n_gt": 1,
+     "tp": 0,
+     "recall": 0.0,
+     "latency_median_s": null,
+     "latency_p90_s": null
+    },
+    "danger": {
+     "n_gt": 2,
+     "tp": 1,
+     "recall": 0.5,
+     "latency_median_s": 1.9619,
+     "latency_p90_s": 1.9619
+    },
+    "car_horn": {
+     "n_gt": 2,
+     "tp": 1,
+     "recall": 0.5,
+     "latency_median_s": 1.9619,
+     "latency_p90_s": 1.9619
+    },
+    "dog_bark": {
+     "n_gt": 4,
+     "tp": 0,
+     "recall": 0.0,
+     "latency_median_s": null,
+     "latency_p90_s": null
+    }
+   }
+  },
+  "val": {
+   "event_recall": 0.4461538461538462,
+   "danger_recall_mean": 0.6666666666666666,
+   "recall": {
+    "smoke_alarm": 0.8947368421052632,
+    "car_horn": 0.3684210526315789,
+    "siren": 0.7368421052631579,
+    "baby_cry": 0.0,
+    "door_knock": 0.3888888888888889,
+    "dog_bark": 0.0,
+    "water_running": 0.7222222222222222
+   },
+   "n_gt": {
+    "smoke_alarm": 19,
+    "car_horn": 19,
+    "siren": 19,
+    "baby_cry": 18,
+    "door_knock": 18,
+    "dog_bark": 19,
+    "water_running": 18
+   },
+   "latency_median_s": 1.4378499999999992,
+   "latency_p90_s": 2.5424300000000017,
+   "latency_median_by_class": {
+    "smoke_alarm": 1.2488000000000028,
+    "car_horn": 1.5649000000000002,
+    "siren": 1.7984500000000025,
+    "baby_cry": null,
+    "door_knock": 1.6234000000000037,
+    "dog_bark": null,
+    "water_running": 1.4573
+   },
+   "fa_per_hour_background": 13.5,
+   "background_hours": 2.0,
+   "fa_background_by_class": {
+    "smoke_alarm": 16,
+    "car_horn": 0,
+    "siren": 4,
+    "baby_cry": 0,
+    "door_knock": 3,
+    "dog_bark": 0,
+    "water_running": 4
+   },
+   "fa_per_hour_event_outside_gt": 9.448259689616798,
+   "n_gt_events": 130,
+   "short": {
+    "all": {
+     "n_gt": 20,
+     "tp": 6,
+     "recall": 0.3,
+     "latency_median_s": 1.3466500000000003,
+     "latency_p90_s": 1.5646500000000003
+    },
+    "door_knock": {
+     "n_gt": 7,
+     "tp": 3,
+     "recall": 0.42857142857142855,
+     "latency_median_s": 1.3896000000000015,
+     "latency_p90_s": 1.646640000000002
+    },
+    "danger": {
+     "n_gt": 11,
+     "tp": 2,
+     "recall": 0.18181818181818182,
+     "latency_median_s": 1.332749999999999,
+     "latency_p90_s": 1.4012699999999985
+    },
+    "car_horn": {
+     "n_gt": 11,
+     "tp": 2,
+     "recall": 0.18181818181818182,
+     "latency_median_s": 1.332749999999999,
+     "latency_p90_s": 1.4012699999999985
+    },
+    "water_running": {
+     "n_gt": 1,
+     "tp": 1,
+     "recall": 1.0,
+     "latency_median_s": 1.3036999999999992,
+     "latency_p90_s": 1.3036999999999992
+    },
+    "dog_bark": {
+     "n_gt": 1,
+     "tp": 0,
+     "recall": 0.0,
+     "latency_median_s": null,
+     "latency_p90_s": null
+    }
+   }
+  },
+  "short_test": {
+   "event_recall": 0.3068181818181818,
+   "danger_recall_mean": 0.3049808429118774,
+   "recall": {
+    "smoke_alarm": 0.4666666666666667,
+    "car_horn": 0.3448275862068966,
+    "siren": 0.10344827586206896,
+    "baby_cry": null,
+    "door_knock": null,
+    "dog_bark": null,
+    "water_running": null
+   },
+   "n_gt": {
+    "smoke_alarm": 30,
+    "car_horn": 29,
+    "siren": 29,
+    "baby_cry": 0,
+    "door_knock": 0,
+    "dog_bark": 0,
+    "water_running": 0
+   },
+   "latency_median_s": 0.9030999999999949,
+   "latency_p90_s": 1.7964,
+   "latency_median_by_class": {
+    "smoke_alarm": 0.7586000000000013,
+    "car_horn": 1.3250500000000003,
+    "siren": 1.2931,
+    "baby_cry": null,
+    "door_knock": null,
+    "dog_bark": null,
+    "water_running": null
+   },
+   "fa_per_hour_background": null,
+   "background_hours": 0.0,
+   "fa_background_by_class": {
+    "smoke_alarm": 0,
+    "car_horn": 0,
+    "siren": 0,
+    "baby_cry": 0,
+    "door_knock": 0,
+    "dog_bark": 0,
+    "water_running": 0
+   },
+   "fa_per_hour_event_outside_gt": 21.899859616284512,
+   "n_gt_events": 88,
+   "short": {
+    "all": {
+     "n_gt": 88,
+     "tp": 27,
+     "recall": 0.3068181818181818,
+     "latency_median_s": 0.9030999999999949,
+     "latency_p90_s": 1.7964
+    },
+    "danger": {
+     "n_gt": 88,
+     "tp": 27,
+     "recall": 0.3068181818181818,
+     "latency_median_s": 0.9030999999999949,
+     "latency_p90_s": 1.7964
+    },
+    "smoke_alarm": {
+     "n_gt": 30,
+     "tp": 14,
+     "recall": 0.4666666666666667,
+     "latency_median_s": 0.7586000000000013,
+     "latency_p90_s": 1.3467399999999998
+    },
+    "car_horn": {
+     "n_gt": 29,
+     "tp": 10,
+     "recall": 0.3448275862068966,
+     "latency_median_s": 1.3250500000000003,
+     "latency_p90_s": 1.8704999999999954
+    },
+    "siren": {
+     "n_gt": 29,
+     "tp": 3,
+     "recall": 0.10344827586206896,
+     "latency_median_s": 1.2931,
+     "latency_p90_s": 1.7139800000000016
+    }
+   }
+  },
+  "short_val": {
+   "event_recall": 0.36363636363636365,
+   "danger_recall_mean": 0.3636363636363636,
+   "recall": {
+    "smoke_alarm": 0.6363636363636364,
+    "car_horn": 0.2727272727272727,
+    "siren": 0.18181818181818182,
+    "baby_cry": null,
+    "door_knock": null,
+    "dog_bark": null,
+    "water_running": null
+   },
+   "n_gt": {
+    "smoke_alarm": 33,
+    "car_horn": 33,
+    "siren": 33,
+    "baby_cry": 0,
+    "door_knock": 0,
+    "dog_bark": 0,
+    "water_running": 0
+   },
+   "latency_median_s": 1.1534000000000013,
+   "latency_p90_s": 1.8225499999999997,
+   "latency_median_by_class": {
+    "smoke_alarm": 1.028099999999995,
+    "car_horn": 1.4690999999999974,
+    "siren": 1.4695500000000008,
+    "baby_cry": null,
+    "door_knock": null,
+    "dog_bark": null,
+    "water_running": null
+   },
+   "fa_per_hour_background": null,
+   "background_hours": 0.0,
+   "fa_background_by_class": {
+    "smoke_alarm": 0,
+    "car_horn": 0,
+    "siren": 0,
+    "baby_cry": 0,
+    "door_knock": 0,
+    "dog_bark": 0,
+    "water_running": 0
+   },
+   "fa_per_hour_event_outside_gt": 8.549038233198765,
+   "n_gt_events": 99,
+   "short": {
+    "all": {
+     "n_gt": 99,
+     "tp": 36,
+     "recall": 0.36363636363636365,
+     "latency_median_s": 1.1534000000000013,
+     "latency_p90_s": 1.8225499999999997
+    },
+    "danger": {
+     "n_gt": 99,
+     "tp": 36,
+     "recall": 0.36363636363636365,
+     "latency_median_s": 1.1534000000000013,
+     "latency_p90_s": 1.8225499999999997
+    },
+    "smoke_alarm": {
+     "n_gt": 33,
+     "tp": 21,
+     "recall": 0.6363636363636364,
+     "latency_median_s": 1.028099999999995,
+     "latency_p90_s": 1.555800000000005
+    },
+    "car_horn": {
+     "n_gt": 33,
+     "tp": 9,
+     "recall": 0.2727272727272727,
+     "latency_median_s": 1.4690999999999974,
+     "latency_p90_s": 2.0767600000000015
+    },
+    "siren": {
+     "n_gt": 33,
+     "tp": 6,
+     "recall": 0.18181818181818182,
+     "latency_median_s": 1.4695500000000008,
+     "latency_p90_s": 1.8925
+    }
+   }
+  },
+  "vn_test": {
+   "event_recall": 0.7472527472527473,
+   "danger_recall_mean": 0.7492753623188406,
+   "recall": {
+    "smoke_alarm": 0.5652173913043478,
+    "car_horn": null,
+    "siren": 0.9333333333333333,
+    "baby_cry": null,
+    "door_knock": null,
+    "dog_bark": null,
+    "water_running": null
+   },
+   "n_gt": {
+    "smoke_alarm": 46,
+    "car_horn": 0,
+    "siren": 45,
+    "baby_cry": 0,
+    "door_knock": 0,
+    "dog_bark": 0,
+    "water_running": 0
+   },
+   "latency_median_s": 1.6143500000000017,
+   "latency_p90_s": 4.227310000000005,
+   "latency_median_by_class": {
+    "smoke_alarm": 0.7772000000000006,
+    "car_horn": null,
+    "siren": 1.8384999999999962,
+    "baby_cry": null,
+    "door_knock": null,
+    "dog_bark": null,
+    "water_running": null
+   },
+   "fa_per_hour_background": 21.0,
+   "background_hours": 1.0,
+   "fa_background_by_class": {
+    "smoke_alarm": 11,
+    "car_horn": 7,
+    "siren": 1,
+    "baby_cry": 0,
+    "door_knock": 0,
+    "dog_bark": 0,
+    "water_running": 2
+   },
+   "fa_per_hour_event_outside_gt": 24.728941516704072,
+   "n_gt_events": 91,
+   "short": {}
+  },
+  "vn_val": {
+   "event_recall": 0.9,
+   "danger_recall_mean": 0.9,
+   "recall": {
+    "smoke_alarm": 0.8444444444444444,
+    "car_horn": null,
+    "siren": 0.9555555555555556,
+    "baby_cry": null,
+    "door_knock": null,
+    "dog_bark": null,
+    "water_running": null
+   },
+   "n_gt": {
+    "smoke_alarm": 45,
+    "car_horn": 0,
+    "siren": 45,
+    "baby_cry": 0,
+    "door_knock": 0,
+    "dog_bark": 0,
+    "water_running": 0
+   },
+   "latency_median_s": 1.5756999999999977,
+   "latency_p90_s": 3.783600000000007,
+   "latency_median_by_class": {
+    "smoke_alarm": 1.2371500000000015,
+    "car_horn": null,
+    "siren": 1.9787000000000035,
+    "baby_cry": null,
+    "door_knock": null,
+    "dog_bark": null,
+    "water_running": null
+   },
+   "fa_per_hour_background": 2.0,
+   "background_hours": 1.0,
+   "fa_background_by_class": {
+    "smoke_alarm": 2,
+    "car_horn": 0,
+    "siren": 0,
+    "baby_cry": 0,
+    "door_knock": 0,
+    "dog_bark": 0,
+    "water_running": 0
+   },
+   "fa_per_hour_event_outside_gt": 1.3223335263817844,
+   "n_gt_events": 90,
+   "short": {}
+  }
+ },
+ "v2_sg_lm_mix": {
+  "test": {
+   "event_recall": 0.47674418604651164,
+   "danger_recall_mean": 0.5277777777777778,
+   "recall": {
+    "smoke_alarm": 0.3333333333333333,
+    "car_horn": 0.6666666666666666,
+    "siren": 0.5833333333333334,
+    "baby_cry": 0.23076923076923078,
+    "door_knock": 0.5,
+    "dog_bark": 0.38461538461538464,
+    "water_running": 0.6666666666666666
+   },
+   "n_gt": {
+    "smoke_alarm": 12,
+    "car_horn": 12,
+    "siren": 12,
+    "baby_cry": 13,
+    "door_knock": 12,
+    "dog_bark": 13,
+    "water_running": 12
+   },
+   "latency_median_s": 1.3999000000000024,
+   "latency_p90_s": 3.5566999999999993,
+   "latency_median_by_class": {
+    "smoke_alarm": 1.036450000000002,
+    "car_horn": 1.2637499999999946,
+    "siren": 1.4651000000000067,
+    "baby_cry": 2.0031000000000034,
+    "door_knock": 1.3573000000000022,
+    "dog_bark": 2.1203000000000003,
+    "water_running": 1.580849999999998
+   },
+   "fa_per_hour_background": 34.0,
+   "background_hours": 1.0,
+   "fa_background_by_class": {
+    "smoke_alarm": 11,
+    "car_horn": 3,
+    "siren": 11,
+    "baby_cry": 3,
+    "door_knock": 1,
+    "dog_bark": 5,
+    "water_running": 0
+   },
+   "fa_per_hour_event_outside_gt": 35.5998247433813,
+   "n_gt_events": 86,
+   "short": {
+    "all": {
+     "n_gt": 13,
+     "tp": 1,
+     "recall": 0.07692307692307693,
+     "latency_median_s": 1.380899999999997,
+     "latency_p90_s": 1.380899999999997
+    },
+    "door_knock": {
+     "n_gt": 6,
+     "tp": 1,
+     "recall": 0.16666666666666666,
+     "latency_median_s": 1.380899999999997,
+     "latency_p90_s": 1.380899999999997
+    },
+    "water_running": {
+     "n_gt": 1,
+     "tp": 0,
+     "recall": 0.0,
+     "latency_median_s": null,
+     "latency_p90_s": null
+    },
+    "danger": {
+     "n_gt": 2,
+     "tp": 0,
+     "recall": 0.0,
+     "latency_median_s": null,
+     "latency_p90_s": null
+    },
+    "car_horn": {
+     "n_gt": 2,
+     "tp": 0,
+     "recall": 0.0,
+     "latency_median_s": null,
+     "latency_p90_s": null
+    },
+    "dog_bark": {
+     "n_gt": 4,
+     "tp": 0,
+     "recall": 0.0,
+     "latency_median_s": null,
+     "latency_p90_s": null
+    }
+   }
+  },
+  "val": {
+   "event_recall": 0.5769230769230769,
+   "danger_recall_mean": 0.6140350877192983,
+   "recall": {
+    "smoke_alarm": 0.8421052631578947,
+    "car_horn": 0.2631578947368421,
+    "siren": 0.7368421052631579,
+    "baby_cry": 0.7222222222222222,
+    "door_knock": 0.5,
+    "dog_bark": 0.5789473684210527,
+    "water_running": 0.3888888888888889
+   },
+   "n_gt": {
+    "smoke_alarm": 19,
+    "car_horn": 19,
+    "siren": 19,
+    "baby_cry": 18,
+    "door_knock": 18,
+    "dog_bark": 19,
+    "water_running": 18
+   },
+   "latency_median_s": 1.483699999999999,
+   "latency_p90_s": 3.9467800000000017,
+   "latency_median_by_class": {
+    "smoke_alarm": 1.2492499999999964,
+    "car_horn": 1.582099999999997,
+    "siren": 1.554000000000002,
+    "baby_cry": 2.7135000000000105,
+    "door_knock": 1.1717999999999904,
+    "dog_bark": 1.4317999999999955,
+    "water_running": 1.9843999999999937
+   },
+   "fa_per_hour_background": 20.0,
+   "background_hours": 2.0,
+   "fa_background_by_class": {
+    "smoke_alarm": 11,
+    "car_horn": 0,
+    "siren": 9,
+    "baby_cry": 16,
+    "door_knock": 2,
+    "dog_bark": 2,
+    "water_running": 0
+   },
+   "fa_per_hour_event_outside_gt": 12.597679586155731,
+   "n_gt_events": 130,
+   "short": {
+    "all": {
+     "n_gt": 20,
+     "tp": 7,
+     "recall": 0.35,
+     "latency_median_s": 1.1717999999999904,
+     "latency_p90_s": 1.2939000000000007
+    },
+    "door_knock": {
+     "n_gt": 7,
+     "tp": 5,
+     "recall": 0.7142857142857143,
+     "latency_median_s": 1.1717999999999904,
+     "latency_p90_s": 1.1966999999999999
+    },
+    "danger": {
+     "n_gt": 11,
+     "tp": 1,
+     "recall": 0.09090909090909091,
+     "latency_median_s": 1.4183999999999983,
+     "latency_p90_s": 1.4183999999999983
+    },
+    "car_horn": {
+     "n_gt": 11,
+     "tp": 1,
+     "recall": 0.09090909090909091,
+     "latency_median_s": 1.4183999999999983,
+     "latency_p90_s": 1.4183999999999983
+    },
+    "water_running": {
+     "n_gt": 1,
+     "tp": 0,
+     "recall": 0.0,
+     "latency_median_s": null,
+     "latency_p90_s": null
+    },
+    "dog_bark": {
+     "n_gt": 1,
+     "tp": 1,
+     "recall": 1.0,
+     "latency_median_s": 0.7720000000000056,
+     "latency_p90_s": 0.7720000000000056
+    }
+   }
+  },
+  "short_test": {
+   "event_recall": 0.2840909090909091,
+   "danger_recall_mean": 0.281992337164751,
+   "recall": {
+    "smoke_alarm": 0.4666666666666667,
+    "car_horn": 0.2413793103448276,
+    "siren": 0.13793103448275862,
+    "baby_cry": null,
+    "door_knock": null,
+    "dog_bark": null,
+    "water_running": null
+   },
+   "n_gt": {
+    "smoke_alarm": 30,
+    "car_horn": 29,
+    "siren": 29,
+    "baby_cry": 0,
+    "door_knock": 0,
+    "dog_bark": 0,
+    "water_running": 0
+   },
+   "latency_median_s": 1.2578999999999994,
+   "latency_p90_s": 1.4397399999999976,
+   "latency_median_by_class": {
+    "smoke_alarm": 1.1324499999999968,
+    "car_horn": 1.2922999999999973,
+    "siren": 1.2280000000000015,
+    "baby_cry": null,
+    "door_knock": null,
+    "dog_bark": null,
+    "water_running": null
+   },
+   "fa_per_hour_background": null,
+   "background_hours": 0.0,
+   "fa_background_by_class": {
+    "smoke_alarm": 0,
+    "car_horn": 0,
+    "siren": 0,
+    "baby_cry": 0,
+    "door_knock": 0,
+    "dog_bark": 0,
+    "water_running": 0
+   },
+   "fa_per_hour_event_outside_gt": 37.06130088909686,
+   "n_gt_events": 88,
+   "short": {
+    "all": {
+     "n_gt": 88,
+     "tp": 25,
+     "recall": 0.2840909090909091,
+     "latency_median_s": 1.2578999999999994,
+     "latency_p90_s": 1.4397399999999976
+    },
+    "danger": {
+     "n_gt": 88,
+     "tp": 25,
+     "recall": 0.2840909090909091,
+     "latency_median_s": 1.2578999999999994,
+     "latency_p90_s": 1.4397399999999976
+    },
+    "smoke_alarm": {
+     "n_gt": 30,
+     "tp": 14,
+     "recall": 0.4666666666666667,
+     "latency_median_s": 1.1324499999999968,
+     "latency_p90_s": 1.6467799999999992
+    },
+    "car_horn": {
+     "n_gt": 29,
+     "tp": 7,
+     "recall": 0.2413793103448276,
+     "latency_median_s": 1.2922999999999973,
+     "latency_p90_s": 1.389560000000004
+    },
+    "siren": {
+     "n_gt": 29,
+     "tp": 4,
+     "recall": 0.13793103448275862,
+     "latency_median_s": 1.2280000000000015,
+     "latency_p90_s": 1.2773500000000002
+    }
+   }
+  },
+  "short_val": {
+   "event_recall": 0.26262626262626265,
+   "danger_recall_mean": 0.2626262626262626,
+   "recall": {
+    "smoke_alarm": 0.45454545454545453,
+    "car_horn": 0.12121212121212122,
+    "siren": 0.21212121212121213,
+    "baby_cry": null,
+    "door_knock": null,
+    "dog_bark": null,
+    "water_running": null
+   },
+   "n_gt": {
+    "smoke_alarm": 33,
+    "car_horn": 33,
+    "siren": 33,
+    "baby_cry": 0,
+    "door_knock": 0,
+    "dog_bark": 0,
+    "water_running": 0
+   },
+   "latency_median_s": 1.3177999999999983,
+   "latency_p90_s": 1.5996999999999986,
+   "latency_median_by_class": {
+    "smoke_alarm": 1.1370999999999967,
+    "car_horn": 1.4876499999999986,
+    "siren": 1.4711999999999996,
+    "baby_cry": null,
+    "door_knock": null,
+    "dog_bark": null,
+    "water_running": null
+   },
+   "fa_per_hour_background": null,
+   "background_hours": 0.0,
+   "fa_background_by_class": {
+    "smoke_alarm": 0,
+    "car_horn": 0,
+    "siren": 0,
+    "baby_cry": 0,
+    "door_knock": 0,
+    "dog_bark": 0,
+    "water_running": 0
+   },
+   "fa_per_hour_event_outside_gt": 13.678461173118023,
+   "n_gt_events": 99,
+   "short": {
+    "all": {
+     "n_gt": 99,
+     "tp": 26,
+     "recall": 0.26262626262626265,
+     "latency_median_s": 1.3177999999999983,
+     "latency_p90_s": 1.5996999999999986
+    },
+    "danger": {
+     "n_gt": 99,
+     "tp": 26,
+     "recall": 0.26262626262626265,
+     "latency_median_s": 1.3177999999999983,
+     "latency_p90_s": 1.5996999999999986
+    },
+    "smoke_alarm": {
+     "n_gt": 33,
+     "tp": 15,
+     "recall": 0.45454545454545453,
+     "latency_median_s": 1.1370999999999967,
+     "latency_p90_s": 1.5714399999999977
+    },
+    "car_horn": {
+     "n_gt": 33,
+     "tp": 4,
+     "recall": 0.12121212121212122,
+     "latency_median_s": 1.4876499999999986,
+     "latency_p90_s": 1.6846299999999992
+    },
+    "siren": {
+     "n_gt": 33,
+     "tp": 7,
+     "recall": 0.21212121212121213,
+     "latency_median_s": 1.4711999999999996,
+     "latency_p90_s": 1.6355400000000004
+    }
+   }
+  },
+  "vn_test": {
+   "event_recall": 0.7472527472527473,
+   "danger_recall_mean": 0.7490338164251208,
+   "recall": {
+    "smoke_alarm": 0.5869565217391305,
+    "car_horn": null,
+    "siren": 0.9111111111111111,
+    "baby_cry": null,
+    "door_knock": null,
+    "dog_bark": null,
+    "water_running": null
+   },
+   "n_gt": {
+    "smoke_alarm": 46,
+    "car_horn": 0,
+    "siren": 45,
+    "baby_cry": 0,
+    "door_knock": 0,
+    "dog_bark": 0,
+    "water_running": 0
+   },
+   "latency_median_s": 1.5469999999999944,
+   "latency_p90_s": 3.3680400000000024,
+   "latency_median_by_class": {
+    "smoke_alarm": 1.1991000000000014,
+    "car_horn": null,
+    "siren": 1.6399999999999864,
+    "baby_cry": null,
+    "door_knock": null,
+    "dog_bark": null,
+    "water_running": null
+   },
+   "fa_per_hour_background": 21.0,
+   "background_hours": 1.0,
+   "fa_background_by_class": {
+    "smoke_alarm": 13,
+    "car_horn": 4,
+    "siren": 2,
+    "baby_cry": 0,
+    "door_knock": 0,
+    "dog_bark": 2,
+    "water_running": 0
+   },
+   "fa_per_hour_event_outside_gt": 23.427418278982806,
+   "n_gt_events": 91,
+   "short": {}
+  },
+  "vn_val": {
+   "event_recall": 0.8666666666666667,
+   "danger_recall_mean": 0.8666666666666667,
+   "recall": {
+    "smoke_alarm": 0.7777777777777778,
+    "car_horn": null,
+    "siren": 0.9555555555555556,
+    "baby_cry": null,
+    "door_knock": null,
+    "dog_bark": null,
+    "water_running": null
+   },
+   "n_gt": {
+    "smoke_alarm": 45,
+    "car_horn": 0,
+    "siren": 45,
+    "baby_cry": 0,
+    "door_knock": 0,
+    "dog_bark": 0,
+    "water_running": 0
+   },
+   "latency_median_s": 1.6981500000000036,
+   "latency_p90_s": 4.622260000000001,
+   "latency_median_by_class": {
+    "smoke_alarm": 1.5146000000000015,
+    "car_horn": null,
+    "siren": 1.9377999999999957,
+    "baby_cry": null,
+    "door_knock": null,
+    "dog_bark": null,
+    "water_running": null
+   },
+   "fa_per_hour_background": 5.0,
+   "background_hours": 1.0,
+   "fa_background_by_class": {
+    "smoke_alarm": 1,
+    "car_horn": 0,
+    "siren": 1,
+    "baby_cry": 0,
+    "door_knock": 0,
+    "dog_bark": 3,
+    "water_running": 0
+   },
+   "fa_per_hour_event_outside_gt": 10.578668211054275,
+   "n_gt_events": 90,
+   "short": {}
+  }
+ },
+ "v2_sg_lm_mix_nod": {
+  "test": {
+   "event_recall": 0.47674418604651164,
+   "danger_recall_mean": 0.638888888888889,
+   "recall": {
+    "smoke_alarm": 0.4166666666666667,
+    "car_horn": 0.75,
+    "siren": 0.75,
+    "baby_cry": 0.23076923076923078,
+    "door_knock": 0.3333333333333333,
+    "dog_bark": 0.38461538461538464,
+    "water_running": 0.5
+   },
+   "n_gt": {
+    "smoke_alarm": 12,
+    "car_horn": 12,
+    "siren": 12,
+    "baby_cry": 13,
+    "door_knock": 12,
+    "dog_bark": 13,
+    "water_running": 12
+   },
+   "latency_median_s": 1.3442000000000007,
+   "latency_p90_s": 3.2781000000000002,
+   "latency_median_by_class": {
+    "smoke_alarm": 0.9739000000000004,
+    "car_horn": 1.6347000000000005,
+    "siren": 1.0810999999999993,
+    "baby_cry": 2.0031000000000034,
+    "door_knock": 1.3469499999999996,
+    "dog_bark": 2.1203000000000003,
+    "water_running": 1.6661000000000001
+   },
+   "fa_per_hour_background": 30.0,
+   "background_hours": 1.0,
+   "fa_background_by_class": {
+    "smoke_alarm": 6,
+    "car_horn": 1,
+    "siren": 11,
+    "baby_cry": 1,
+    "door_knock": 1,
+    "dog_bark": 8,
+    "water_running": 2
+   },
+   "fa_per_hour_event_outside_gt": 30.85318144426379,
+   "n_gt_events": 86,
+   "short": {
+    "all": {
+     "n_gt": 13,
+     "tp": 0,
+     "recall": 0.0,
+     "latency_median_s": null,
+     "latency_p90_s": null
+    },
+    "door_knock": {
+     "n_gt": 6,
+     "tp": 0,
+     "recall": 0.0,
+     "latency_median_s": null,
+     "latency_p90_s": null
+    },
+    "water_running": {
+     "n_gt": 1,
+     "tp": 0,
+     "recall": 0.0,
+     "latency_median_s": null,
+     "latency_p90_s": null
+    },
+    "danger": {
+     "n_gt": 2,
+     "tp": 0,
+     "recall": 0.0,
+     "latency_median_s": null,
+     "latency_p90_s": null
+    },
+    "car_horn": {
+     "n_gt": 2,
+     "tp": 0,
+     "recall": 0.0,
+     "latency_median_s": null,
+     "latency_p90_s": null
+    },
+    "dog_bark": {
+     "n_gt": 4,
+     "tp": 0,
+     "recall": 0.0,
+     "latency_median_s": null,
+     "latency_p90_s": null
+    }
+   }
+  },
+  "val": {
+   "event_recall": 0.5846153846153846,
+   "danger_recall_mean": 0.6666666666666666,
+   "recall": {
+    "smoke_alarm": 0.8947368421052632,
+    "car_horn": 0.3157894736842105,
+    "siren": 0.7894736842105263,
+    "baby_cry": 0.7222222222222222,
+    "door_knock": 0.4444444444444444,
+    "dog_bark": 0.5789473684210527,
+    "water_running": 0.3333333333333333
+   },
+   "n_gt": {
+    "smoke_alarm": 19,
+    "car_horn": 19,
+    "siren": 19,
+    "baby_cry": 18,
+    "door_knock": 18,
+    "dog_bark": 19,
+    "water_running": 18
+   },
+   "latency_median_s": 1.3717500000000058,
+   "latency_p90_s": 3.754650000000005,
+   "latency_median_by_class": {
+    "smoke_alarm": 1.1437000000000026,
+    "car_horn": 1.4145999999999983,
+    "siren": 1.3699000000000012,
+    "baby_cry": 3.1007999999999996,
+    "door_knock": 1.1735999999999933,
+    "dog_bark": 1.174900000000008,
+    "water_running": 1.879099999999994
+   },
+   "fa_per_hour_background": 18.5,
+   "background_hours": 2.0,
+   "fa_background_by_class": {
+    "smoke_alarm": 6,
+    "car_horn": 3,
+    "siren": 17,
+    "baby_cry": 4,
+    "door_knock": 2,
+    "dog_bark": 3,
+    "water_running": 2
+   },
+   "fa_per_hour_event_outside_gt": 14.172389534425198,
+   "n_gt_events": 130,
+   "short": {
+    "all": {
+     "n_gt": 20,
+     "tp": 8,
+     "recall": 0.4,
+     "latency_median_s": 1.0450999999999944,
+     "latency_p90_s": 1.2217600000000015
+    },
+    "door_knock": {
+     "n_gt": 7,
+     "tp": 5,
+     "recall": 0.7142857142857143,
+     "latency_median_s": 1.1717999999999904,
+     "latency_p90_s": 1.1966999999999999
+    },
+    "danger": {
+     "n_gt": 11,
+     "tp": 2,
+     "recall": 0.18181818181818182,
+     "latency_median_s": 1.082749999999999,
+     "latency_p90_s": 1.2142299999999995
+    },
+    "car_horn": {
+     "n_gt": 11,
+     "tp": 2,
+     "recall": 0.18181818181818182,
+     "latency_median_s": 1.082749999999999,
+     "latency_p90_s": 1.2142299999999995
+    },
+    "water_running": {
+     "n_gt": 1,
+     "tp": 0,
+     "recall": 0.0,
+     "latency_median_s": null,
+     "latency_p90_s": null
+    },
+    "dog_bark": {
+     "n_gt": 1,
+     "tp": 1,
+     "recall": 1.0,
+     "latency_median_s": 0.7720000000000056,
+     "latency_p90_s": 0.7720000000000056
+    }
+   }
+  },
+  "short_test": {
+   "event_recall": 0.3522727272727273,
+   "danger_recall_mean": 0.34980842911877397,
+   "recall": {
+    "smoke_alarm": 0.5666666666666667,
+    "car_horn": 0.2413793103448276,
+    "siren": 0.2413793103448276,
+    "baby_cry": null,
+    "door_knock": null,
+    "dog_bark": null,
+    "water_running": null
+   },
+   "n_gt": {
+    "smoke_alarm": 30,
+    "car_horn": 29,
+    "siren": 29,
+    "baby_cry": 0,
+    "door_knock": 0,
+    "dog_bark": 0,
+    "water_running": 0
+   },
+   "latency_median_s": 0.9030999999999949,
+   "latency_p90_s": 1.3752000000000066,
+   "latency_median_by_class": {
+    "smoke_alarm": 0.7839000000000027,
+    "car_horn": 0.9434999999999998,
+    "siren": 1.2406000000000006,
+    "baby_cry": null,
+    "door_knock": null,
+    "dog_bark": null,
+    "water_running": null
+   },
+   "fa_per_hour_background": null,
+   "background_hours": 0.0,
+   "fa_background_by_class": {
+    "smoke_alarm": 0,
+    "car_horn": 0,
+    "siren": 0,
+    "baby_cry": 0,
+    "door_knock": 0,
+    "dog_bark": 0,
+    "water_running": 0
+   },
+   "fa_per_hour_event_outside_gt": 23.58446420215255,
+   "n_gt_events": 88,
+   "short": {
+    "all": {
+     "n_gt": 88,
+     "tp": 31,
+     "recall": 0.3522727272727273,
+     "latency_median_s": 0.9030999999999949,
+     "latency_p90_s": 1.3752000000000066
+    },
+    "danger": {
+     "n_gt": 88,
+     "tp": 31,
+     "recall": 0.3522727272727273,
+     "latency_median_s": 0.9030999999999949,
+     "latency_p90_s": 1.3752000000000066
+    },
+    "smoke_alarm": {
+     "n_gt": 30,
+     "tp": 17,
+     "recall": 0.5666666666666667,
+     "latency_median_s": 0.7839000000000027,
+     "latency_p90_s": 1.3415199999999985
+    },
+    "car_horn": {
+     "n_gt": 29,
+     "tp": 7,
+     "recall": 0.2413793103448276,
+     "latency_median_s": 0.9434999999999998,
+     "latency_p90_s": 1.3254600000000012
+    },
+    "siren": {
+     "n_gt": 29,
+     "tp": 7,
+     "recall": 0.2413793103448276,
+     "latency_median_s": 1.2406000000000006,
+     "latency_p90_s": 1.5121600000000017
+    }
+   }
+  },
+  "short_val": {
+   "event_recall": 0.3333333333333333,
+   "danger_recall_mean": 0.3333333333333333,
+   "recall": {
+    "smoke_alarm": 0.48484848484848486,
+    "car_horn": 0.15151515151515152,
+    "siren": 0.36363636363636365,
+    "baby_cry": null,
+    "door_knock": null,
+    "dog_bark": null,
+    "water_running": null
+   },
+   "n_gt": {
+    "smoke_alarm": 33,
+    "car_horn": 33,
+    "siren": 33,
+    "baby_cry": 0,
+    "door_knock": 0,
+    "dog_bark": 0,
+    "water_running": 0
+   },
+   "latency_median_s": 1.028099999999995,
+   "latency_p90_s": 1.5278999999999967,
+   "latency_median_by_class": {
+    "smoke_alarm": 0.8439499999999995,
+    "car_horn": 1.1106999999999942,
+    "siren": 1.2494000000000014,
+    "baby_cry": null,
+    "door_knock": null,
+    "dog_bark": null,
+    "water_running": null
+   },
+   "fa_per_hour_background": null,
+   "background_hours": 0.0,
+   "fa_background_by_class": {
+    "smoke_alarm": 0,
+    "car_horn": 0,
+    "siren": 0,
+    "baby_cry": 0,
+    "door_knock": 0,
+    "dog_bark": 0,
+    "water_running": 0
+   },
+   "fa_per_hour_event_outside_gt": 13.678461173118023,
+   "n_gt_events": 99,
+   "short": {
+    "all": {
+     "n_gt": 99,
+     "tp": 33,
+     "recall": 0.3333333333333333,
+     "latency_median_s": 1.028099999999995,
+     "latency_p90_s": 1.5278999999999967
+    },
+    "danger": {
+     "n_gt": 99,
+     "tp": 33,
+     "recall": 0.3333333333333333,
+     "latency_median_s": 1.028099999999995,
+     "latency_p90_s": 1.5278999999999967
+    },
+    "smoke_alarm": {
+     "n_gt": 33,
+     "tp": 16,
+     "recall": 0.48484848484848486,
+     "latency_median_s": 0.8439499999999995,
+     "latency_p90_s": 1.2492500000000035
+    },
+    "car_horn": {
+     "n_gt": 33,
+     "tp": 5,
+     "recall": 0.15151515151515152,
+     "latency_median_s": 1.1106999999999942,
+     "latency_p90_s": 1.537220000000002
+    },
+    "siren": {
+     "n_gt": 33,
+     "tp": 12,
+     "recall": 0.36363636363636365,
+     "latency_median_s": 1.2494000000000014,
+     "latency_p90_s": 1.5292999999999963
+    }
+   }
+  },
+  "vn_test": {
+   "event_recall": 0.8241758241758241,
+   "danger_recall_mean": 0.8258454106280193,
+   "recall": {
+    "smoke_alarm": 0.6739130434782609,
+    "car_horn": null,
+    "siren": 0.9777777777777777,
+    "baby_cry": null,
+    "door_knock": null,
+    "dog_bark": null,
+    "water_running": null
+   },
+   "n_gt": {
+    "smoke_alarm": 46,
+    "car_horn": 0,
+    "siren": 45,
+    "baby_cry": 0,
+    "door_knock": 0,
+    "dog_bark": 0,
+    "water_running": 0
+   },
+   "latency_median_s": 1.1420999999999992,
+   "latency_p90_s": 2.690280000000009,
+   "latency_median_by_class": {
+    "smoke_alarm": 0.6984999999999957,
+    "car_horn": null,
+    "siren": 1.321799999999996,
+    "baby_cry": null,
+    "door_knock": null,
+    "dog_bark": null,
+    "water_running": null
+   },
+   "fa_per_hour_background": 14.0,
+   "background_hours": 1.0,
+   "fa_background_by_class": {
+    "smoke_alarm": 0,
+    "car_horn": 2,
+    "siren": 4,
+    "baby_cry": 0,
+    "door_knock": 0,
+    "dog_bark": 8,
+    "water_running": 0
+   },
+   "fa_per_hour_event_outside_gt": 15.618278852655205,
+   "n_gt_events": 91,
+   "short": {}
+  },
+  "vn_val": {
+   "event_recall": 0.8666666666666667,
+   "danger_recall_mean": 0.8666666666666667,
+   "recall": {
+    "smoke_alarm": 0.8444444444444444,
+    "car_horn": null,
+    "siren": 0.8888888888888888,
+    "baby_cry": null,
+    "door_knock": null,
+    "dog_bark": null,
+    "water_running": null
+   },
+   "n_gt": {
+    "smoke_alarm": 45,
+    "car_horn": 0,
+    "siren": 45,
+    "baby_cry": 0,
+    "door_knock": 0,
+    "dog_bark": 0,
+    "water_running": 0
+   },
+   "latency_median_s": 1.4006499999999988,
+   "latency_p90_s": 3.3488799999999985,
+   "latency_median_by_class": {
+    "smoke_alarm": 1.2550000000000008,
+    "car_horn": null,
+    "siren": 1.5485500000000014,
+    "baby_cry": null,
+    "door_knock": null,
+    "dog_bark": null,
+    "water_running": null
+   },
+   "fa_per_hour_background": 4.0,
+   "background_hours": 1.0,
+   "fa_background_by_class": {
+    "smoke_alarm": 1,
+    "car_horn": 1,
+    "siren": 2,
+    "baby_cry": 0,
+    "door_knock": 0,
+    "dog_bark": 0,
+    "water_running": 0
+   },
+   "fa_per_hour_event_outside_gt": 7.934001158290707,
+   "n_gt_events": 90,
+   "short": {}
+  }
+ },
+ "v2_sg_lm": {
+  "test": {
+   "event_recall": 0.43023255813953487,
+   "danger_recall_mean": 0.6111111111111112,
+   "recall": {
+    "smoke_alarm": 0.4166666666666667,
+    "car_horn": 0.75,
+    "siren": 0.6666666666666666,
+    "baby_cry": 0.23076923076923078,
+    "door_knock": 0.25,
+    "dog_bark": 0.38461538461538464,
+    "water_running": 0.3333333333333333
+   },
+   "n_gt": {
+    "smoke_alarm": 12,
+    "car_horn": 12,
+    "siren": 12,
+    "baby_cry": 13,
+    "door_knock": 12,
+    "dog_bark": 13,
+    "water_running": 12
+   },
+   "latency_median_s": 1.353200000000001,
+   "latency_p90_s": 3.3278599999999994,
+   "latency_median_by_class": {
+    "smoke_alarm": 0.9949000000000012,
+    "car_horn": 1.0733000000000033,
+    "siren": 1.0746499999999948,
+    "baby_cry": 2.5031000000000034,
+    "door_knock": 1.353200000000001,
+    "dog_bark": 2.6203000000000003,
+    "water_running": 1.461949999999998
+   },
+   "fa_per_hour_background": 35.0,
+   "background_hours": 1.0,
+   "fa_background_by_class": {
+    "smoke_alarm": 7,
+    "car_horn": 2,
+    "siren": 17,
+    "baby_cry": 4,
+    "door_knock": 0,
+    "dog_bark": 4,
+    "water_running": 1
+   },
+   "fa_per_hour_event_outside_gt": 28.47985979470504,
+   "n_gt_events": 86,
+   "short": {
+    "all": {
+     "n_gt": 13,
+     "tp": 0,
+     "recall": 0.0,
+     "latency_median_s": null,
+     "latency_p90_s": null
+    },
+    "door_knock": {
+     "n_gt": 6,
+     "tp": 0,
+     "recall": 0.0,
+     "latency_median_s": null,
+     "latency_p90_s": null
+    },
+    "water_running": {
+     "n_gt": 1,
+     "tp": 0,
+     "recall": 0.0,
+     "latency_median_s": null,
+     "latency_p90_s": null
+    },
+    "danger": {
+     "n_gt": 2,
+     "tp": 0,
+     "recall": 0.0,
+     "latency_median_s": null,
+     "latency_p90_s": null
+    },
+    "car_horn": {
+     "n_gt": 2,
+     "tp": 0,
+     "recall": 0.0,
+     "latency_median_s": null,
+     "latency_p90_s": null
+    },
+    "dog_bark": {
+     "n_gt": 4,
+     "tp": 0,
+     "recall": 0.0,
+     "latency_median_s": null,
+     "latency_p90_s": null
+    }
+   }
+  },
+  "val": {
+   "event_recall": 0.5307692307692308,
+   "danger_recall_mean": 0.6491228070175439,
+   "recall": {
+    "smoke_alarm": 0.8421052631578947,
+    "car_horn": 0.3157894736842105,
+    "siren": 0.7894736842105263,
+    "baby_cry": 0.6111111111111112,
+    "door_knock": 0.2222222222222222,
+    "dog_bark": 0.5263157894736842,
+    "water_running": 0.3888888888888889
+   },
+   "n_gt": {
+    "smoke_alarm": 19,
+    "car_horn": 19,
+    "siren": 19,
+    "baby_cry": 18,
+    "door_knock": 18,
+    "dog_bark": 19,
+    "water_running": 18
+   },
+   "latency_median_s": 1.4784999999999968,
+   "latency_p90_s": 3.863159999999999,
+   "latency_median_by_class": {
+    "smoke_alarm": 1.1887000000000114,
+    "car_horn": 1.8251499999999972,
+    "siren": 1.4806999999999988,
+    "baby_cry": 3.1007999999999996,
+    "door_knock": 1.0655499999999947,
+    "dog_bark": 1.2532500000000013,
+    "water_running": 2.4958000000000027
+   },
+   "fa_per_hour_background": 22.0,
+   "background_hours": 2.0,
+   "fa_background_by_class": {
+    "smoke_alarm": 5,
+    "car_horn": 3,
+    "siren": 22,
+    "baby_cry": 7,
+    "door_knock": 2,
+    "dog_bark": 4,
+    "water_running": 1
+   },
+   "fa_per_hour_event_outside_gt": 14.95974450855993,
+   "n_gt_events": 130,
+   "short": {
+    "all": {
+     "n_gt": 20,
+     "tp": 5,
+     "recall": 0.25,
+     "latency_median_s": 0.8522000000000105,
+     "latency_p90_s": 1.3197599999999952
+    },
+    "door_knock": {
+     "n_gt": 7,
+     "tp": 2,
+     "recall": 0.2857142857142857,
+     "latency_median_s": 1.0120000000000005,
+     "latency_p90_s": 1.1398399999999924
+    },
+    "danger": {
+     "n_gt": 11,
+     "tp": 2,
+     "recall": 0.18181818181818182,
+     "latency_median_s": 1.082749999999999,
+     "latency_p90_s": 1.3512699999999984
+    },
+    "car_horn": {
+     "n_gt": 11,
+     "tp": 2,
+     "recall": 0.18181818181818182,
+     "latency_median_s": 1.082749999999999,
+     "latency_p90_s": 1.3512699999999984
+    },
+    "water_running": {
+     "n_gt": 1,
+     "tp": 0,
+     "recall": 0.0,
+     "latency_median_s": null,
+     "latency_p90_s": null
+    },
+    "dog_bark": {
+     "n_gt": 1,
+     "tp": 1,
+     "recall": 1.0,
+     "latency_median_s": 0.7720000000000056,
+     "latency_p90_s": 0.7720000000000056
+    }
+   }
+  },
+  "short_test": {
+   "event_recall": 0.3181818181818182,
+   "danger_recall_mean": 0.317624521072797,
+   "recall": {
+    "smoke_alarm": 0.36666666666666664,
+    "car_horn": 0.3448275862068966,
+    "siren": 0.2413793103448276,
+    "baby_cry": null,
+    "door_knock": null,
+    "dog_bark": null,
+    "water_running": null
+   },
+   "n_gt": {
+    "smoke_alarm": 30,
+    "car_horn": 29,
+    "siren": 29,
+    "baby_cry": 0,
+    "door_knock": 0,
+    "dog_bark": 0,
+    "water_running": 0
+   },
+   "latency_median_s": 0.7881,
+   "latency_p90_s": 1.3360000000000036,
+   "latency_median_by_class": {
+    "smoke_alarm": 0.7332999999999998,
+    "car_horn": 0.7862499999999955,
+    "siren": 0.9174000000000007,
+    "baby_cry": null,
+    "door_knock": null,
+    "dog_bark": null,
+    "water_running": null
+   },
+   "fa_per_hour_background": null,
+   "background_hours": 0.0,
+   "fa_background_by_class": {
+    "smoke_alarm": 0,
+    "car_horn": 0,
+    "siren": 0,
+    "baby_cry": 0,
+    "door_knock": 0,
+    "dog_bark": 0,
+    "water_running": 0
+   },
+   "fa_per_hour_event_outside_gt": 21.899859616284512,
+   "n_gt_events": 88,
+   "short": {
+    "all": {
+     "n_gt": 88,
+     "tp": 28,
+     "recall": 0.3181818181818182,
+     "latency_median_s": 0.7881,
+     "latency_p90_s": 1.3360000000000036
+    },
+    "danger": {
+     "n_gt": 88,
+     "tp": 28,
+     "recall": 0.3181818181818182,
+     "latency_median_s": 0.7881,
+     "latency_p90_s": 1.3360000000000036
+    },
+    "smoke_alarm": {
+     "n_gt": 30,
+     "tp": 11,
+     "recall": 0.36666666666666664,
+     "latency_median_s": 0.7332999999999998,
+     "latency_p90_s": 0.944899999999997
+    },
+    "car_horn": {
+     "n_gt": 29,
+     "tp": 10,
+     "recall": 0.3448275862068966,
+     "latency_median_s": 0.7862499999999955,
+     "latency_p90_s": 1.382300000000006
+    },
+    "siren": {
+     "n_gt": 29,
+     "tp": 7,
+     "recall": 0.2413793103448276,
+     "latency_median_s": 0.9174000000000007,
+     "latency_p90_s": 1.4253200000000008
+    }
+   }
+  },
+  "short_val": {
+   "event_recall": 0.43434343434343436,
+   "danger_recall_mean": 0.4343434343434343,
+   "recall": {
+    "smoke_alarm": 0.6060606060606061,
+    "car_horn": 0.3939393939393939,
+    "siren": 0.30303030303030304,
+    "baby_cry": null,
+    "door_knock": null,
+    "dog_bark": null,
+    "water_running": null
+   },
+   "n_gt": {
+    "smoke_alarm": 33,
+    "car_horn": 33,
+    "siren": 33,
+    "baby_cry": 0,
+    "door_knock": 0,
+    "dog_bark": 0,
+    "water_running": 0
+   },
+   "latency_median_s": 1.0861000000000018,
+   "latency_p90_s": 1.5076000000000003,
+   "latency_median_by_class": {
+    "smoke_alarm": 1.0983000000000018,
+    "car_horn": 1.0212999999999965,
+    "siren": 1.115800000000001,
+    "baby_cry": null,
+    "door_knock": null,
+    "dog_bark": null,
+    "water_running": null
+   },
+   "fa_per_hour_background": null,
+   "background_hours": 0.0,
+   "fa_background_by_class": {
+    "smoke_alarm": 0,
+    "car_horn": 0,
+    "siren": 0,
+    "baby_cry": 0,
+    "door_knock": 0,
+    "dog_bark": 0,
+    "water_running": 0
+   },
+   "fa_per_hour_event_outside_gt": 15.388268819757776,
+   "n_gt_events": 99,
+   "short": {
+    "all": {
+     "n_gt": 99,
+     "tp": 43,
+     "recall": 0.43434343434343436,
+     "latency_median_s": 1.0861000000000018,
+     "latency_p90_s": 1.5076000000000003
+    },
+    "danger": {
+     "n_gt": 99,
+     "tp": 43,
+     "recall": 0.43434343434343436,
+     "latency_median_s": 1.0861000000000018,
+     "latency_p90_s": 1.5076000000000003
+    },
+    "smoke_alarm": {
+     "n_gt": 33,
+     "tp": 20,
+     "recall": 0.6060606060606061,
+     "latency_median_s": 1.0983000000000018,
+     "latency_p90_s": 1.555989999999999
+    },
+    "car_horn": {
+     "n_gt": 33,
+     "tp": 13,
+     "recall": 0.3939393939393939,
+     "latency_median_s": 1.0212999999999965,
+     "latency_p90_s": 1.2590399999999993
+    },
+    "siren": {
+     "n_gt": 33,
+     "tp": 10,
+     "recall": 0.30303030303030304,
+     "latency_median_s": 1.115800000000001,
+     "latency_p90_s": 1.5266999999999995
+    }
+   }
+  },
+  "vn_test": {
+   "event_recall": 0.7692307692307693,
+   "danger_recall_mean": 0.771256038647343,
+   "recall": {
+    "smoke_alarm": 0.5869565217391305,
+    "car_horn": null,
+    "siren": 0.9555555555555556,
+    "baby_cry": null,
+    "door_knock": null,
+    "dog_bark": null,
+    "water_running": null
+   },
+   "n_gt": {
+    "smoke_alarm": 46,
+    "car_horn": 0,
+    "siren": 45,
+    "baby_cry": 0,
+    "door_knock": 0,
+    "dog_bark": 0,
+    "water_running": 0
+   },
+   "latency_median_s": 1.1955000000000027,
+   "latency_p90_s": 2.5734300000000028,
+   "latency_median_by_class": {
+    "smoke_alarm": 0.8552999999999997,
+    "car_horn": null,
+    "siren": 1.3388999999999953,
+    "baby_cry": null,
+    "door_knock": null,
+    "dog_bark": null,
+    "water_running": null
+   },
+   "fa_per_hour_background": 15.0,
+   "background_hours": 1.0,
+   "fa_background_by_class": {
+    "smoke_alarm": 0,
+    "car_horn": 3,
+    "siren": 5,
+    "baby_cry": 1,
+    "door_knock": 0,
+    "dog_bark": 6,
+    "water_running": 0
+   },
+   "fa_per_hour_event_outside_gt": 15.618278852655205,
+   "n_gt_events": 91,
+   "short": {}
+  },
+  "vn_val": {
+   "event_recall": 0.8555555555555555,
+   "danger_recall_mean": 0.8555555555555555,
+   "recall": {
+    "smoke_alarm": 0.8222222222222222,
+    "car_horn": null,
+    "siren": 0.8888888888888888,
+    "baby_cry": null,
+    "door_knock": null,
+    "dog_bark": null,
+    "water_running": null
+   },
+   "n_gt": {
+    "smoke_alarm": 45,
+    "car_horn": 0,
+    "siren": 45,
+    "baby_cry": 0,
+    "door_knock": 0,
+    "dog_bark": 0,
+    "water_running": 0
+   },
+   "latency_median_s": 1.391300000000001,
+   "latency_p90_s": 4.1572000000000005,
+   "latency_median_by_class": {
+    "smoke_alarm": 1.2009000000000007,
+    "car_horn": null,
+    "siren": 1.8118500000000033,
+    "baby_cry": null,
+    "door_knock": null,
+    "dog_bark": null,
+    "water_running": null
+   },
+   "fa_per_hour_background": 11.0,
+   "background_hours": 1.0,
+   "fa_background_by_class": {
+    "smoke_alarm": 1,
+    "car_horn": 3,
+    "siren": 5,
+    "baby_cry": 0,
+    "door_knock": 0,
+    "dog_bark": 2,
+    "water_running": 0
+   },
+   "fa_per_hour_event_outside_gt": 15.868002316581414,
+   "n_gt_events": 90,
+   "short": {}
+  }
+ },
+ "v2_sm_pcen": {
+  "test": {
+   "event_recall": 0.46511627906976744,
+   "danger_recall_mean": 0.5277777777777778,
+   "recall": {
+    "smoke_alarm": 0.3333333333333333,
+    "car_horn": 0.5833333333333334,
+    "siren": 0.6666666666666666,
+    "baby_cry": 0.15384615384615385,
+    "door_knock": 0.4166666666666667,
+    "dog_bark": 0.5384615384615384,
+    "water_running": 0.5833333333333334
+   },
+   "n_gt": {
+    "smoke_alarm": 12,
+    "car_horn": 12,
+    "siren": 12,
+    "baby_cry": 13,
+    "door_knock": 12,
+    "dog_bark": 13,
+    "water_running": 12
+   },
+   "latency_median_s": 1.3660500000000013,
+   "latency_p90_s": 3.4901399999999954,
+   "latency_median_by_class": {
+    "smoke_alarm": 0.9227499999999935,
+    "car_horn": 2.194599999999994,
+    "siren": 1.0742499999999993,
+    "baby_cry": 4.387300000000003,
+    "door_knock": 1.3406999999999982,
+    "dog_bark": 1.6420999999999992,
+    "water_running": 1.5778999999999996
+   },
+   "fa_per_hour_background": 21.0,
+   "background_hours": 1.0,
+   "fa_background_by_class": {
+    "smoke_alarm": 6,
+    "car_horn": 5,
+    "siren": 4,
+    "baby_cry": 1,
+    "door_knock": 0,
+    "dog_bark": 5,
+    "water_running": 0
+   },
+   "fa_per_hour_event_outside_gt": 28.47985979470504,
+   "n_gt_events": 86,
+   "short": {
+    "all": {
+     "n_gt": 13,
+     "tp": 2,
+     "recall": 0.15384615384615385,
+     "latency_median_s": 0.8470499999999959,
+     "latency_p90_s": 0.9059699999999964
+    },
+    "door_knock": {
+     "n_gt": 6,
+     "tp": 0,
+     "recall": 0.0,
+     "latency_median_s": null,
+     "latency_p90_s": null
+    },
+    "water_running": {
+     "n_gt": 1,
+     "tp": 0,
+     "recall": 0.0,
+     "latency_median_s": null,
+     "latency_p90_s": null
+    },
+    "danger": {
+     "n_gt": 2,
+     "tp": 0,
+     "recall": 0.0,
+     "latency_median_s": null,
+     "latency_p90_s": null
+    },
+    "car_horn": {
+     "n_gt": 2,
+     "tp": 0,
+     "recall": 0.0,
+     "latency_median_s": null,
+     "latency_p90_s": null
+    },
+    "dog_bark": {
+     "n_gt": 4,
+     "tp": 2,
+     "recall": 0.5,
+     "latency_median_s": 0.8470499999999959,
+     "latency_p90_s": 0.9059699999999964
+    }
+   }
+  },
+  "val": {
+   "event_recall": 0.5538461538461539,
+   "danger_recall_mean": 0.6315789473684211,
+   "recall": {
+    "smoke_alarm": 0.7368421052631579,
+    "car_horn": 0.2631578947368421,
+    "siren": 0.8947368421052632,
+    "baby_cry": 0.6111111111111112,
+    "door_knock": 0.4444444444444444,
+    "dog_bark": 0.5789473684210527,
+    "water_running": 0.3333333333333333
+   },
+   "n_gt": {
+    "smoke_alarm": 19,
+    "car_horn": 19,
+    "siren": 19,
+    "baby_cry": 18,
+    "door_knock": 18,
+    "dog_bark": 19,
+    "water_running": 18
+   },
+   "latency_median_s": 1.3148000000000017,
+   "latency_p90_s": 4.802020000000001,
+   "latency_median_by_class": {
+    "smoke_alarm": 1.453350000000004,
+    "car_horn": 1.0649000000000002,
+    "siren": 1.0452999999999975,
+    "baby_cry": 1.7797999999999945,
+    "door_knock": 1.1931499999999993,
+    "dog_bark": 1.2720000000000056,
+    "water_running": 1.7775999999999996
+   },
+   "fa_per_hour_background": 21.5,
+   "background_hours": 2.0,
+   "fa_background_by_class": {
+    "smoke_alarm": 9,
+    "car_horn": 9,
+    "siren": 6,
+    "baby_cry": 7,
+    "door_knock": 2,
+    "dog_bark": 4,
+    "water_running": 6
+   },
+   "fa_per_hour_event_outside_gt": 20.471229327503064,
+   "n_gt_events": 130,
+   "short": {
+    "all": {
+     "n_gt": 20,
+     "tp": 6,
+     "recall": 0.3,
+     "latency_median_s": 1.0468999999999973,
+     "latency_p90_s": 1.241450000000004
+    },
+    "door_knock": {
+     "n_gt": 7,
+     "tp": 4,
+     "recall": 0.5714285714285714,
+     "latency_median_s": 1.0324999999999989,
+     "latency_p90_s": 1.2002500000000005
+    },
+    "danger": {
+     "n_gt": 11,
+     "tp": 1,
+     "recall": 0.09090909090909091,
+     "latency_median_s": 0.9183999999999983,
+     "latency_p90_s": 0.9183999999999983
+    },
+    "car_horn": {
+     "n_gt": 11,
+     "tp": 1,
+     "recall": 0.09090909090909091,
+     "latency_median_s": 0.9183999999999983,
+     "latency_p90_s": 0.9183999999999983
+    },
+    "water_running": {
+     "n_gt": 1,
+     "tp": 0,
+     "recall": 0.0,
+     "latency_median_s": null,
+     "latency_p90_s": null
+    },
+    "dog_bark": {
+     "n_gt": 1,
+     "tp": 1,
+     "recall": 1.0,
+     "latency_median_s": 1.2720000000000056,
+     "latency_p90_s": 1.2720000000000056
+    }
+   }
+  },
+  "short_test": {
+   "event_recall": 0.22727272727272727,
+   "danger_recall_mean": 0.22643678160919542,
+   "recall": {
+    "smoke_alarm": 0.3,
+    "car_horn": 0.1724137931034483,
+    "siren": 0.20689655172413793,
+    "baby_cry": null,
+    "door_knock": null,
+    "dog_bark": null,
+    "water_running": null
+   },
+   "n_gt": {
+    "smoke_alarm": 30,
+    "car_horn": 29,
+    "siren": 29,
+    "baby_cry": 0,
+    "door_knock": 0,
+    "dog_bark": 0,
+    "water_running": 0
+   },
+   "latency_median_s": 1.1246500000000026,
+   "latency_p90_s": 1.6777600000000021,
+   "latency_median_by_class": {
+    "smoke_alarm": 0.9890999999999934,
+    "car_horn": 1.267399999999995,
+    "siren": 1.2671000000000001,
+    "baby_cry": null,
+    "door_knock": null,
+    "dog_bark": null,
+    "water_running": null
+   },
+   "fa_per_hour_background": null,
+   "background_hours": 0.0,
+   "fa_background_by_class": {
+    "smoke_alarm": 0,
+    "car_horn": 0,
+    "siren": 0,
+    "baby_cry": 0,
+    "door_knock": 0,
+    "dog_bark": 0,
+    "water_running": 0
+   },
+   "fa_per_hour_event_outside_gt": 33.69209171736079,
+   "n_gt_events": 88,
+   "short": {
+    "all": {
+     "n_gt": 88,
+     "tp": 20,
+     "recall": 0.22727272727272727,
+     "latency_median_s": 1.1246500000000026,
+     "latency_p90_s": 1.6777600000000021
+    },
+    "danger": {
+     "n_gt": 88,
+     "tp": 20,
+     "recall": 0.22727272727272727,
+     "latency_median_s": 1.1246500000000026,
+     "latency_p90_s": 1.6777600000000021
+    },
+    "smoke_alarm": {
+     "n_gt": 30,
+     "tp": 9,
+     "recall": 0.3,
+     "latency_median_s": 0.9890999999999934,
+     "latency_p90_s": 1.4801199999999994
+    },
+    "car_horn": {
+     "n_gt": 29,
+     "tp": 5,
+     "recall": 0.1724137931034483,
+     "latency_median_s": 1.267399999999995,
+     "latency_p90_s": 1.5989599999999977
+    },
+    "siren": {
+     "n_gt": 29,
+     "tp": 6,
+     "recall": 0.20689655172413793,
+     "latency_median_s": 1.2671000000000001,
+     "latency_p90_s": 1.556150000000001
+    }
+   }
+  },
+  "short_val": {
+   "event_recall": 0.3434343434343434,
+   "danger_recall_mean": 0.3434343434343434,
+   "recall": {
+    "smoke_alarm": 0.3333333333333333,
+    "car_horn": 0.21212121212121213,
+    "siren": 0.48484848484848486,
+    "baby_cry": null,
+    "door_knock": null,
+    "dog_bark": null,
+    "water_running": null
+   },
+   "n_gt": {
+    "smoke_alarm": 33,
+    "car_horn": 33,
+    "siren": 33,
+    "baby_cry": 0,
+    "door_knock": 0,
+    "dog_bark": 0,
+    "water_running": 0
+   },
+   "latency_median_s": 0.9746499999999978,
+   "latency_p90_s": 1.51355,
+   "latency_median_by_class": {
+    "smoke_alarm": 0.8067999999999955,
+    "car_horn": 0.9976999999999947,
+    "siren": 1.056149999999998,
+    "baby_cry": null,
+    "door_knock": null,
+    "dog_bark": null,
+    "water_running": null
+   },
+   "fa_per_hour_background": null,
+   "background_hours": 0.0,
+   "fa_background_by_class": {
+    "smoke_alarm": 0,
+    "car_horn": 0,
+    "siren": 0,
+    "baby_cry": 0,
+    "door_knock": 0,
+    "dog_bark": 0,
+    "water_running": 0
+   },
+   "fa_per_hour_event_outside_gt": 17.09807646639753,
+   "n_gt_events": 99,
+   "short": {
+    "all": {
+     "n_gt": 99,
+     "tp": 34,
+     "recall": 0.3434343434343434,
+     "latency_median_s": 0.9746499999999978,
+     "latency_p90_s": 1.51355
+    },
+    "danger": {
+     "n_gt": 99,
+     "tp": 34,
+     "recall": 0.3434343434343434,
+     "latency_median_s": 0.9746499999999978,
+     "latency_p90_s": 1.51355
+    },
+    "smoke_alarm": {
+     "n_gt": 33,
+     "tp": 11,
+     "recall": 0.3333333333333333,
+     "latency_median_s": 0.8067999999999955,
+     "latency_p90_s": 1.5837999999999965
+    },
+    "car_horn": {
+     "n_gt": 33,
+     "tp": 7,
+     "recall": 0.21212121212121213,
+     "latency_median_s": 0.9976999999999947,
+     "latency_p90_s": 1.5122399999999985
+    },
+    "siren": {
+     "n_gt": 33,
+     "tp": 16,
+     "recall": 0.48484848484848486,
+     "latency_median_s": 1.056149999999998,
+     "latency_p90_s": 1.3925
+    }
+   }
+  },
+  "vn_test": {
+   "event_recall": 0.7142857142857143,
+   "danger_recall_mean": 0.7169082125603865,
+   "recall": {
+    "smoke_alarm": 0.4782608695652174,
+    "car_horn": null,
+    "siren": 0.9555555555555556,
+    "baby_cry": null,
+    "door_knock": null,
+    "dog_bark": null,
+    "water_running": null
+   },
+   "n_gt": {
+    "smoke_alarm": 46,
+    "car_horn": 0,
+    "siren": 45,
+    "baby_cry": 0,
+    "door_knock": 0,
+    "dog_bark": 0,
+    "water_running": 0
+   },
+   "latency_median_s": 1.4446999999999974,
+   "latency_p90_s": 4.251360000000005,
+   "latency_median_by_class": {
+    "smoke_alarm": 1.4252500000000055,
+    "car_horn": null,
+    "siren": 1.4714000000000027,
+    "baby_cry": null,
+    "door_knock": null,
+    "dog_bark": null,
+    "water_running": null
+   },
+   "fa_per_hour_background": 23.0,
+   "background_hours": 1.0,
+   "fa_background_by_class": {
+    "smoke_alarm": 3,
+    "car_horn": 13,
+    "siren": 1,
+    "baby_cry": 0,
+    "door_knock": 0,
+    "dog_bark": 6,
+    "water_running": 0
+   },
+   "fa_per_hour_event_outside_gt": 32.53808094303167,
+   "n_gt_events": 91,
+   "short": {}
+  },
+  "vn_val": {
+   "event_recall": 0.8111111111111111,
+   "danger_recall_mean": 0.8111111111111111,
+   "recall": {
+    "smoke_alarm": 0.6888888888888889,
+    "car_horn": null,
+    "siren": 0.9333333333333333,
+    "baby_cry": null,
+    "door_knock": null,
+    "dog_bark": null,
+    "water_running": null
+   },
+   "n_gt": {
+    "smoke_alarm": 45,
+    "car_horn": 0,
+    "siren": 45,
+    "baby_cry": 0,
+    "door_knock": 0,
+    "dog_bark": 0,
+    "water_running": 0
+   },
+   "latency_median_s": 1.5803999999999974,
+   "latency_p90_s": 4.555000000000001,
+   "latency_median_by_class": {
+    "smoke_alarm": 1.5803999999999974,
+    "car_horn": null,
+    "siren": 1.587600000000002,
+    "baby_cry": null,
+    "door_knock": null,
+    "dog_bark": null,
+    "water_running": null
+   },
+   "fa_per_hour_background": 14.0,
+   "background_hours": 1.0,
+   "fa_background_by_class": {
+    "smoke_alarm": 5,
+    "car_horn": 7,
+    "siren": 0,
+    "baby_cry": 2,
+    "door_knock": 0,
+    "dog_bark": 0,
+    "water_running": 0
+   },
+   "fa_per_hour_event_outside_gt": 22.479669948490336,
+   "n_gt_events": 90,
+   "short": {}
+  }
+ }
+}

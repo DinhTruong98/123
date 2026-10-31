@@ -1,0 +1,610 @@
+{
+ "max_val": 22.0,
+ "max_vnval": 32.0,
+ "floor_drop": 0.05,
+ "floors": {
+  "smoke_alarm": 0.621875,
+  "car_horn": 0.2131578947368421,
+  "siren": 0.79375,
+  "baby_cry": 0.5611111111111111,
+  "door_knock": 0.17222222222222222,
+  "dog_bark": 0.4763157894736842,
+  "water_running": 0.2833333333333333
+ },
+ "best": [
+  {
+   "fast": null,
+   "setting": "smooth=1 k/n=2/3 margin=\u2013",
+   "smooth_n": 1,
+   "k_of_n": [
+    2,
+    3
+   ],
+   "budget": 15.0,
+   "thresholds": {
+    "smoke_alarm": 0.85,
+    "car_horn": 0.97,
+    "siren": 0.95,
+    "baby_cry": 0.97,
+    "door_knock": 0.75,
+    "dog_bark": 0.99,
+    "water_running": 0.95
+   },
+   "weighted_recall": 0.7247956403269755,
+   "lat_both": 1.5821,
+   "val": {
+    "recall": 0.5769230769230769,
+    "danger": 0.6140350877192983,
+    "fa_h": 20.0,
+    "lat": 1.483699999999999,
+    "per_class": {
+     "smoke_alarm": 0.8421052631578947,
+     "car_horn": 0.2631578947368421,
+     "siren": 0.7368421052631579,
+     "baby_cry": 0.7222222222222222,
+     "door_knock": 0.5,
+     "dog_bark": 0.5789473684210527,
+     "water_running": 0.3888888888888889
+    }
+   },
+   "vn_val": {
+    "recall": 0.8666666666666667,
+    "danger": 0.8666666666666667,
+    "fa_h": 5.0,
+    "lat": 1.6981500000000036,
+    "per_class": {
+     "smoke_alarm": 0.7777777777777778,
+     "car_horn": null,
+     "siren": 0.9555555555555556,
+     "baby_cry": null,
+     "door_knock": null,
+     "dog_bark": null,
+     "water_running": null
+    }
+   },
+   "short_val": {
+    "recall": 0.26262626262626265,
+    "danger": 0.2626262626262626,
+    "fa_h": null,
+    "lat": 1.3177999999999983,
+    "per_class": {
+     "smoke_alarm": 0.45454545454545453,
+     "car_horn": 0.12121212121212122,
+     "siren": 0.21212121212121213,
+     "baby_cry": null,
+     "door_knock": null,
+     "dog_bark": null,
+     "water_running": null
+    }
+   }
+  },
+  {
+   "fast": 0.99609375,
+   "setting": "smooth=1 k/n=2/2 margin=\u2013",
+   "smooth_n": 1,
+   "k_of_n": [
+    2,
+    2
+   ],
+   "budget": 15.0,
+   "thresholds": {
+    "smoke_alarm": 0.85,
+    "car_horn": 0.97,
+    "siren": 0.95,
+    "baby_cry": 0.97,
+    "door_knock": 0.75,
+    "dog_bark": 0.99,
+    "water_running": 0.95
+   },
+   "weighted_recall": 0.7247956403269755,
+   "lat_both": 1.5104,
+   "val": {
+    "recall": 0.5846153846153846,
+    "danger": 0.6315789473684211,
+    "fa_h": 20.0,
+    "lat": 1.3717500000000058,
+    "per_class": {
+     "smoke_alarm": 0.8421052631578947,
+     "car_horn": 0.3157894736842105,
+     "siren": 0.7368421052631579,
+     "baby_cry": 0.7222222222222222,
+     "door_knock": 0.5,
+     "dog_bark": 0.5789473684210527,
+     "water_running": 0.3888888888888889
+    }
+   },
+   "vn_val": {
+    "recall": 0.8555555555555555,
+    "danger": 0.8555555555555556,
+    "fa_h": 5.0,
+    "lat": 1.670499999999997,
+    "per_class": {
+     "smoke_alarm": 0.7777777777777778,
+     "car_horn": null,
+     "siren": 0.9333333333333333,
+     "baby_cry": null,
+     "door_knock": null,
+     "dog_bark": null,
+     "water_running": null
+    }
+   },
+   "short_val": {
+    "recall": 0.31313131313131315,
+    "danger": 0.31313131313131315,
+    "fa_h": null,
+    "lat": 1.0861000000000018,
+    "per_class": {
+     "smoke_alarm": 0.45454545454545453,
+     "car_horn": 0.24242424242424243,
+     "siren": 0.24242424242424243,
+     "baby_cry": null,
+     "door_knock": null,
+     "dog_bark": null,
+     "water_running": null
+    }
+   }
+  },
+  {
+   "fast": null,
+   "setting": "smooth=1 k/n=2/2 margin=\u2013",
+   "smooth_n": 1,
+   "k_of_n": [
+    2,
+    2
+   ],
+   "budget": 15.0,
+   "thresholds": {
+    "smoke_alarm": 0.85,
+    "car_horn": 0.97,
+    "siren": 0.95,
+    "baby_cry": 0.97,
+    "door_knock": 0.65,
+    "dog_bark": 0.99,
+    "water_running": 0.95
+   },
+   "weighted_recall": 0.7220708446866485,
+   "lat_both": 1.6224,
+   "val": {
+    "recall": 0.5846153846153846,
+    "danger": 0.6140350877192983,
+    "fa_h": 19.5,
+    "lat": 1.4879999999999995,
+    "per_class": {
+     "smoke_alarm": 0.8421052631578947,
+     "car_horn": 0.2631578947368421,
+     "siren": 0.7368421052631579,
+     "baby_cry": 0.7222222222222222,
+     "door_knock": 0.5555555555555556,
+     "dog_bark": 0.5789473684210527,
+     "water_running": 0.3888888888888889
+    }
+   },
+   "vn_val": {
+    "recall": 0.8555555555555555,
+    "danger": 0.8555555555555556,
+    "fa_h": 5.0,
+    "lat": 1.7009000000000007,
+    "per_class": {
+     "smoke_alarm": 0.7777777777777778,
+     "car_horn": null,
+     "siren": 0.9333333333333333,
+     "baby_cry": null,
+     "door_knock": null,
+     "dog_bark": null,
+     "water_running": null
+    }
+   },
+   "short_val": {
+    "recall": 0.25252525252525254,
+    "danger": 0.25252525252525254,
+    "fa_h": null,
+    "lat": 1.3067999999999955,
+    "per_class": {
+     "smoke_alarm": 0.42424242424242425,
+     "car_horn": 0.12121212121212122,
+     "siren": 0.21212121212121213,
+     "baby_cry": null,
+     "door_knock": null,
+     "dog_bark": null,
+     "water_running": null
+    }
+   }
+  },
+  {
+   "fast": 0.99609375,
+   "setting": "smooth=1 k/n=2/3 margin=\u2013",
+   "smooth_n": 1,
+   "k_of_n": [
+    2,
+    3
+   ],
+   "budget": 15.0,
+   "thresholds": {
+    "smoke_alarm": 0.95,
+    "car_horn": 0.97,
+    "siren": 0.95,
+    "baby_cry": 0.97,
+    "door_knock": 0.75,
+    "dog_bark": 0.99,
+    "water_running": 0.85
+   },
+   "weighted_recall": 0.7193460490463215,
+   "lat_both": 1.5125,
+   "val": {
+    "recall": 0.6153846153846154,
+    "danger": 0.6315789473684211,
+    "fa_h": 20.0,
+    "lat": 1.4735999999999976,
+    "per_class": {
+     "smoke_alarm": 0.8421052631578947,
+     "car_horn": 0.3157894736842105,
+     "siren": 0.7368421052631579,
+     "baby_cry": 0.7222222222222222,
+     "door_knock": 0.5,
+     "dog_bark": 0.5789473684210527,
+     "water_running": 0.6111111111111112
+    }
+   },
+   "vn_val": {
+    "recall": 0.8222222222222222,
+    "danger": 0.8222222222222222,
+    "fa_h": 5.0,
+    "lat": 1.6409999999999982,
+    "per_class": {
+     "smoke_alarm": 0.6888888888888889,
+     "car_horn": null,
+     "siren": 0.9555555555555556,
+     "baby_cry": null,
+     "door_knock": null,
+     "dog_bark": null,
+     "water_running": null
+    }
+   },
+   "short_val": {
+    "recall": 0.2828282828282828,
+    "danger": 0.2828282828282828,
+    "fa_h": null,
+    "lat": 1.0559499999999957,
+    "per_class": {
+     "smoke_alarm": 0.36363636363636365,
+     "car_horn": 0.24242424242424243,
+     "siren": 0.24242424242424243,
+     "baby_cry": null,
+     "door_knock": null,
+     "dog_bark": null,
+     "water_running": null
+    }
+   }
+  },
+  {
+   "fast": 0.99,
+   "setting": "smooth=1 k/n=2/2 margin=\u2013",
+   "smooth_n": 1,
+   "k_of_n": [
+    2,
+    2
+   ],
+   "budget": 15.0,
+   "thresholds": {
+    "smoke_alarm": 0.95,
+    "car_horn": 0.97,
+    "siren": 0.95,
+    "baby_cry": 0.97,
+    "door_knock": 0.65,
+    "dog_bark": 0.99,
+    "water_running": 0.9
+   },
+   "weighted_recall": 0.7084468664850136,
+   "lat_both": 1.4689,
+   "val": {
+    "recall": 0.6,
+    "danger": 0.6315789473684211,
+    "fa_h": 20.0,
+    "lat": 1.3717500000000058,
+    "per_class": {
+     "smoke_alarm": 0.8421052631578947,
+     "car_horn": 0.3157894736842105,
+     "siren": 0.7368421052631579,
+     "baby_cry": 0.7222222222222222,
+     "door_knock": 0.5555555555555556,
+     "dog_bark": 0.5789473684210527,
+     "water_running": 0.4444444444444444
+    }
+   },
+   "vn_val": {
+    "recall": 0.8111111111111111,
+    "danger": 0.8111111111111111,
+    "fa_h": 5.0,
+    "lat": 1.5746000000000038,
+    "per_class": {
+     "smoke_alarm": 0.6888888888888889,
+     "car_horn": null,
+     "siren": 0.9333333333333333,
+     "baby_cry": null,
+     "door_knock": null,
+     "dog_bark": null,
+     "water_running": null
+    }
+   },
+   "short_val": {
+    "recall": 0.29292929292929293,
+    "danger": 0.29292929292929293,
+    "fa_h": null,
+    "lat": 1.0212999999999965,
+    "per_class": {
+     "smoke_alarm": 0.36363636363636365,
+     "car_horn": 0.2727272727272727,
+     "siren": 0.24242424242424243,
+     "baby_cry": null,
+     "door_knock": null,
+     "dog_bark": null,
+     "water_running": null
+    }
+   }
+  },
+  {
+   "fast": 0.99,
+   "setting": "smooth=1 k/n=2/3 margin=\u2013",
+   "smooth_n": 1,
+   "k_of_n": [
+    2,
+    3
+   ],
+   "budget": 15.0,
+   "thresholds": {
+    "smoke_alarm": 0.9,
+    "car_horn": 0.97,
+    "siren": 0.99609375,
+    "baby_cry": 0.97,
+    "door_knock": 0.75,
+    "dog_bark": 0.99609375,
+    "water_running": 0.9
+   },
+   "weighted_recall": 0.6920980926430518,
+   "lat_both": 1.4718,
+   "val": {
+    "recall": 0.5846153846153846,
+    "danger": 0.5964912280701754,
+    "fa_h": 21.0,
+    "lat": 1.402700000000003,
+    "per_class": {
+     "smoke_alarm": 0.8421052631578947,
+     "car_horn": 0.3157894736842105,
+     "siren": 0.631578947368421,
+     "baby_cry": 0.7222222222222222,
+     "door_knock": 0.5,
+     "dog_bark": 0.5263157894736842,
+     "water_running": 0.5555555555555556
+    }
+   },
+   "vn_val": {
+    "recall": 0.8,
+    "danger": 0.8,
+    "fa_h": 3.0,
+    "lat": 1.5446000000000026,
+    "per_class": {
+     "smoke_alarm": 0.7333333333333333,
+     "car_horn": null,
+     "siren": 0.8666666666666667,
+     "baby_cry": null,
+     "door_knock": null,
+     "dog_bark": null,
+     "water_running": null
+    }
+   },
+   "short_val": {
+    "recall": 0.31313131313131315,
+    "danger": 0.31313131313131315,
+    "fa_h": null,
+    "lat": 1.028099999999995,
+    "per_class": {
+     "smoke_alarm": 0.45454545454545453,
+     "car_horn": 0.2727272727272727,
+     "siren": 0.21212121212121213,
+     "baby_cry": null,
+     "door_knock": null,
+     "dog_bark": null,
+     "water_running": null
+    }
+   }
+  },
+  {
+   "fast": null,
+   "setting": "smooth=1 k/n=1/1 margin=\u2013",
+   "smooth_n": 1,
+   "k_of_n": [
+    1,
+    1
+   ],
+   "budget": 15.0,
+   "thresholds": {
+    "smoke_alarm": 0.99,
+    "car_horn": 0.99609375,
+    "siren": 0.99,
+    "baby_cry": 0.99609375,
+    "door_knock": 0.65,
+    "dog_bark": 0.99609375,
+    "water_running": 0.97
+   },
+   "weighted_recall": 0.659400544959128,
+   "lat_both": 1.3152,
+   "val": {
+    "recall": 0.5615384615384615,
+    "danger": 0.543859649122807,
+    "fa_h": 20.0,
+    "lat": 1.0649000000000002,
+    "per_class": {
+     "smoke_alarm": 0.7368421052631579,
+     "car_horn": 0.2631578947368421,
+     "siren": 0.631578947368421,
+     "baby_cry": 0.6111111111111112,
+     "door_knock": 0.6111111111111112,
+     "dog_bark": 0.5789473684210527,
+     "water_running": 0.5
+    }
+   },
+   "vn_val": {
+    "recall": 0.7666666666666667,
+    "danger": 0.7666666666666666,
+    "fa_h": 5.0,
+    "lat": 1.6595999999999975,
+    "per_class": {
+     "smoke_alarm": 0.6666666666666666,
+     "car_horn": null,
+     "siren": 0.8666666666666667,
+     "baby_cry": null,
+     "door_knock": null,
+     "dog_bark": null,
+     "water_running": null
+    }
+   },
+   "short_val": {
+    "recall": 0.26262626262626265,
+    "danger": 0.2626262626262626,
+    "fa_h": null,
+    "lat": 1.0137499999999982,
+    "per_class": {
+     "smoke_alarm": 0.3333333333333333,
+     "car_horn": 0.24242424242424243,
+     "siren": 0.21212121212121213,
+     "baby_cry": null,
+     "door_knock": null,
+     "dog_bark": null,
+     "water_running": null
+    }
+   }
+  },
+  {
+   "fast": 0.99609375,
+   "setting": "smooth=1 k/n=1/1 margin=\u2013",
+   "smooth_n": 1,
+   "k_of_n": [
+    1,
+    1
+   ],
+   "budget": 15.0,
+   "thresholds": {
+    "smoke_alarm": 0.99,
+    "car_horn": 0.99609375,
+    "siren": 0.99,
+    "baby_cry": 0.99609375,
+    "door_knock": 0.65,
+    "dog_bark": 0.99609375,
+    "water_running": 0.97
+   },
+   "weighted_recall": 0.659400544959128,
+   "lat_both": 1.3152,
+   "val": {
+    "recall": 0.5615384615384615,
+    "danger": 0.543859649122807,
+    "fa_h": 20.0,
+    "lat": 1.0649000000000002,
+    "per_class": {
+     "smoke_alarm": 0.7368421052631579,
+     "car_horn": 0.2631578947368421,
+     "siren": 0.631578947368421,
+     "baby_cry": 0.6111111111111112,
+     "door_knock": 0.6111111111111112,
+     "dog_bark": 0.5789473684210527,
+     "water_running": 0.5
+    }
+   },
+   "vn_val": {
+    "recall": 0.7666666666666667,
+    "danger": 0.7666666666666666,
+    "fa_h": 5.0,
+    "lat": 1.6595999999999975,
+    "per_class": {
+     "smoke_alarm": 0.6666666666666666,
+     "car_horn": null,
+     "siren": 0.8666666666666667,
+     "baby_cry": null,
+     "door_knock": null,
+     "dog_bark": null,
+     "water_running": null
+    }
+   },
+   "short_val": {
+    "recall": 0.26262626262626265,
+    "danger": 0.2626262626262626,
+    "fa_h": null,
+    "lat": 1.0137499999999982,
+    "per_class": {
+     "smoke_alarm": 0.3333333333333333,
+     "car_horn": 0.24242424242424243,
+     "siren": 0.21212121212121213,
+     "baby_cry": null,
+     "door_knock": null,
+     "dog_bark": null,
+     "water_running": null
+    }
+   }
+  },
+  {
+   "fast": 0.99,
+   "setting": "smooth=1 k/n=1/1 margin=\u2013",
+   "smooth_n": 1,
+   "k_of_n": [
+    1,
+    1
+   ],
+   "budget": 15.0,
+   "thresholds": {
+    "smoke_alarm": 0.99609375,
+    "car_horn": 0.99609375,
+    "siren": 0.99609375,
+    "baby_cry": 0.99609375,
+    "door_knock": 0.85,
+    "dog_bark": 0.99609375,
+    "water_running": 0.97
+   },
+   "weighted_recall": 0.6566757493188011,
+   "lat_both": 1.3181,
+   "val": {
+    "recall": 0.5538461538461539,
+    "danger": 0.543859649122807,
+    "fa_h": 18.5,
+    "lat": 1.1282500000000013,
+    "per_class": {
+     "smoke_alarm": 0.7368421052631579,
+     "car_horn": 0.2631578947368421,
+     "siren": 0.631578947368421,
+     "baby_cry": 0.6111111111111112,
+     "door_knock": 0.5555555555555556,
+     "dog_bark": 0.5789473684210527,
+     "water_running": 0.5
+    }
+   },
+   "vn_val": {
+    "recall": 0.7666666666666667,
+    "danger": 0.7666666666666666,
+    "fa_h": 5.0,
+    "lat": 1.6595999999999975,
+    "per_class": {
+     "smoke_alarm": 0.6666666666666666,
+     "car_horn": null,
+     "siren": 0.8666666666666667,
+     "baby_cry": null,
+     "door_knock": null,
+     "dog_bark": null,
+     "water_running": null
+    }
+   },
+   "short_val": {
+    "recall": 0.2727272727272727,
+    "danger": 0.2727272727272727,
+    "fa_h": null,
+    "lat": 1.0061999999999998,
+    "per_class": {
+     "smoke_alarm": 0.3333333333333333,
+     "car_horn": 0.2727272727272727,
+     "siren": 0.21212121212121213,
+     "baby_cry": null,
+     "door_knock": null,
+     "dog_bark": null,
+     "water_running": null
+    }
+   }
+  }
+ ]
+}

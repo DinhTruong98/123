@@ -65,6 +65,17 @@ Kết quả `make demo-headless` (model có sẵn, config hiện tại) so với
 với chỉ dùng k-of-n. Các lớp DANGER còn được nhắc lại mỗi 5 s (`[repeat]`) tới khi xác nhận. Chạy real-time có UI cho cùng kết quả, UI đạt 30 FPS (giới hạn của vòng lặp; khả năng ~160 FPS).
 (`t` của cảnh báo là thời điểm **cuối** cửa sổ 1 s đang phân tích.)
 
+## Model VN v2 (nhánh `vn-v2`, chưa thay model của app)
+
+`assets/models/vn_v2/` + `config/soundwatch_vn_v2.yaml`: train lại với dữ liệu còi / báo cháy Việt Nam, hiệu chỉnh nhiệt độ,
+ngưỡng chọn lại trên val, thêm chế độ ngữ cảnh `indoor` / `street` / `auto` (`run --mode street`). Còi VN (mức sự kiện, VN test)
+0.87 → 0.96; ở chế độ `street`, báo nhầm trên nền VN giảm từ 16 xuống 5 lần/giờ. Chi tiết, các thí nghiệm (PCEN, sigmoid đa
+nhãn, trộn hai cửa sổ, cửa sổ 2 s) và việc cần làm để port: [docs/vn_v2_results.md](docs/vn_v2_results.md).
+
+```bash
+uv run python -m soundwatch run --config config/soundwatch_vn_v2.yaml --source assets/demo/demo_scenario.wav --headless --fast --mode street
+```
+
 ## Toàn bộ pipeline
 
 ```bash
