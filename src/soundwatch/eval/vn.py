@@ -47,7 +47,8 @@ def _recall(y: np.ndarray, p: np.ndarray, cls: int) -> tuple[float, int]:
     return (float((p[m] == cls).mean()) if m.any() else float("nan")), int(m.sum())
 
 
-def evaluate(cfg: Config, models: list[tuple[str, Path, Path]], split: str, manifest: Path | None) -> dict:
+def evaluate(cfg: Config, models: list[tuple[str, Path, Path]], split: str, manifest: Path | None,
+             relabelled: set[str] | None = None) -> dict:
     from soundwatch.eval.calibration import calibration_report
     from soundwatch.eval.offline import metrics_from_predictions
     from soundwatch.models import common
@@ -90,7 +91,10 @@ def evaluate(cfg: Config, models: list[tuple[str, Path, Path]], split: str, mani
             y, p = d["label"][is_vn], pred[is_vn]
             breakdown = {}
             for col in ("vehicle_type", "passing", "distance"):
-                vals = meta.reindex(files)[col].astype(str).to_numpy()
+                vals = np.array(["" if pd.isna(v) else str(v) for v in meta.reindex(files)[col]],
+                                dtype=object)
+                if col == "vehicle_type" and relabelled:  # vn-v3: clips moved smoke_alarm -> siren
+                    vals[np.isin(files, list(relabelled))] = "relabel_v3"
                 breakdown[col] = {}
                 for v in sorted(set(vals[y == siren])):
                     r, n = _recall(y[vals == v], p[vals == v], siren)
@@ -165,6 +169,8 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
     )
     parser.add_argument("--manifest", default=None, help="custom manifest.csv for the VN siren breakdown")
     parser.add_argument("--out-dir", default=None)
+    parser.add_argument("--relabel", default=None,
+                        help="relabel csv (vn-v3): its clips moved to siren get vehicle_type 'relabel_v3'")
     parser.add_argument("--windows-dir", default=None,
                         help="windows build to score (e.g. 2 s windows; use a config with that window_s)")
 
@@ -174,7 +180,11 @@ def main(args: argparse.Namespace) -> int:
         paths.WINDOWS = Path(args.windows_dir).resolve()
     cfg = load_config(args.config)
     models = [(n, Path(m), Path(s)) for n, m, s in args.model]
-    r = evaluate(cfg, models, args.split, Path(args.manifest) if args.manifest else None)
+    relabelled = None
+    if getattr(args, "relabel", None):
+        rel = pd.read_csv(args.relabel, dtype=str)
+        relabelled = set(rel.loc[rel["new_class"] == "siren", "file"])
+    r = evaluate(cfg, models, args.split, Path(args.manifest) if args.manifest else None, relabelled)
     out = Path(args.out_dir) if args.out_dir else paths.REPORTS
     out.mkdir(parents=True, exist_ok=True)
     (out / f"vn_eval_{args.split}.json").write_text(json.dumps(r, indent=2, ensure_ascii=False))

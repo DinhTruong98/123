@@ -184,11 +184,11 @@ def grid(evidence):
 
 
 def select(val, evidence):
-    """Best sound-only rule on val (both street kinds, random levels): accuracy - 0.002 * wrong switches/h."""
+    """Best sound-only rule on val (both street kinds, random levels): accuracy - 0.01 * wrong switches/h."""
     best = None
     for a in grid(evidence):
         sc = [score(val[k], a) for k in ("vn", "orig")]
-        obj = np.mean([x["acc"] for x in sc]) - 0.002 * np.mean([x["wrong_switches_per_h"] for x in sc])
+        obj = np.mean([x["acc"] for x in sc]) - 0.01 * np.mean([x["wrong_switches_per_h"] for x in sc])
         if best is None or obj > best[0]:
             best = (obj, a)
     return best[1]
