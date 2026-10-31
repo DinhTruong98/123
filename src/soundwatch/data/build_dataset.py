@@ -98,6 +98,17 @@ def collect_fsd50k(root: Path, selection: pd.DataFrame, cfg: Config, max_windows
 # quarter to a third of each alert class instead of swamping the original data (docs/vn_siren_finetune.md)
 CUSTOM_MAX_WINDOWS = {"background": 4, "car_horn": 4}
 CUSTOM_MAX_WINDOWS_DEFAULT = 6
+# train-split-only overrides (vn-v2): with 6 windows per clip the 96 VN smoke-alarm clips made up 63% of the
+# train smoke_alarm windows; 2 per clip brings VN to ~36%. val/test keep CUSTOM_MAX_WINDOWS, so the
+# evaluation windows do not change.
+CUSTOM_MAX_WINDOWS_TRAIN = {"smoke_alarm": 2}
+
+
+def custom_max_windows(class_key: str, split: str) -> int:
+    """Window cap per custom clip (evenly spaced) for a class in a split."""
+    if split == "train" and class_key in CUSTOM_MAX_WINDOWS_TRAIN:
+        return CUSTOM_MAX_WINDOWS_TRAIN[class_key]
+    return CUSTOM_MAX_WINDOWS.get(class_key, CUSTOM_MAX_WINDOWS_DEFAULT)
 
 
 def collect_custom(manifest: Path, cfg: Config, skip_low: bool = True) -> list[ClipRecord]:
@@ -117,7 +128,7 @@ def collect_custom(manifest: Path, cfg: Config, skip_low: bool = True) -> list[C
                 str(manifest.parent / r["file"]),
                 label_map.key_to_id(r["class_key"], cfg),
                 r["split"],
-                CUSTOM_MAX_WINDOWS.get(r["class_key"], CUSTOM_MAX_WINDOWS_DEFAULT),
+                custom_max_windows(r["class_key"], r["split"]),
             )
         )
     return out
