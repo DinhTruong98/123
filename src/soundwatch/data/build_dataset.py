@@ -258,8 +258,8 @@ def build(
     records: list[ClipRecord],
     cfg: Config,
     out_dir: Path = paths.WINDOWS,
-    noise_dir: Path = paths.NOISE,
-    events_dir: Path = EVENTS,
+    noise_dir: Path | None = paths.NOISE,
+    events_dir: Path | None = EVENTS,
     workers: int = 4,
     seed: int = 1234,
     bg_cap: float = BG_CAP_FACTOR,
@@ -269,7 +269,7 @@ def build(
     if len(set(ids)) != len(ids):
         raise ValueError("duplicate source_clip ids")
     for d in (noise_dir, events_dir):
-        if d.exists():
+        if d is not None and d.exists():
             shutil.rmtree(d)
     out_dir.mkdir(parents=True, exist_ok=True)
     a = cfg.audio
@@ -280,7 +280,7 @@ def build(
             a.window_samples,
             a.hop_samples,
             label_map.is_alert(r.label, cfg),
-            _save_target(r, cfg, noise_dir, events_dir),
+            _save_target(r, cfg, noise_dir, events_dir) if noise_dir is not None else None,
         )
         for r in records
     ]
@@ -326,6 +326,7 @@ def build(
     for s in SPLITS:
         waves, labs, srcs = per_split[s]
         wave = np.concatenate(waves) if waves else np.zeros((0, a.window_samples), np.float16)
+        waves.clear()  # free the per-clip arrays before the background cap copies `wave`
         label = np.asarray(labs, dtype=np.int16)
         src = np.asarray(srcs, dtype=str)
         per_split[s] = ([], [], [])  # free lists
@@ -393,6 +394,12 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--custom-keep-low", action="store_true", help="keep custom clips with label_confidence=low"
     )
+    parser.add_argument(
+        "--windows-dir",
+        default=None,
+        help="write windows/summary here instead of artifacts/data/windows; the noise bank and event "
+        "clips are then NOT rebuilt (e.g. a 2 s windows build with a config whose audio.window_s is 2)",
+    )
 
 
 def resolve_clock_alarm(mode: str, fsd_records: list[ClipRecord], cfg: Config) -> bool:
@@ -438,13 +445,18 @@ def main(args: argparse.Namespace) -> int:
         f"building dataset from {len(records)} clips ({src}); "
         f"ESC-50 clock_alarm -> {'background' if clock_bg else 'smoke_alarm'}"
     )
-    summary = build(records, cfg, workers=args.workers, seed=args.seed)
+    wdir = Path(args.windows_dir).resolve() if getattr(args, "windows_dir", None) else paths.WINDOWS
+    if wdir == paths.WINDOWS.resolve():
+        summary = build(records, cfg, workers=args.workers, seed=args.seed)
+    else:
+        summary = build(records, cfg, out_dir=wdir, noise_dir=None, events_dir=None, workers=args.workers,
+                        seed=args.seed)
     summary["quick"] = bool(args.quick)
     summary["with_fsd50k"] = bool(args.with_fsd50k)
     summary["clock_alarm"] = "background" if clock_bg else "smoke_alarm"
     summary["custom_manifest"] = str(Path(args.custom_manifest).resolve()) if args.custom_manifest else None
     summary["custom_clips"] = len(custom)
-    with open(paths.WINDOWS / "summary.json", "w", encoding="utf-8") as f:
+    with open(wdir / "summary.json", "w", encoding="utf-8") as f:
         json.dump(summary, f, indent=2)
     missing = [k for k, v in summary["windows"]["test"].items() if v == 0]
     if missing:

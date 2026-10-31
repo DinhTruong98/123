@@ -165,9 +165,13 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
     )
     parser.add_argument("--manifest", default=None, help="custom manifest.csv for the VN siren breakdown")
     parser.add_argument("--out-dir", default=None)
+    parser.add_argument("--windows-dir", default=None,
+                        help="windows build to score (e.g. 2 s windows; use a config with that window_s)")
 
 
 def main(args: argparse.Namespace) -> int:
+    if getattr(args, "windows_dir", None):
+        paths.WINDOWS = Path(args.windows_dir).resolve()
     cfg = load_config(args.config)
     models = [(n, Path(m), Path(s)) for n, m, s in args.model]
     r = evaluate(cfg, models, args.split, Path(args.manifest) if args.manifest else None)

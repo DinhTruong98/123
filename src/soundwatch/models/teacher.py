@@ -27,6 +27,9 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--seed", type=int, default=1234)
     parser.add_argument("--refresh", action="store_true", help="recompute cached YAMNet embeddings")
     parser.add_argument("--threads", type=int, default=None)
+    common.add_data_dir_args(parser)
+    parser.add_argument("--models-dir", default=None,
+                        help="teacher_head.keras / teacher_metrics.json directory (default artifacts/models)")
 
 
 def yamnet_embeddings(split: str, waves: np.ndarray, labels: np.ndarray, refresh: bool = False,
@@ -81,6 +84,9 @@ def train_head(x_tr: np.ndarray, y_tr: np.ndarray, x_va: np.ndarray, y_va: np.nd
 
 
 def main(args: argparse.Namespace) -> int:
+    common.apply_data_dirs(args)
+    if getattr(args, "models_dir", None):
+        paths.MODELS = Path(args.models_dir).resolve()
     cfg = load_config(args.config)
     common.setup_tf(args.threads, seed=args.seed)
     t_start = time.time()

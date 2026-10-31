@@ -31,6 +31,27 @@ def setup_tf(threads: int | None = None, seed: int | None = None) -> None:
         keras.utils.set_random_seed(seed)
 
 
+def add_data_dir_args(parser) -> None:
+    """--windows-dir / --cache-dir: train on another windows build (e.g. 2 s windows from
+    `build-dataset --windows-dir`) with its own feature / teacher caches."""
+    parser.add_argument("--windows-dir", default=None,
+                        help=f"windows/{{train,val,test}}.npz directory (default {paths.WINDOWS})")
+    parser.add_argument("--cache-dir", default=None,
+                        help=f"feature / teacher cache directory (default {paths.CACHE})")
+
+
+def apply_data_dirs(args) -> None:
+    """Point paths.WINDOWS / paths.CACHE at the --windows-dir / --cache-dir of `args` (if set).
+    The YAMNet weights stay in the default cache."""
+    from soundwatch.models import yamnet_loader  # noqa: F401 - binds YAMNET_DIR to the default cache
+
+    if getattr(args, "windows_dir", None):
+        paths.WINDOWS = Path(args.windows_dir).resolve()
+    if getattr(args, "cache_dir", None):
+        paths.CACHE = Path(args.cache_dir).resolve()
+        paths.CACHE.mkdir(parents=True, exist_ok=True)
+
+
 def load_split(split: str, windows_dir: Path | None = None) -> dict[str, np.ndarray]:
     """Load artifacts/data/windows/<split>.npz -> {"wave", "label", "source_clip"} (wave kept float16)."""
     p = (windows_dir or paths.WINDOWS) / f"{split}.npz"

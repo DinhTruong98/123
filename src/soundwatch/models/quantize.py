@@ -45,6 +45,7 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
                         "present, else config model.stats_path)")
     parser.add_argument("--out-dir", default=None,
                         help="write outputs here instead of artifacts/models (implies no default paths)")
+    common.add_data_dir_args(parser)
     parser.add_argument("--calibrate", action="store_true",
                         help="fit temperature on val and fold it into the last Dense layer")
 
@@ -167,6 +168,7 @@ def main(args: argparse.Namespace) -> int:
     from soundwatch.eval import calibration as cal
     from soundwatch.models.dscnn import count_macs, count_params, with_output
 
+    common.apply_data_dirs(args)
     cfg = load_config(args.config)
     common.setup_tf(args.threads, seed=args.seed)
     src = paths.MODELS / f"student_{args.tag}.keras"

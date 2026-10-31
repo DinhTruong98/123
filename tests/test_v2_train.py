@@ -164,3 +164,32 @@ def test_fold_temperature_into_dense():
     t = np.linspace(0.5, 3.0, 8)
     cal.fold_temperature(m, t)
     np.testing.assert_allclose(np.asarray(m(x, training=False)), z / t, rtol=1e-4, atol=1e-5)
+
+
+def test_build_dataset_windows_dir_keeps_noise(tmp_path, monkeypatch):
+    from soundwatch.config import load_config
+    from soundwatch.data import build_dataset as bd
+
+    cfg = load_config()
+    wav = tmp_path / "a.wav"
+    import soundfile as sf
+
+    sf.write(wav, 0.1 * np.random.default_rng(0).standard_normal(48000), 16000)
+    recs = [bd.ClipRecord("x/a.wav", str(wav), 0, "train"), bd.ClipRecord("x/b.wav", str(wav), 7, "val")]
+    noise = tmp_path / "noise"
+    (noise / "keep").mkdir(parents=True)
+    out = tmp_path / "w2"
+    bd.build(recs, cfg, out_dir=out, noise_dir=None, events_dir=None, workers=1, verbose=False)
+    assert (out / "train.npz").exists() and (noise / "keep").exists()
+
+
+def test_data_dirs_override(tmp_path, monkeypatch):
+    from soundwatch.models import common
+
+    monkeypatch.setattr(paths, "WINDOWS", paths.WINDOWS)
+    monkeypatch.setattr(paths, "CACHE", paths.CACHE)
+    p = argparse.ArgumentParser()
+    common.add_data_dir_args(p)
+    common.apply_data_dirs(p.parse_args(["--windows-dir", str(tmp_path / "w"), "--cache-dir",
+                                         str(tmp_path / "c")]))
+    assert paths.WINDOWS == (tmp_path / "w").resolve() and (tmp_path / "c").is_dir()

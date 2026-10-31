@@ -86,6 +86,7 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--threads", type=int, default=None)
     parser.add_argument("--quick", action="store_true",
                         help="smoke test: <=2000 train windows, 1 epoch, no caches, outputs tagged *_quick")
+    common.add_data_dir_args(parser)
     parser.add_argument("--frontend", choices=["logmel", "pcen"], default="logmel",
                         help="feature front-end (pcen: fixed PCEN, see audio/features.py)")
     parser.add_argument("--output", choices=["softmax", "sigmoid"], default="softmax",
@@ -363,6 +364,7 @@ def run(args: argparse.Namespace) -> dict:
     from soundwatch.models.distill import bce_loss, kd_loss, pack_targets
     from soundwatch.models.dscnn import count_macs, count_params
 
+    common.apply_data_dirs(args)
     cfg = load_config(args.config)
     quick = bool(args.quick)
     tag = args.tag or ("distill" if args.distill else "nodistill")
@@ -370,7 +372,7 @@ def run(args: argparse.Namespace) -> dict:
         tag += "_quick"
     output = getattr(args, "output", "softmax")
     frontend = getattr(args, "frontend", "logmel")
-    default_meta = output == "softmax" and frontend == "logmel"
+    default_meta = output == "softmax" and frontend == "logmel" and abs(cfg.audio.window_s - 1.0) < 1e-9
     meta = None if default_meta else ModelMeta.make(frontend, output, cfg.audio.window_s)
     if getattr(args, "p_mix", 0.0) > 0 and output != "sigmoid":
         raise ValueError("--p-mix needs --output sigmoid (mixed samples have several labels)")
