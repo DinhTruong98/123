@@ -193,3 +193,13 @@ def test_data_dirs_override(tmp_path, monkeypatch):
     common.apply_data_dirs(p.parse_args(["--windows-dir", str(tmp_path / "w"), "--cache-dir",
                                          str(tmp_path / "c")]))
     assert paths.WINDOWS == (tmp_path / "w").resolve() and (tmp_path / "c").is_dir()
+
+
+def test_gather_kept_equals_concat_index():
+    from soundwatch.data.build_dataset import _gather_kept
+
+    rng = np.random.default_rng(0)
+    pieces = [rng.normal(size=(n, 5)).astype(np.float16) for n in (3, 0, 4, 1, 6)]
+    full = np.concatenate(pieces)
+    keep = np.sort(rng.choice(len(full), 9, replace=False))
+    np.testing.assert_array_equal(_gather_kept(list(pieces), keep, 5), full[keep])

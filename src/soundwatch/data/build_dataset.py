@@ -243,6 +243,24 @@ def _save_target(rec: ClipRecord, cfg: Config, noise_dir: Path, events_dir: Path
     return None
 
 
+def _gather_kept(pieces: list[np.ndarray], keep: np.ndarray, n_samples: int) -> np.ndarray:
+    """``np.concatenate(pieces)[keep]`` for sorted ``keep``, freeing each piece once copied (the
+    pieces list is emptied), so peak memory is about the pieces plus nothing more."""
+    out = np.empty((len(keep), n_samples), np.float16)
+    off = pos = 0
+    for i in range(len(pieces)):
+        p = pieces[i]
+        n = len(p)
+        lo, hi = np.searchsorted(keep, [off, off + n])
+        sel = keep[lo:hi] - off
+        out[pos:pos + len(sel)] = p[sel]
+        pos += len(sel)
+        off += n
+        pieces[i] = None
+    pieces.clear()
+    return out
+
+
 def cap_background(labels: np.ndarray, bg_id: int, factor: float, rng: np.random.Generator) -> np.ndarray:
     """Indices to keep so that #background <= factor * largest non-background class."""
     others = np.bincount(labels[labels != bg_id], minlength=bg_id)
@@ -325,8 +343,6 @@ def build(
     }
     for s in SPLITS:
         waves, labs, srcs = per_split[s]
-        wave = np.concatenate(waves) if waves else np.zeros((0, a.window_samples), np.float16)
-        waves.clear()  # free the per-clip arrays before the background cap copies `wave`
         label = np.asarray(labs, dtype=np.int16)
         src = np.asarray(srcs, dtype=str)
         per_split[s] = ([], [], [])  # free lists
@@ -334,7 +350,8 @@ def build(
             zip(cfg.class_keys, np.bincount(label, minlength=cfg.num_classes).tolist(), strict=True)
         )
         keep = cap_background(label, cfg.background_id, bg_cap, rng)
-        wave, label, src = wave[keep], label[keep], src[keep]
+        wave = _gather_kept(waves, keep, a.window_samples)  # == concatenate(waves)[keep], lower peak memory
+        label, src = label[keep], src[keep]
         np.savez(out_dir / f"{s}.npz", wave=wave, label=label, source_clip=src)
         del wave
         summary["windows"][s] = dict(
