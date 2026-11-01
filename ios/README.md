@@ -6,6 +6,28 @@ PostProcessor (k-of-n, cooldown, DANGER lặp tới khi xác nhận; DANGER báo
 `danger_fast_threshold`). Cảnh báo bằng icon, nhãn tiếng Việt, màu theo mức, rung
 Core Haptics. Khi khoá màn hình thì gửi notification.
 
+**Nhánh `ios-v3`** (`ios-dual-model` + merge `origin/main`): model chính A là **v3**. Đã làm phần Swift ở mục 11 của
+`docs/vn_v3_results.md`:
+- nhãn / icon theo chế độ (quy tắc 9b): `AlertEvent.label` / `.sfSymbol` lấy theo chế độ lúc báo, nên lịch sử giữ đúng nhãn
+  cũ sau khi đổi chế độ. Trong nhà: "Còi hú báo động / báo cháy" (icon lửa), "Chuông báo cháy / báo động"; Ngoài đường:
+  "Xe ưu tiên (cấp cứu / cảnh sát / cứu hoả)", "Chuông báo động". Nhãn dài cho phép 3 dòng;
+- `auto` bản v3: bằng chứng âm thanh (EMA của tổng có trọng số các xác suất: car_horn +1, baby_cry / door_knock /
+  water_running −1) cùng mức âm (trung vị RMS), `min_s` 10 s, `min_dwell_s` 60 s, mức âm có quyền phủ quyết;
+- tab Nghe có nút Trong nhà / Ngoài đường / Tự động cho v3 và dòng "Đang chạy: Ngoài đường (tự động)". Cài đặt bật/tắt
+  lớp dùng nhãn gốc ("Còi hú", "Chuông / bíp báo động");
+- notification, lịch sử, log phiên dùng nhãn hiển thị; rung và màu theo mức hiệu lực của chế độ (Ngoài đường: car_horn là
+  INFO, rung một lần);
+- tab So sánh: A = v3, B = VN v2, mỗi bên hiện nhãn theo config của chính nó (vn2 "Còi cấp cứu" / "Báo cháy" khác nghĩa
+  v3 "Còi hú" / "Chuông / bíp báo động"); log phiên ghi cả `class` và `label`.
+- Quy tắc 10 (`flip_guard_hops`) không bật trong config v3 nên không port.
+
+Kết quả (2026-11-01): 44/44 XCTest. Trên iPhone 14 (Release, iOS 27.0.1), "Phát file demo": v3 báo smoke_alarm 3.0 s,
+car_horn 12.0 s, siren 21.0 s, baby_cry 31.0 s, door_knock 38.5 s, water_running 55.5 s, đúng `demo_expected_events.json`
+(các lần nhắc car_horn / siren cũng đúng giờ); feature 0.57 ms + v3 2.55 ms + vn2 2.49 ms = 5.62 ms / hop trung bình, tối đa
+9.29 ms. Notification khi app chạy nền mang nhãn của chế độ:
+
+![](docs/screenshots/9-notification-v3.png)
+
 ## Cấu trúc
 
 ```
@@ -134,6 +156,7 @@ silicon (LiteRT không có lát x86_64 cho simulator).
 | `EndToEndTests` | Engine offline trên `demo_scenario.wav`: sự kiện không lặp khớp `demo_expected_events.json` (cùng lớp, cùng hop: lệch ≤ 0.25 s); tắt luật 4b thì test này fail |
 | `ThemeTests` | mọi SF Symbol dùng trong UI tồn tại; chữ trên nền cảnh báo đạt tương phản ≥ 4.5:1 |
 | `PostProcessorModesTests` | port `tests/test_v2_frontend_modes.py`: không có `modes` thì giống hệt cũ; `indoor` giống hệt (chỉ thêm mức hiệu lực); `street` tắt dog_bark/baby_cry, hạ car_horn xuống INFO (không luật hai tầng, không lặp); đổi chế độ xoá occurrence; `auto` theo trung vị RMS; bản sửa quy tắc 4b (ngưỡng nhanh < ngưỡng lớp vẫn giữ occurrence); `AlertEvent.level` |
+| `PostProcessorV3Tests` | port `tests/test_v3.py`: config v3 đọc được (nhãn, icon, khoá `auto` mới, mặc định như Python); cảnh báo mang nhãn/icon của chế độ, đổi chế độ thì cảnh báo sau đổi, cảnh báo cũ giữ nguyên; không ghi đè thì sự kiện giống hệt; `auto` theo bằng chứng âm thanh có hysteresis; `min_dwell_s` và mức âm phủ quyết |
 | `DualModelTests` | B (VN v2): config có `modes`, classifier golden khớp Python ±1/256, demo khớp `demo_expected_events_vn2.json` (lệch ≤ 0.25 s); engine 2 model cho mỗi model đúng các sự kiện như khi chạy riêng; lệnh đổi chế độ cho B |
 
 Kết quả (Xcode 27.1, simulator iOS 27.1, Mac Apple silicon):
@@ -255,7 +278,7 @@ Trong Xcode: Edit Scheme → Run → Arguments. Với `devicectl` phải đặt 
 
 ## So sánh 2 model ngoài đời
 
-Nhánh `ios-dual-model`: app chạy **song song** model A "Hiện tại" (`student_int8.tflite`, `soundwatch_config.json`, không
+Nhánh `ios-dual-model` (trên `ios-v3`: A là **v3**, B là VN v2, model rung mặc định là A): app chạy **song song** model A "Hiện tại" (`student_int8.tflite`, `soundwatch_config.json`, không
 đổi) và model B "VN v2" (`student_int8_vn2.tflite`, `soundwatch_config_vn2.json`, sinh bằng
 `uv run python ios/scripts/export_ios_assets.py --suffix vn2 --config config/soundwatch_vn_v2.yaml --model
 assets/models/vn_v2/student_int8.tflite --stats assets/models/vn_v2/feature_stats.json`) trên cùng micro.
