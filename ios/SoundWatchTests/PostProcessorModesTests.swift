@@ -12,7 +12,13 @@ final class PostProcessorModesTests: XCTestCase {
     var cfg: SoundWatchConfig!
 
     override func setUpWithError() throws {
-        cfg = try TestSupport.config()  // deployed model A config (no modes)
+        // classes of the app model; post-processing as config/soundwatch.yaml, which the Python tests use
+        var c = try TestSupport.config()
+        c.postprocess.smoothN = 1
+        c.postprocess.kOfN = [2, 2]
+        c.postprocess.dangerFastThreshold = 255.0 / 256
+        c.modes = nil
+        cfg = c
     }
 
     func modes(default d: String = "indoor") throws -> SoundWatchConfig.Modes {

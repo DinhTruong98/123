@@ -7,7 +7,7 @@ import XCTest
 final class DualModelTests: XCTestCase {
     func testConfigBHasModesAndOwnPostprocess() throws {
         let a = try TestSupport.config(), b = try TestSupport.configB()
-        XCTAssertNil(a.modes)
+        XCTAssertEqual(a.modes?.default, "indoor")  // A = v3
         XCTAssertEqual(b.modes?.default, "indoor")
         XCTAssertEqual(Set(b.modes!.names), ["indoor", "street", "auto"])
         XCTAssertEqual(b.modes!.spec("street").disable, ["dog_bark", "baby_cry"])
@@ -76,7 +76,7 @@ final class DualModelTests: XCTestCase {
         print(String(format: "DUAL feature %.3f ms, infer A %.3f ms, infer B %.3f ms (mean of %d hops), wall %.2f s",
                      mean(inferred.map(\.featureMs)), mean(inferred.map { $0.models[0].inferMs }),
                      mean(inferred.map { $0.models[1].inferMs }), inferred.count, wall))
-        XCTAssertTrue(r.status.allSatisfy { $0.models[1].mode == "indoor" && $0.models[0].mode == nil })
+        XCTAssertTrue(r.status.allSatisfy { $0.models[1].mode == "indoor" && $0.models[0].mode == "indoor" })
     }
 
     func testDualEngineModeCommand() throws {

@@ -50,6 +50,7 @@ final class EndToEndTests: XCTestCase {
         for (s, p) in zip(fresh, expFresh) {
             XCTAssertEqual(keys[s.classId], p["class_key"] as! String)
             XCTAssertEqual(s.tAudio, (p["t_audio"] as! NSNumber).doubleValue, accuracy: 0.25)  // hops are 0.5 s apart
+            XCTAssertEqual(s.label, p["label"] as? String)  // mode display override (v3 indoor), else nil
         }
     }
 }

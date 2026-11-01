@@ -8,6 +8,10 @@ struct AlertEvent: Equatable {
     /// Effective level when context modes are configured (e.g. car_horn -> INFO in `street`);
     /// nil = the class's configured level (always nil without modes).
     var level: Level? = nil
+    /// Label / SF Symbol of the active mode when it overrides the class's own (rule 9b), taken at the
+    /// time of the alert; nil = the class's own.
+    var label: String? = nil
+    var sfSymbol: String? = nil
 }
 
 /// Port of src/soundwatch/engine/postprocess.py (see its docstring for the rules):
@@ -18,7 +22,9 @@ struct AlertEvent: Equatable {
 /// every other condition of a fresh alert still applies, and a fast-path hit also keeps the
 /// occurrence alive (clear timer of rule 5). Compared in Float, like numpy float32.
 /// Rule 9 (optional `modes`): the active context mode switches classes off and overrides levels;
-/// 'auto' follows the running median of the per-hop RMS. Without modes nothing changes.
+/// 'auto' follows the running median of the per-hop RMS and/or (vn-v3) an EMA of street evidence from
+/// the class probabilities, with a minimum dwell between switches. Rule 9b: a mode may override a
+/// class's label / icon; events carry them. Without modes (or overrides) nothing changes.
 final class PostProcessor {
     static let autoMode = "auto", autoLowMode = "indoor", autoHighMode = "street"
 
@@ -51,6 +57,11 @@ final class PostProcessor {
     private let keys: [String]
     private var rms: [(t: Double, v: Double)] = []
     private var autoT0: Double?
+    private(set) var streetScore = 0.0
+    private var scoreT: Double?
+    private var lastSwitchT: Double?
+    private(set) var effectiveLabel: [String?]
+    private(set) var effectiveSymbol: [String?]
     /// Active named mode (nil = no modes configured) and the requested one ('auto' or a named mode).
     private(set) var mode: String?
     private(set) var modeSelector: String?
@@ -75,6 +86,8 @@ final class PostProcessor {
         enabled = classes.map(\.enabled)
         modeOff = Array(repeating: false, count: classes.count)
         keys = classes.map(\.key)
+        effectiveLabel = Array(repeating: nil, count: classes.count)
+        effectiveSymbol = Array(repeating: nil, count: classes.count)
         hist = Array(repeating: Array(repeating: 0, count: numClasses), count: smoothN)
         hits = Array(repeating: Array(repeating: false, count: numClasses), count: n)
         smoothed = Array(repeating: 0, count: numClasses)
@@ -101,6 +114,9 @@ final class PostProcessor {
         peak = Array(repeating: 0, count: numClasses)
         rms.removeAll()
         autoT0 = nil
+        streetScore = 0
+        scoreT = nil
+        lastSwitchT = nil
     }
 
     func ack(_ c: Int) {
@@ -121,6 +137,10 @@ final class PostProcessor {
     func isActiveClass(_ c: Int) -> Bool { enabled[c] && !modeOff[c] }
     func level(_ c: Int) -> Level { effectiveLevel[c] }
     func isPending(_ c: Int) -> Bool { pending[c] }
+    /// Effective label and SF Symbol of a class in the active mode (rule 9b).
+    func display(_ c: Int) -> (label: String, sfSymbol: String) {
+        (effectiveLabel[c] ?? classes[c].labelVi, effectiveSymbol[c] ?? classes[c].sfSymbol)
+    }
 
     // MARK: modes (rule 9)
 
@@ -132,6 +152,8 @@ final class PostProcessor {
         if name == Self.autoMode {
             rms.removeAll()
             autoT0 = nil
+            streetScore = 0
+            scoreT = nil
             applyMode(mode ?? Self.autoLowMode, tAudio: tAudio, reason: "\(reason): auto")
         } else {
             applyMode(name, tAudio: tAudio, reason: reason)
@@ -156,23 +178,53 @@ final class PostProcessor {
         }
         modeOff = off
         effectiveLevel = level
+        effectiveLabel = keys.map { spec.label[$0] }
+        effectiveSymbol = keys.map { spec.sfSymbol[$0] }
         isDanger = danger
         mode = name
         modeLog.append((tAudio ?? .nan, old, name, reason))
     }
 
-    private func autoUpdate(t: Double, rmsDbfs: Double) {
+    /// PostProcessor._auto_update (vn-v3): level and/or sound evidence, min_s, min_dwell_s.
+    private func autoUpdate(t: Double, rmsDbfs: Double?, probs: [Float]) {
         guard let a = modes?.auto else { return }
-        rms.append((t, rmsDbfs))
-        while let first = rms.first, first.t <= t - a.windowS { rms.removeFirst() }
         if autoT0 == nil { autoT0 = t }
-        if t - autoT0! + 1e-9 < min(a.minS, a.windowS) { return }
-        let med = Self.median(rms.map(\.v))
-        let h = a.hysteresisDb / 2
-        if mode != Self.autoHighMode && med > a.streetAboveDbfs + h {
-            applyMode(Self.autoHighMode, tAudio: t, reason: String(format: "auto: median RMS %.1f dBFS", med))
-        } else if mode != Self.autoLowMode && med < a.streetAboveDbfs - h {
-            applyMode(Self.autoLowMode, tAudio: t, reason: String(format: "auto: median RMS %.1f dBFS", med))
+        var loud = false, quiet = false
+        var med = Double.nan
+        if a.usesRms, let r = rmsDbfs {
+            rms.append((t, r))
+            while let first = rms.first, first.t <= t - a.windowS { rms.removeFirst() }
+        }
+        if let above = a.streetAboveDbfs, !rms.isEmpty {
+            med = Self.median(rms.map(\.v))
+            let h = a.hysteresisDb / 2
+            loud = med > above + h
+            quiet = med < above - h
+        }
+        var streetEv = false, indoorEv = false
+        if a.usesSound {
+            let x = a.streetEvidence.keys.sorted().reduce(0.0) { acc, k in
+                acc + a.streetEvidence[k]! * Double(keys.firstIndex(of: k).map { probs[$0] } ?? 0)
+            }
+            let alpha = scoreT == nil ? 1.0 : 1 - exp(-max(0, t - scoreT!) / a.evidenceWindowS)
+            streetScore += alpha * (x - streetScore)
+            scoreT = t
+            streetEv = streetScore >= a.streetScoreAbove
+            indoorEv = streetScore < a.streetScoreAbove - a.scoreHysteresis
+        }
+        if t - autoT0! + 1e-9 < (a.usesSound ? a.minS : min(a.minS, a.windowS)) { return }
+        if let last = lastSwitchT, t - last + 1e-9 < a.minDwellS { return }
+        // with both kinds of evidence the level can veto: no street when quiet, no indoor when loud
+        let toStreet = a.usesSound ? streetEv && !(a.usesRms && quiet) : loud
+        let toIndoor = a.usesSound ? indoorEv && !(a.usesRms && loud) : quiet
+        var why = a.usesRms ? String(format: "median RMS %.1f dBFS", med) : ""
+        if a.usesSound { why += (a.usesRms ? ", " : "") + String(format: "street score %.3f", streetScore) }
+        if mode != Self.autoHighMode && toStreet {
+            applyMode(Self.autoHighMode, tAudio: t, reason: "auto: \(why)")
+            lastSwitchT = t
+        } else if mode != Self.autoLowMode && toIndoor {
+            applyMode(Self.autoLowMode, tAudio: t, reason: "auto: \(why)")
+            lastSwitchT = t
         }
     }
 
@@ -188,7 +240,9 @@ final class PostProcessor {
     /// `rmsDbfs` (level of the analysed window) is only used by the 'auto' mode.
     func update(_ probs: [Float], tAudio t: Double, rmsDbfs: Double? = nil) -> [AlertEvent] {
         precondition(probs.count == numClasses)
-        if modeSelector == Self.autoMode, let r = rmsDbfs { autoUpdate(t: t, rmsDbfs: r) }
+        if modeSelector == Self.autoMode, rmsDbfs != nil || modes?.auto?.usesSound == true {
+            autoUpdate(t: t, rmsDbfs: rmsDbfs, probs: probs)
+        }
 
         hist[histPos] = probs
         histPos = (histPos + 1) % smoothN
@@ -234,13 +288,15 @@ final class PostProcessor {
             let level: Level? = modes == nil ? nil : effectiveLevel[c]
             if danger && active[c] {
                 if pending[c] && since >= cfg.dangerRepeatS {
-                    events.append(AlertEvent(classId: c, confidence: peak[c], tAudio: t, repeatAlert: true, level: level))
+                    events.append(AlertEvent(classId: c, confidence: peak[c], tAudio: t, repeatAlert: true, level: level,
+                                             label: effectiveLabel[c], sfSymbol: effectiveSymbol[c]))
                     lastEmit[c] = t
                 }
                 continue
             }
             if triggered {
-                events.append(AlertEvent(classId: c, confidence: conf, tAudio: t, repeatAlert: false, level: level))
+                events.append(AlertEvent(classId: c, confidence: conf, tAudio: t, repeatAlert: false, level: level,
+                                         label: effectiveLabel[c], sfSymbol: effectiveSymbol[c]))
                 lastEmit[c] = t
                 if danger {
                     active[c] = true

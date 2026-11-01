@@ -30,23 +30,60 @@ struct SoundWatchConfig: Decodable {
         struct Spec: Decodable {
             var disable: [String] = []
             var level: [String: Int] = [:]
+            // vn-v3 display overrides (rule 9b): class key -> label / PNG icon / SF Symbol
+            var label: [String: String] = [:]
+            var icon: [String: String] = [:]
+            var sfSymbol: [String: String] = [:]
 
             init() {}
 
-            init(from decoder: Decoder) throws {  // both keys optional, like the YAML
+            init(from decoder: Decoder) throws {  // every key optional, like the YAML
                 let c = try decoder.container(keyedBy: CodingKeys.self)
                 disable = try c.decodeIfPresent([String].self, forKey: .disable) ?? []
                 level = try c.decodeIfPresent([String: Int].self, forKey: .level) ?? [:]
+                label = try c.decodeIfPresent([String: String].self, forKey: .label) ?? [:]
+                icon = try c.decodeIfPresent([String: String].self, forKey: .icon) ?? [:]
+                sfSymbol = try c.decodeIfPresent([String: String].self, forKey: .sfSymbol) ?? [:]
             }
 
-            private enum CodingKeys: String, CodingKey { case disable, level }
+            private enum CodingKeys: String, CodingKey { case disable, level, label, icon, sfSymbol }
         }
 
+        /// config.AutoModeConfig: level evidence (median RMS, vn-v2; off when `streetAboveDbfs` is nil)
+        /// and/or sound evidence (vn-v3: EMA of a weighted sum of the class probabilities).
         struct Auto: Decodable {
-            let streetAboveDbfs: Double
-            let windowS: Double
-            let hysteresisDb: Double
-            let minS: Double
+            var streetAboveDbfs: Double? = -35
+            var windowS: Double = 30
+            var hysteresisDb: Double = 0
+            var minS: Double = 5
+            var streetEvidence: [String: Double] = [:]
+            var streetScoreAbove: Double = 0
+            var scoreHysteresis: Double = 0
+            var evidenceWindowS: Double = 60
+            var minDwellS: Double = 0
+
+            var usesRms: Bool { streetAboveDbfs != nil }
+            var usesSound: Bool { !streetEvidence.isEmpty }
+
+            init() {}
+
+            init(from decoder: Decoder) throws {  // defaults as in Python
+                let c = try decoder.container(keyedBy: CodingKeys.self)
+                if c.contains(.streetAboveDbfs) { streetAboveDbfs = try c.decodeIfPresent(Double.self, forKey: .streetAboveDbfs) }
+                windowS = try c.decodeIfPresent(Double.self, forKey: .windowS) ?? windowS
+                hysteresisDb = try c.decodeIfPresent(Double.self, forKey: .hysteresisDb) ?? hysteresisDb
+                minS = try c.decodeIfPresent(Double.self, forKey: .minS) ?? minS
+                streetEvidence = try c.decodeIfPresent([String: Double].self, forKey: .streetEvidence) ?? [:]
+                streetScoreAbove = try c.decodeIfPresent(Double.self, forKey: .streetScoreAbove) ?? streetScoreAbove
+                scoreHysteresis = try c.decodeIfPresent(Double.self, forKey: .scoreHysteresis) ?? scoreHysteresis
+                evidenceWindowS = try c.decodeIfPresent(Double.self, forKey: .evidenceWindowS) ?? evidenceWindowS
+                minDwellS = try c.decodeIfPresent(Double.self, forKey: .minDwellS) ?? minDwellS
+            }
+
+            private enum CodingKeys: String, CodingKey {
+                case streetAboveDbfs, windowS, hysteresisDb, minS, streetEvidence, streetScoreAbove, scoreHysteresis,
+                     evidenceWindowS, minDwellS
+            }
         }
 
         let `default`: String
