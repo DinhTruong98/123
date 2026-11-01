@@ -16,7 +16,11 @@ struct CompareView: View {
                     HStack(alignment: .top, spacing: 12) {
                         ForEach(state.models.indices, id: \.self) { m in MiniFace(model: m) }
                     }
-                    if state.models.count > 1 { ModePicker() }
+                    ForEach(state.models.indices, id: \.self) { m in
+                        if state.models[m].config.modes != nil {
+                            ModePicker(model: m, title: "Chế độ của \(state.models[m].short) · \(state.models[m].name)")
+                        }
+                    }
                     TruthButton(flash: $truthFlash)
                     if let f = truthFlash {
                         Label("Đã ghi: \(f)", systemImage: "checkmark.circle.fill")
@@ -90,7 +94,7 @@ private struct MiniFace: View {
                     VStack(spacing: 4) {
                         Image(systemName: cls.sfSymbol).font(.system(size: 34, weight: .bold))
                         Text(cls.labelVi).font(.headline).multilineTextAlignment(.center)
-                            .minimumScaleFactor(0.6).lineLimit(2)
+                            .minimumScaleFactor(0.5).lineLimit(3)
                         Text("\(cls.level.name) · \(Int((a.confidence * 100).rounded()))%")
                             .font(.caption.weight(.medium))
                         Text(a.date, format: .dateTime.hour().minute().second()).font(.caption2.monospacedDigit())
@@ -133,20 +137,23 @@ func modeName(_ m: String) -> String {
     }
 }
 
-private struct ModePicker: View {
+/// Trong nhà / Ngoài đường / Tự động for one model; shows the running mode while on Tự động.
+struct ModePicker: View {
     @EnvironmentObject var state: AppState
+    let model: Int
+    let title: String
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text("Chế độ của B").font(.subheadline.weight(.semibold))
-            Picker("Chế độ của B", selection: $state.modeB) {
+            Text(title).font(.subheadline.weight(.semibold))
+            Picker(title, selection: state.modeBinding(model)) {
                 Text("Trong nhà").tag("indoor")
                 Text("Ngoài đường").tag("street")
                 Text("Tự động").tag("auto")
             }
             .pickerStyle(.segmented)
-            if state.modeB == "auto", let m = state.activeMode(1) {
-                Text("Đang chạy: \(modeName(m))").font(.caption).foregroundStyle(.secondary)
+            if let d = state.modeDescription(model) {
+                Text("Đang chạy: \(d)").font(.caption).foregroundStyle(.secondary)
             }
         }
     }

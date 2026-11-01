@@ -58,6 +58,9 @@ struct ListenView: View {
                     if let err = state.errorMessage {
                         Notice(icon: "exclamationmark.octagon.fill", text: err)
                     }
+                    if state.models[0].config.modes != nil {
+                        ModePicker(model: 0, title: "Chế độ")
+                    }
                     RecentAlerts()
                     if state.showDebug { DebugPanel() }
                 }
@@ -237,7 +240,7 @@ private struct AlertFace: View {
                         .font(.system(.largeTitle, design: .rounded, weight: .heavy))
                         .multilineTextAlignment(.center)
                         .minimumScaleFactor(0.5)
-                        .lineLimit(2)
+                        .lineLimit(3)
                     Label(cls.level.name, systemImage: cls.level.symbol)
                         .font(.headline)
                     Text("\(Int((alert.confidence * 100).rounded()))% · \(alert.date.formatted(date: .omitted, time: .standard))")
@@ -436,10 +439,14 @@ struct SettingsView: View {
                                 Text("\(state.models[m].short) · \(state.models[m].name)").tag(m)
                             }
                         }
-                        Picker("Chế độ của B", selection: $state.modeB) {
-                            Text("Trong nhà").tag("indoor")
-                            Text("Ngoài đường").tag("street")
-                            Text("Tự động").tag("auto")
+                        ForEach(state.models.indices, id: \.self) { m in
+                            if state.models[m].config.modes != nil {
+                                Picker("Chế độ của \(state.models[m].short) · \(state.models[m].name)", selection: state.modeBinding(m)) {
+                                    Text("Trong nhà").tag("indoor")
+                                    Text("Ngoài đường").tag("street")
+                                    Text("Tự động").tag("auto")
+                                }
+                            }
                         }
                         Toggle("Lưu 10 s audio khi hai model không đồng ý", isOn: $state.saveDisagreementAudio)
                     } header: {

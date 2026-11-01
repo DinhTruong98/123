@@ -13,6 +13,8 @@ struct ShownAlert: Identifiable, Equatable {
     let tAudio: Double
     var model = 0                 // 0 = A (Hiện tại), 1 = B (VN v2)
     var level: Level? = nil       // effective level (context mode); nil = configured level
+    var label: String? = nil      // label / SF Symbol of the mode at alert time (rule 9b); nil = the class's
+    var sfSymbol: String? = nil
     var mode: String? = nil       // context mode of the model when it alerted
     var verdict: Verdict? = nil   // user feedback (Đúng / Sai)
     var disagree = false          // the other model did not report this class within ±2 s
@@ -21,7 +23,7 @@ struct ShownAlert: Identifiable, Equatable {
 /// One model shown in the app.
 struct ModelInfo {
     let short: String  // "A" / "B"
-    let name: String   // "Hiện tại" / "VN v2"
+    let name: String   // "v3" / "VN v2"
     let config: SoundWatchConfig
 }
 
@@ -51,21 +53,15 @@ final class AppState: ObservableObject {
             haptics.continuousLimit = dangerVibrationLimitS > 0 ? Double(dangerVibrationLimitS) : nil
         }
     }
-    /// The one model whose alerts vibrate and post notifications (default B, so no double vibration).
+    /// The one model whose alerts vibrate and post notifications (default A = v3, the app's model).
     @Published var alertModel: Int {
         didSet {
-            UserDefaults.standard.set(alertModel, forKey: "alertModel")
+            UserDefaults.standard.set(alertModel, forKey: "alertModelV3")
             haptics.stopAll()
         }
     }
-    /// Context mode requested for B: indoor / street / auto.
-    @Published var modeB = UserDefaults.standard.string(forKey: "modeB") ?? "indoor" {
-        didSet {
-            UserDefaults.standard.set(modeB, forKey: "modeB")
-            if models.count > 1 { engine?.setMode(modeB, model: 1) }
-            session.log(["type": "mode_request", "model": "B", "mode": modeB])
-        }
-    }
+    /// Context mode requested per model (indoor / street / auto); "" for a model without modes.
+    @Published private(set) var modeSelections: [String] = []
     @Published var saveDisagreementAudio = UserDefaults.standard.bool(forKey: "saveDisagreementAudio") {
         didSet { UserDefaults.standard.set(saveDisagreementAudio, forKey: "saveDisagreementAudio") }
     }
@@ -95,7 +91,7 @@ final class AppState: ObservableObject {
     init() {
         // A missing/corrupt bundled resource is a build error, so crash loudly.
         let cfgA = try! SoundWatchConfig.load(from: Resources.require("soundwatch_config", "json"))
-        var infos = [ModelInfo(short: "A", name: "Hiện tại", config: cfgA)]
+        var infos = [ModelInfo(short: "A", name: "v3", config: cfgA)]
         var pipelines: [ModelPipeline] = []
         var err: String?
         do {
@@ -114,7 +110,7 @@ final class AppState: ObservableObject {
         models = infos
         engine = pipelines.isEmpty ? nil : Engine(pipelines: pipelines)
         errorMessage = err
-        alertModel = min(UserDefaults.standard.object(forKey: "alertModel") as? Int ?? 1, infos.count - 1)
+        alertModel = min(UserDefaults.standard.object(forKey: "alertModelV3") as? Int ?? 0, infos.count - 1)
         currentAlerts = Array(repeating: nil, count: infos.count)
         dismissTasks = Array(repeating: nil, count: infos.count)
         capture = AudioCapture(sampleRate: cfgA.audio.sampleRate)
@@ -122,7 +118,12 @@ final class AppState: ObservableObject {
         let saved = UserDefaults.standard.array(forKey: Self.enabledKey) as? [Bool]
         enabled = saved?.count == cfgA.numClasses ? saved! : cfgA.classes.map(\.enabled)
         for (c, on) in enabled.enumerated() { engine?.setEnabled(c, on) }
-        if infos.count > 1 { engine?.setMode(modeB, model: 1) }
+        modeSelections = infos.map { i in
+            guard let m = i.config.modes else { return "" }
+            let saved = UserDefaults.standard.string(forKey: "mode_\(i.short)") ?? m.default
+            return m.names.contains(saved) ? saved : m.default
+        }
+        for (m, sel) in modeSelections.enumerated() where !sel.isEmpty { engine?.setMode(sel, model: m) }
 
         engine?.onStatus = { [weak self] s in Task { @MainActor in self?.handle(status: s) } }
         engine?.onAlert = { [weak self] m, e in
@@ -152,11 +153,29 @@ final class AppState: ObservableObject {
 
     func class_(_ id: Int) -> SoundClass { config.classes[id] }
 
-    /// The class as shown for an alert: its effective level (context mode) decides colour and wording.
+    /// The class as shown for an alert, from that model's own config (its labels: v3 "Còi hú" is not
+    /// vn2 "Còi cấp cứu"), with the mode's effective level, label and icon at the time of the alert.
     func displayClass(_ a: ShownAlert) -> SoundClass {
-        let c = class_(a.classId)
-        guard let l = a.level, l != c.level else { return c }
-        return c.with(level: l)
+        let c = models[a.model].config.classes[a.classId]
+        return c.with(level: a.level ?? c.level, label: a.label, sfSymbol: a.sfSymbol)
+    }
+
+    func setMode(_ name: String, model m: Int) {
+        guard m < modeSelections.count, models[m].config.modes?.names.contains(name) == true else { return }
+        modeSelections[m] = name
+        UserDefaults.standard.set(name, forKey: "mode_\(models[m].short)")
+        engine?.setMode(name, model: m)
+        session.log(["type": "mode_request", "model": models[m].short, "mode": name])
+    }
+
+    func modeBinding(_ m: Int) -> Binding<String> {
+        Binding(get: { [weak self] in self?.modeSelections[m] ?? "" }, set: { [weak self] in self?.setMode($0, model: m) })
+    }
+
+    /// "Ngoài đường (tự động)" etc.
+    func modeDescription(_ m: Int) -> String? {
+        guard let active = activeMode(m) ?? (modeSelections[m].isEmpty ? nil : modeSelections[m]) else { return nil }
+        return modeName(active) + (modeSelections[m] == PostProcessor.autoMode ? " (tự động)" : "")
     }
 
     /// A's current alert (main "Nghe" face, unchanged single-model view).
@@ -288,19 +307,20 @@ final class AppState: ObservableObject {
         print(String(format: "SW_ALERT model=%@ t_audio=%.1f %@ level=%d conf=%.3f%@", models[m].short, e.tAudio,
                      cls.key, level.rawValue, e.confidence, e.repeatAlert ? " repeat" : ""))
         var shown = ShownAlert(classId: e.classId, confidence: e.confidence, date: date, tAudio: e.tAudio,
-                               model: m, level: e.level, mode: mode)
+                               model: m, level: e.level, label: e.label, sfSymbol: e.sfSymbol, mode: mode)
         if !e.repeatAlert {
             history.insert(shown, at: 0)
             if history.count > 2 * config.ui.historyLen { history.removeLast(history.count - 2 * config.ui.historyLen) }
             if sessionActive {
                 sessionAlerts.append(shown)
                 session.log(["type": "alert", "id": shown.id.uuidString, "model": models[m].short,
-                             "class": cls.key, "level": level.rawValue, "confidence": Double(e.confidence),
+                             "class": cls.key, "label": displayClass(shown).labelVi,
+                             "level": level.rawValue, "confidence": Double(e.confidence),
                              "t_audio": e.tAudio, "mode": mode ?? "", "source": source == .demo ? "demo" : "mic"])
             }
             if models.count > 1 { checkAgreement(shown) }
         }
-        if m == alertModel { vibrateAndNotify(e, level: level, date: date) }
+        if m == alertModel { vibrateAndNotify(e, shown: displayClass(shown), date: date) }
         // A pending DANGER alert is not covered by a lower-level one.
         if let cur = currentAlerts[m], effectiveLevel(cur) == .danger, level < .danger { return }
         // a repeat only brings an alert back when the face is idle (the newest alert stays in front)
@@ -311,8 +331,8 @@ final class AppState: ObservableObject {
 
     func effectiveLevel(_ a: ShownAlert) -> Level { a.level ?? models[a.model].config.classes[a.classId].level }
 
-    private func vibrateAndNotify(_ e: AlertEvent, level: Level, date: Date) {
-        let cls = class_(e.classId)
+    private func vibrateAndNotify(_ e: AlertEvent, shown cls: SoundClass, date: Date) {
+        let level = cls.level
         if level == .danger && !e.repeatAlert {
             haptics.startContinuous(classId: e.classId, pattern: cls.vibration)  // until ack / limit
         } else if !(level == .danger && haptics.isVibrationHandled(e.classId)) {
@@ -321,8 +341,8 @@ final class AppState: ObservableObject {
         if !isActive {
             // after the vibration limit, DANGER repeats update the notification silently
             let silent = level == .danger && e.repeatAlert && !haptics.isLooping(e.classId)
-            notifier.post(classId: e.classId, cls: level == cls.level ? cls : cls.with(level: level),
-                          confidence: e.confidence, at: date, repeatAlert: e.repeatAlert, silent: silent)
+            notifier.post(classId: e.classId, cls: cls, confidence: e.confidence, at: date,
+                          repeatAlert: e.repeatAlert, silent: silent)
         }
     }
 
@@ -414,7 +434,8 @@ final class AppState: ObservableObject {
         rmsMinute = nil
         sessionStart = Date()
         sessionActive = true
-        session.log(["type": "settings", "alert_model": models[alertModel].short, "mode_b": modeB,
+        session.log(["type": "settings", "alert_model": models[alertModel].short,
+                     "modes": Dictionary(uniqueKeysWithValues: models.indices.map { (models[$0].short, modeSelections[$0]) }),
                      "save_audio": saveDisagreementAudio])
     }
 
@@ -485,15 +506,17 @@ final class AppState: ObservableObject {
 }
 
 extension SoundClass {
-    /// The same class shown at another level (context mode), with that level's standard colour.
-    func with(level l: Level) -> SoundClass {
-        let color: [Int] = switch l {
+    /// The same class shown at another level (context mode, with that level's standard colour) and/or
+    /// with the mode's label / SF Symbol (rule 9b).
+    func with(level l: Level, label: String? = nil, sfSymbol symbol: String? = nil) -> SoundClass {
+        let standard: [Int] = switch l {
         case .danger: [230, 40, 40]
         case .warn: [255, 140, 0]
         case .info: [40, 140, 255]
         }
-        return SoundClass(key: key, labelVi: labelVi, level: l, color: color, vibration: vibration,
-                          threshold: threshold, cooldownS: cooldownS, enabled: enabled, sfSymbol: sfSymbol)
+        let color = l == level ? self.color : standard
+        return SoundClass(key: key, labelVi: label ?? labelVi, level: l, color: color, vibration: vibration,
+                          threshold: threshold, cooldownS: cooldownS, enabled: enabled, sfSymbol: symbol ?? sfSymbol)
     }
 }
 
