@@ -191,6 +191,20 @@ port nguyên PostProcessor (kể cả luật hai tầng) và đọc tham số t�
 Khi đổi config hoặc model ở phía Python, chạy lại `uv run python ios/scripts/export_ios_assets.py` để cập nhật tài
 nguyên của app. Build, cài bằng Apple ID miễn phí (USB hoặc Wi-Fi) và XCTest: xem [ios/README.md](ios/README.md).
 
+**Model trong app hiện là v3** (`assets/models/vn_v3/`, config `config/soundwatch_vn_v3.yaml`). Đây là model train thêm
+dữ liệu âm thanh Việt Nam, với lớp định nghĩa theo âm thanh: `siren` = "Còi hú" (xe cấp cứu, cảnh sát, cứu hoả, còi hú
+báo cháy), `smoke_alarm` = "Chuông / bíp báo động". Tài nguyên app được sinh bằng:
+
+```bash
+uv run python ios/scripts/export_ios_assets.py --config config/soundwatch_vn_v3.yaml \
+    --model assets/models/vn_v3/student_int8.tflite --stats assets/models/vn_v3/feature_stats.json
+```
+
+Swift hiện chưa đọc khối `modes` (nhãn / icon theo ngữ cảnh Trong nhà / Ngoài đường, chế độ tự động), nên app dùng nhãn
+gốc của config v3. Việc cần làm ở Swift: mục 11 của [docs/vn_v3_results.md](docs/vn_v3_results.md). Phía Python,
+`config/soundwatch.yaml` và `assets/models/student_int8.tflite` vẫn là model ban đầu (giữ để so sánh). Lịch sử các
+model: [VN v1](docs/vn_finetune_results.md), [VN v2](docs/vn_v2_results.md), [v3](docs/vn_v3_results.md).
+
 Đã chạy trên iPhone 12 (Release): feature + suy luận khoảng 4 ms mỗi hop. "Phát file demo" cho 12/12 cảnh báo trùng
 bản Python (6/7 âm, cùng thời điểm).
 

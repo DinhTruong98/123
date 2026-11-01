@@ -8,7 +8,7 @@ import time
 from pathlib import Path
 
 from soundwatch import paths
-from soundwatch.types import AlertEvent, Level, SoundClass
+from soundwatch.types import AlertEvent, Level, SoundClass, event_label
 
 
 def default_log_path() -> Path:
@@ -17,16 +17,19 @@ def default_log_path() -> Path:
 
 def event_to_dict(event: AlertEvent, classes: list[SoundClass] | tuple[SoundClass, ...]) -> dict:
     sc = classes[event.class_id]
-    return {
+    d = {
         "class_id": event.class_id,
         "key": sc.key,
-        "label_vi": sc.label_vi,
+        "label_vi": event_label(event, sc),  # effective label (context-mode override, vn-v3)
         "level": (sc.level if getattr(event, "level", None) is None else Level(event.level)).name,
         "confidence": round(float(event.confidence), 4),
         "t_audio": round(float(event.t_audio), 3),
         "t_wall": float(event.t_wall),
         "repeat": bool(event.repeat),
     }
+    if getattr(event, "icon", None):  # only with a mode icon override, so old logs keep their keys
+        d["icon"] = event.icon
+    return d
 
 
 class EventLogger:

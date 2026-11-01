@@ -189,13 +189,41 @@ def _modes_lines(cfg: Config) -> list[str]:
                + ",\n  ".join(dis) + "};")
     out.append("static const uint8_t kModeLevel[SW_NUM_MODES][SW_NUM_CLASSES] = {\n  "
                + ",\n  ".join(lev) + "};")
+    if any(spec.label or spec.icon for _, spec in m.modes):  # vn-v3 display overrides
+        lab, ico, asc = [], [], []
+        for _, spec in m.modes:
+            lm, im = spec.label_map, spec.icon_map
+            lab.append("{" + ", ".join(c_string(lm.get(c.key, c.label_vi)) for c in cls) + "}")
+            asc.append("{" + ", ".join(c_string(ascii_fold(lm.get(c.key, c.label_vi))) for c in cls) + "}")
+            ico.append("{" + ", ".join(c_string(im.get(c.key, c.icon)) for c in cls) + "}")
+        out.append("// Display per mode (label/icon overrides of config `modes:`, else the class's own)")
+        out.append("static const char* const kModeLabelUtf8[SW_NUM_MODES][SW_NUM_CLASSES] = {\n  "
+                   + ",\n  ".join(lab) + "};")
+        out.append("static const char* const kModeLabelAscii[SW_NUM_MODES][SW_NUM_CLASSES] = {\n  "
+                   + ",\n  ".join(asc) + "};")
+        out.append("static const char* const kModeIconName[SW_NUM_MODES][SW_NUM_CLASSES] = {\n  "
+                   + ",\n  ".join(ico) + "};")
     if m.auto is not None:
         a = m.auto
-        out += ["// auto: street while the running median of the per-hop RMS over the window is above",
-                f"#define SW_AUTO_STREET_ABOVE_DBFS {a.street_above_dbfs:.1f}f",
-                f"#define SW_AUTO_WINDOW_MS   {int(round(a.window_s * 1000))}",
-                f"#define SW_AUTO_HYSTERESIS_DB {a.hysteresis_db:.1f}f",
-                f"#define SW_AUTO_MIN_MS      {int(round(a.min_s * 1000))}"]
+        if a.uses_rms:
+            out += ["// auto: street while the running median of the per-hop RMS over the window is above",
+                    f"#define SW_AUTO_STREET_ABOVE_DBFS {a.street_above_dbfs:.1f}f",
+                    f"#define SW_AUTO_WINDOW_MS   {int(round(a.window_s * 1000))}",
+                    f"#define SW_AUTO_HYSTERESIS_DB {a.hysteresis_db:.1f}f",
+                    f"#define SW_AUTO_MIN_MS      {int(round(a.min_s * 1000))}"]
+        else:
+            out += ["#define SW_AUTO_USE_RMS 0", f"#define SW_AUTO_MIN_MS      {int(round(a.min_s * 1000))}"]
+        if a.uses_sound:  # vn-v3: street evidence from the model (EMA of a weighted sum of probs)
+            w = a.evidence_map
+            out += ["// auto (vn-v3): score += (1-exp(-dt/tau)) * (sum_c kAutoEvidenceWeight[c]*p[c]-score)",
+                    "// street evidence: score >= SCORE_ABOVE; indoor: score < SCORE_ABOVE - SCORE_HYST",
+                    "#define SW_AUTO_USE_SOUND 1",
+                    "static const float kAutoEvidenceWeight[SW_NUM_CLASSES] = {"
+                    + ", ".join(f"{w.get(c.key, 0.0):.4f}f" for c in cls) + "};",
+                    f"#define SW_AUTO_SCORE_ABOVE {a.street_score_above:.4f}f",
+                    f"#define SW_AUTO_SCORE_HYST {a.score_hysteresis:.4f}f",
+                    f"#define SW_AUTO_EVIDENCE_TAU_MS {int(round(a.evidence_window_s * 1000))}",
+                    f"#define SW_AUTO_MIN_DWELL_MS {int(round(a.min_dwell_s * 1000))}"]
     return out + [""]
 
 

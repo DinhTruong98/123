@@ -1,0 +1,350 @@
+{
+ "pools": {
+  "val": {
+   "indoor": 166,
+   "street_vn": 385,
+   "street_orig": 479
+  },
+  "test": {
+   "indoor": 161,
+   "street_vn": 372,
+   "street_orig": 497
+  }
+ },
+ "models": {
+  "v3": {
+   "selected_sound_rule": {
+    "street_above_dbfs": null,
+    "window_s": 30.0,
+    "hysteresis_db": 0.0,
+    "min_s": 10.0,
+    "street_evidence": [
+     [
+      "car_horn",
+      1.0
+     ],
+     [
+      "baby_cry",
+      -1.0
+     ],
+     [
+      "door_knock",
+      -1.0
+     ],
+     [
+      "water_running",
+      -1.0
+     ]
+    ],
+    "street_score_above": -0.01,
+    "score_hysteresis": 0.02,
+    "evidence_window_s": 30.0,
+    "min_dwell_s": 60.0
+   },
+   "selected_horn_only_rule": {
+    "street_above_dbfs": null,
+    "window_s": 30.0,
+    "hysteresis_db": 0.0,
+    "min_s": 10.0,
+    "street_evidence": [
+     [
+      "car_horn",
+      1.0
+     ]
+    ],
+    "street_score_above": 0.03,
+    "score_hysteresis": 0.02,
+    "evidence_window_s": 30.0,
+    "min_dwell_s": 60.0
+   },
+   "val/vn/rand/rms_v2": {
+    "acc": 0.5306469044310638,
+    "acc_settled": 0.5763888888888888,
+    "lat_median_s": 25.0,
+    "lat_p90_s": 175.95000000000002,
+    "never_switched": 3,
+    "n_transitions": 30,
+    "wrong_switches_per_h": 13.88888888888889
+   },
+   "val/vn/rand/horn_only": {
+    "acc": 0.7444804693530955,
+    "acc_settled": 0.8712962962962963,
+    "lat_median_s": 32.75,
+    "lat_p90_s": 102.45000000000003,
+    "never_switched": 0,
+    "n_transitions": 30,
+    "wrong_switches_per_h": 2.7777777777777777
+   },
+   "val/vn/rand/sound": {
+    "acc": 0.8551798672224795,
+    "acc_settled": 0.937962962962963,
+    "lat_median_s": 15.75,
+    "lat_p90_s": 42.40000000000001,
+    "never_switched": 0,
+    "n_transitions": 30,
+    "wrong_switches_per_h": 3.333333333333333
+   },
+   "val/vn/rand/rms+sound": {
+    "acc": 0.7984406360969585,
+    "acc_settled": 0.9427083333333334,
+    "lat_median_s": 31.75,
+    "lat_p90_s": 70.80000000000001,
+    "never_switched": 0,
+    "n_transitions": 30,
+    "wrong_switches_per_h": 1.6666666666666665
+   },
+   "val/vn/plaus/rms_v2": {
+    "acc": 0.8774895785085688,
+    "acc_settled": 0.9626157407407407,
+    "lat_median_s": 16.5,
+    "lat_p90_s": 42.35000000000001,
+    "never_switched": 0,
+    "n_transitions": 30,
+    "wrong_switches_per_h": 2.2222222222222223
+   },
+   "val/vn/plaus/horn_only": {
+    "acc": 0.7192373012197005,
+    "acc_settled": 0.8302083333333333,
+    "lat_median_s": 40.0,
+    "lat_p90_s": 127.85000000000001,
+    "never_switched": 1,
+    "n_transitions": 30,
+    "wrong_switches_per_h": 3.333333333333333
+   },
+   "val/vn/plaus/sound": {
+    "acc": 0.8545622973598889,
+    "acc_settled": 0.9586805555555555,
+    "lat_median_s": 21.0,
+    "lat_p90_s": 51.05,
+    "never_switched": 0,
+    "n_transitions": 30,
+    "wrong_switches_per_h": 1.6666666666666665
+   },
+   "val/vn/plaus/rms+sound": {
+    "acc": 0.8723174309093716,
+    "acc_settled": 0.9984953703703704,
+    "lat_median_s": 21.75,
+    "lat_p90_s": 47.400000000000006,
+    "never_switched": 0,
+    "n_transitions": 30,
+    "wrong_switches_per_h": 0.0
+   },
+   "val/orig/rand/rms_v2": {
+    "acc": 0.5127373784159333,
+    "acc_settled": 0.5237268518518519,
+    "lat_median_s": 16.5,
+    "lat_p90_s": 180.0,
+    "never_switched": 7,
+    "n_transitions": 30,
+    "wrong_switches_per_h": 7.777777777777778
+   },
+   "val/orig/rand/horn_only": {
+    "acc": 0.6265246255982708,
+    "acc_settled": 0.7376157407407408,
+    "lat_median_s": 43.0,
+    "lat_p90_s": 174.60000000000002,
+    "never_switched": 3,
+    "n_transitions": 30,
+    "wrong_switches_per_h": 2.7777777777777777
+   },
+   "val/orig/rand/sound": {
+    "acc": 0.8028408213679172,
+    "acc_settled": 0.9336805555555555,
+    "lat_median_s": 32.75,
+    "lat_p90_s": 58.95,
+    "never_switched": 0,
+    "n_transitions": 30,
+    "wrong_switches_per_h": 3.888888888888889
+   },
+   "val/orig/rand/rms+sound": {
+    "acc": 0.7643970974216459,
+    "acc_settled": 0.9181712962962963,
+    "lat_median_s": 40.0,
+    "lat_p90_s": 79.55000000000003,
+    "never_switched": 0,
+    "n_transitions": 30,
+    "wrong_switches_per_h": 2.7777777777777777
+   },
+   "val/orig/plaus/rms_v2": {
+    "acc": 0.9104523699243476,
+    "acc_settled": 1.0,
+    "lat_median_s": 16.75,
+    "lat_p90_s": 27.5,
+    "never_switched": 0,
+    "n_transitions": 30,
+    "wrong_switches_per_h": 0.0
+   },
+   "val/orig/plaus/horn_only": {
+    "acc": 0.6699861046780917,
+    "acc_settled": 0.7659722222222223,
+    "lat_median_s": 35.25,
+    "lat_p90_s": 162.00000000000003,
+    "never_switched": 3,
+    "n_transitions": 30,
+    "wrong_switches_per_h": 3.333333333333333
+   },
+   "val/orig/plaus/sound": {
+    "acc": 0.8276980083371931,
+    "acc_settled": 0.9550925925925926,
+    "lat_median_s": 29.5,
+    "lat_p90_s": 53.2,
+    "never_switched": 0,
+    "n_transitions": 30,
+    "wrong_switches_per_h": 2.2222222222222223
+   },
+   "val/orig/plaus/rms+sound": {
+    "acc": 0.8370387525088776,
+    "acc_settled": 0.9777777777777777,
+    "lat_median_s": 29.5,
+    "lat_p90_s": 53.2,
+    "never_switched": 0,
+    "n_transitions": 30,
+    "wrong_switches_per_h": 0.5555555555555556
+   },
+   "test/vn/rand/rms_v2": {
+    "acc": 0.5353558746333179,
+    "acc_settled": 0.5491898148148148,
+    "lat_median_s": 17.75,
+    "lat_p90_s": 180.0,
+    "never_switched": 7,
+    "n_transitions": 30,
+    "wrong_switches_per_h": 8.333333333333334
+   },
+   "test/vn/rand/horn_only": {
+    "acc": 0.5581287633163502,
+    "acc_settled": 0.6775462962962963,
+    "lat_median_s": 75.0,
+    "lat_p90_s": 180.0,
+    "never_switched": 4,
+    "n_transitions": 30,
+    "wrong_switches_per_h": 2.7777777777777777
+   },
+   "test/vn/rand/sound": {
+    "acc": 0.7731202717307395,
+    "acc_settled": 0.9098379629629629,
+    "lat_median_s": 30.5,
+    "lat_p90_s": 82.5,
+    "never_switched": 0,
+    "n_transitions": 30,
+    "wrong_switches_per_h": 2.7777777777777777
+   },
+   "test/vn/rand/rms+sound": {
+    "acc": 0.7244094488188977,
+    "acc_settled": 0.8212962962962963,
+    "lat_median_s": 29.5,
+    "lat_p90_s": 180.0,
+    "never_switched": 4,
+    "n_transitions": 30,
+    "wrong_switches_per_h": 0.5555555555555556
+   },
+   "test/vn/plaus/rms_v2": {
+    "acc": 0.8645978076269878,
+    "acc_settled": 0.9664351851851852,
+    "lat_median_s": 16.75,
+    "lat_p90_s": 43.55000000000001,
+    "never_switched": 0,
+    "n_transitions": 30,
+    "wrong_switches_per_h": 2.2222222222222223
+   },
+   "test/vn/plaus/horn_only": {
+    "acc": 0.6026709896557048,
+    "acc_settled": 0.7018518518518518,
+    "lat_median_s": 59.0,
+    "lat_p90_s": 180.0,
+    "never_switched": 4,
+    "n_transitions": 30,
+    "wrong_switches_per_h": 3.333333333333333
+   },
+   "test/vn/plaus/sound": {
+    "acc": 0.7894858730893932,
+    "acc_settled": 0.9158564814814815,
+    "lat_median_s": 22.75,
+    "lat_p90_s": 69.15,
+    "never_switched": 0,
+    "n_transitions": 30,
+    "wrong_switches_per_h": 3.333333333333333
+   },
+   "test/vn/plaus/rms+sound": {
+    "acc": 0.830631465184499,
+    "acc_settled": 0.9690972222222223,
+    "lat_median_s": 23.25,
+    "lat_p90_s": 69.15,
+    "never_switched": 0,
+    "n_transitions": 30,
+    "wrong_switches_per_h": 0.5555555555555556
+   },
+   "test/orig/rand/rms_v2": {
+    "acc": 0.5030878493129536,
+    "acc_settled": 0.5068287037037037,
+    "lat_median_s": 25.0,
+    "lat_p90_s": 180.0,
+    "never_switched": 11,
+    "n_transitions": 30,
+    "wrong_switches_per_h": 7.222222222222222
+   },
+   "test/orig/rand/horn_only": {
+    "acc": 0.48579589316041377,
+    "acc_settled": 0.5241898148148149,
+    "lat_median_s": 57.25,
+    "lat_p90_s": 180.0,
+    "never_switched": 4,
+    "n_transitions": 30,
+    "wrong_switches_per_h": 6.111111111111111
+   },
+   "test/orig/rand/sound": {
+    "acc": 0.8165045545777366,
+    "acc_settled": 0.9599537037037037,
+    "lat_median_s": 33.5,
+    "lat_p90_s": 56.750000000000014,
+    "never_switched": 0,
+    "n_transitions": 30,
+    "wrong_switches_per_h": 2.2222222222222223
+   },
+   "test/orig/rand/rms+sound": {
+    "acc": 0.7628531727651691,
+    "acc_settled": 0.9009259259259259,
+    "lat_median_s": 38.75,
+    "lat_p90_s": 96.85000000000002,
+    "never_switched": 0,
+    "n_transitions": 30,
+    "wrong_switches_per_h": 1.6666666666666665
+   },
+   "test/orig/plaus/rms_v2": {
+    "acc": 0.8943183572641655,
+    "acc_settled": 1.0,
+    "lat_median_s": 17.25,
+    "lat_p90_s": 31.650000000000002,
+    "never_switched": 0,
+    "n_transitions": 30,
+    "wrong_switches_per_h": 0.0
+   },
+   "test/orig/plaus/horn_only": {
+    "acc": 0.5850702485718697,
+    "acc_settled": 0.7082175925925925,
+    "lat_median_s": 76.75,
+    "lat_p90_s": 139.4,
+    "never_switched": 0,
+    "n_transitions": 30,
+    "wrong_switches_per_h": 3.888888888888889
+   },
+   "test/orig/plaus/sound": {
+    "acc": 0.8266172610776594,
+    "acc_settled": 0.9638888888888889,
+    "lat_median_s": 26.25,
+    "lat_p90_s": 59.85000000000001,
+    "never_switched": 0,
+    "n_transitions": 30,
+    "wrong_switches_per_h": 1.6666666666666665
+   },
+   "test/orig/plaus/rms+sound": {
+    "acc": 0.8403581905203026,
+    "acc_settled": 0.9847222222222223,
+    "lat_median_s": 26.25,
+    "lat_p90_s": 59.85000000000001,
+    "never_switched": 0,
+    "n_transitions": 30,
+    "wrong_switches_per_h": 0.0
+   }
+  }
+ }
+}
