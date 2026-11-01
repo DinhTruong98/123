@@ -178,13 +178,21 @@ def export_golden_json(cfg, stats: dict, clf: TFLiteClassifier) -> dict:
     }
 
 
+def _event_json(e, keys) -> dict:
+    """Demo event; `label` / `icon` (vn-v3 mode display overrides) only when the mode sets them."""
+    d = {"class_key": keys[e.class_id], "t_audio": e.t_audio, "repeat": e.repeat, "confidence": e.confidence}
+    for k in ("label", "icon"):
+        if getattr(e, k, None) is not None:
+            d[k] = getattr(e, k)
+    return d
+
+
 def export_demo(cfg, stats: dict) -> dict:
     clf = TFLiteClassifier(MODEL, output="sigmoid" if F.model_meta(stats).output == "sigmoid" else None)
     events, summary, st = run_offline(cfg, FileSource(DEMO_WAV, realtime=False), clf, stats)
     keys = cfg.class_keys
     return {
-        "events": [{"class_key": keys[e.class_id], "t_audio": e.t_audio, "repeat": e.repeat,
-                    "confidence": e.confidence} for e in events],
+        "events": [_event_json(e, keys) for e in events],
         "hops": [{"t_audio": float(t), "gated": bool(g), "probs": f32(p)}
                  for t, g, p in zip(summary.t_audio, summary.gated, summary.probs, strict=True)],
         "infer_ms_mean": st["infer_ms_mean"], "feature_ms_mean": st["feature_ms_mean"],
